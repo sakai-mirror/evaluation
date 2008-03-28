@@ -267,10 +267,11 @@ public class EvaluationAssignProducer implements ViewComponentProducer, ViewPara
          UIInput adhocGroupEmails = UIInput.make(newAdhocgroupArea, "adhoc-email-input", null);
 
          UIOutput saveEmailsButton = UIOutput.make(newAdhocgroupArea, "adhoc-save-emails-button");
-         UIOutput clearEmailsButton = UIOutput.make(newAdhocgroupArea, "adhoc-clear-emails-button");
+         //UIOutput clearEmailsButton = UIOutput.make(newAdhocgroupArea, "adhoc-clear-emails-button");
+         UIOutput addMoreUsersButton = UIOutput.make(newAdhocgroupArea, "adhoc-addmoreusers-button");
          
          initJS.append(HTMLUtil.emitJavascriptCall("EvalSystem.initAssignAdhocGroupArea", 
-                 new String[] {saveEmailsButton.getFullID(), clearEmailsButton.getFullID(),
+                 new String[] {saveEmailsButton.getFullID(), addMoreUsersButton.getFullID(),
                adhocGroupName.getFullID(), adhocGroupEmails.getFullID(),
                adhocEmailsArea.getFullID(), vsh.getFullURL(new SimpleViewParameters(UVBProducer.VIEW_ID))}));
       }
@@ -284,7 +285,7 @@ public class EvaluationAssignProducer implements ViewComponentProducer, ViewPara
       hierarchyNodesSelect.optionnames = UIOutputMany.make(hierNodesLabels.toArray(new String[] {}));
       
       // all command buttons are just HTML now so no more bindings
-      UIMessage.make(form, "cancel-button", "general.cancel.button");
+      UIMessage.make(form, "back-button", "general.back.button");
       UIMessage.make(form, "confirmAssignCourses", "assigneval.save.assigned.button" );
 
 //      UICommand.make(form, "editSettings", UIMessage.make("assigneval.edit.settings.button"), "#{evaluationBean.backToSettingsAction}");

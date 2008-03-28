@@ -760,6 +760,20 @@ label.block{
 	padding: .5em;
 	margin:.2em;
 }	
+/*since these list items can contain list items, minimize inheritance*/
+.itemListEval li ul li, .itemListEval li ol li{
+	list-style:disc;
+	list-style-position:inside;
+	border:none;
+	padding:.2em;
+}	
+.itemListEval li ol li{
+	list-style:decimal;
+	list-style-position:inside;
+	border:none;
+	padding:.2em;
+}	
+
 
 .itemListNew .itemListEval li:hover{
 /*	background: #ffc*/
@@ -835,11 +849,16 @@ label.block{
 .fullVertical{
 	margin:.5em 2em
 }
+.fullVertical ol {
+	padding-left:0;
+	margin:0;
+}
 .fullVertical ol li{
 	margin:0;
-	border:none 
-}
-	
+	padding:.3em;
+	border:none;
+	list-style: none  !important; 
+}	
 .fullDisplayHorizontal td{
 	padding:0;
 /*

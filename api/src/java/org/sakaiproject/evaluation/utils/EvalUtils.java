@@ -359,6 +359,85 @@ public class EvalUtils {
       return newTitle;
    }
 
+   /**
+    * Ensures that a string does not exceed a certain length, if it does then
+    * the "..." is appended in the return
+    * 
+    * @param str any string
+    * @param maxLength
+    * @return
+    */
+   public static String makeMaxLengthString(String str, int maxLength) {
+      if (str == null) {
+         return null;
+      }
+      if (maxLength > 3) {
+         if (str.length() > maxLength) {
+            str = str.substring(0, maxLength - 2) + "...";
+         }
+      }
+      return str;
+   }
+
+   /**
+    * Check if an email address is valid (you should trim it before you send it along)
+    * 
+    * @param email an email address
+    * @return true if valid, false otherwise
+    */
+   public static boolean isValidEmail(String email) {
+      boolean valid = false;
+      if (email != null && email.length() > 5) {
+         valid = email.matches("^[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[a-z0-9-]+(\\.[a-z0-9-]+)*(\\.[a-z]{2,6})$");
+      }
+      return valid;
+   }
+
+   public static String ENDING_P_SPACE_TAGS = "<p>&nbsp;</p>";
+   public static String STARTING_P_TAG = "<p>";
+   public static String ENDING_P_TAG = "</p>";
+
+   /**
+    * Attempts to remove all unnecessary P tags from html strings
+    * 
+    * @param cleanup an html string to cleanup
+    * @return the cleaned up string
+    */
+   public static String cleanupHtmlPtags(String cleanup) {
+      if (cleanup == null) {
+         // nulls are ok
+         return null;
+      } else if (cleanup.trim().length() == 0) {
+         // nothing to do
+         return cleanup;
+      }
+      cleanup = cleanup.trim();
+
+      if (cleanup.length() > ENDING_P_SPACE_TAGS.length()) {
+         // (remove trailing blank lines)
+         // - While (cleanup ends with "<p>&nbsp;</p>") remove trailing "<p>&nbsp;</p>".
+         while (cleanup.toLowerCase().endsWith(ENDING_P_SPACE_TAGS)) {
+            // chop off the end
+            cleanup = cleanup.substring(0, cleanup.length() - ENDING_P_SPACE_TAGS.length()).trim();
+         }
+      }
+
+      if (cleanup.length() > (STARTING_P_TAG.length() + ENDING_P_TAG.length())) {
+         // (remove a single set of <p> tags)
+         // if cleanup starts with "<p>" and cleanup ends with "</p>" and, remove leading "<p>" and trailing "</p>" from cleanup
+         String lcCheck = cleanup.toLowerCase();
+         if (lcCheck.startsWith(STARTING_P_TAG) 
+               && lcCheck.endsWith(ENDING_P_TAG)) {
+            if (lcCheck.indexOf(STARTING_P_TAG, STARTING_P_TAG.length()) == -1 
+                  && lcCheck.lastIndexOf(ENDING_P_TAG, lcCheck.length() - ENDING_P_TAG.length() - 1) == -1) {
+               // chop off the front and end P tags
+               cleanup = cleanup.substring(STARTING_P_TAG.length(), cleanup.length() - ENDING_P_TAG.length()).trim();
+            }
+         }
+      }
+
+      return cleanup;
+   }
 
    /**
     * Get a map of answers for the given response, where the key to

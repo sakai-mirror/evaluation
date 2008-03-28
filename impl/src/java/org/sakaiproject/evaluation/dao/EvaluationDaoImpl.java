@@ -288,12 +288,9 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
 
       boolean emptyReturn = false;
       Map<String, Object> params = new HashMap<String, Object>();
-      String joinHQL = "";
 
       String groupsHQL = "";
       if (evalGroupIds != null && evalGroupIds.length > 0) {
-         joinHQL += ", EvalAssignGroup as assign ";
-
          String approvedHQL = "";
          if (approvedOnly != null) {
             approvedHQL = " and assign.instructorApproval = :approval ";
@@ -370,7 +367,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
             params.put("deletedState", EvalConstants.EVALUATION_STATE_DELETED);
          }
 
-         String hql = "select distinct eval from EvalEvaluation as eval " + joinHQL 
+         String hql = "select eval from EvalEvaluation as eval " 
             + " where 1=1 " + activeHQL + groupsHQL //+ responsesHQL 
             + " order by eval.dueDate, eval.title, eval.id";
          evals = executeHqlQuery(hql, params, startResult, maxResults);
@@ -398,7 +395,9 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
 
       String recentHQL = "";
       if (recentClosedDate != null) {
-         recentHQL = " and eval.stopDate >= :recentClosedDate ";
+         recentHQL = " and ( (eval.viewDate is not null and eval.viewDate >= :recentClosedDate) "
+         		+ "or (eval.stopDate is not null and eval.stopDate >= :recentClosedDate) "
+               + "or (eval.dueDate is not null and eval.dueDate >= :recentClosedDate) ) ";
          params.put("recentClosedDate", recentClosedDate);
       }
 
@@ -437,7 +436,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       List<EvalEvaluation> evals = null;
       String hql = "select eval from EvalEvaluation as eval " 
          + " where 1=1 " + stateHQL + recentHQL + ownerGroupHQL 
-         + " order by eval.stopDate, eval.title, eval.id";
+         + " order by eval.dueDate, eval.title, eval.id";
       evals = executeHqlQuery(hql, params, startResult, maxResults);
       Collections.sort(evals, new ComparatorsUtils.EvaluationDateTitleIdComparator());
       return evals;
@@ -1261,14 +1260,24 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
     */
    @SuppressWarnings("unchecked")
    private List executeHqlQuery(String hql, Map<String, Object> params, int start, int limit) {
-      Query query = getSession().createQuery(hql);
-      query.setFirstResult(start);
-      if (limit > 0) {
-         query.setMaxResults(limit);
+      List l = null;
+      try {
+         Query query = getSession().createQuery(hql);
+         query.setFirstResult(start);
+         if (limit > 0) {
+            query.setMaxResults(limit);
+         }
+         setParameters(query, params);
+         l = query.list();
+      } catch (org.hibernate.exception.SQLGrammarException e) {
+         // failed to execute the query
+         StringBuilder info = new StringBuilder();
+         info.append("Failure info: errorCode=" + e.getErrorCode());
+         info.append(", SQLstate=" + e.getSQLState());
+         info.append(", SQL=" + e.getSQL());
+         throw new RuntimeException("Unable to execute query: " + e.getMessage() + " :: HQL=" + hql + " :: " + info, e);
       }
-      setParameters(query, params);
-      log.debug("HQL query:" + query.getQueryString());
-      return query.list();
+      return l;
    }
 
 

@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
 
@@ -75,9 +77,15 @@ public class TemplateItemUtils {
          templateItemsList.add(templateItem);
       }
 
-      return orderTemplateItems(templateItemsList);
+      return orderTemplateItems(templateItemsList, false);
    }
 
+   /**
+    * Create an array of all the template item ids in a collection
+    * 
+    * @param templateItemsCollection any collection of {@link EvalTemplateItem}
+    * @return an array in the order of the collection iterator
+    */
    public static Long[] makeTemplateItemsIdsArray(Collection<EvalTemplateItem> templateItemsCollection) {
       List<Long> templateItemsIds = new ArrayList<Long>();
 
@@ -88,6 +96,84 @@ public class TemplateItemUtils {
       Long[] ids = templateItemsIds.toArray(new Long[] {});
       return ids;
    }
+
+   /**
+    * Generate the rendering data structure for working with template items,
+    * this is primarily used for sorting and grouping the template items properly<br/>
+    * <b>NOTE:</b> There will always be a course category {@link TemplateItemGroup} as long
+    * as there were some TemplateItems supplied but it may have nothing in it so you should
+    * check to see if the lists are empty
+    * 
+    * @param allTemplateItems the list of all template items to be placed into the structure
+    * @param hierarchyNodes the list of all hierarchy nodes for grouping (list order will be used)
+    * @param associates a map of associate type -> list of ids of that type,
+    * e.g. {@link EvalConstants#ITEM_CATEGORY_INSTRUCTOR} => [aaronz,sgtithens],
+    * normally only the instructors
+    * @return a list of TemplateItemGroup in correct rendering order
+    */
+   public static List<TemplateItemGroup> makeTemplateItemsStructure(List<EvalTemplateItem> allTemplateItems, 
+         List<EvalHierarchyNode> hierarchyNodes, Map<String, List<String>> associates) {
+      // check inputs
+      if (allTemplateItems == null || hierarchyNodes == null || associates == null) {
+         throw new IllegalArgumentException("null inputs are not allowed, empty lists and maps are ok though");
+      }
+
+      List<TemplateItemGroup> tigs = new ArrayList<TemplateItemGroup>();
+      if (allTemplateItems.size() > 0) {
+         // filter out the block child items, to get a list of non-child items
+         List<EvalTemplateItem> nonChildItemsList = TemplateItemUtils.getNonChildItems(allTemplateItems);
+   
+         // ensure there is at least one course category
+         if (! associates.containsKey(EvalConstants.ITEM_CATEGORY_COURSE)) {
+            List<String> courses = new ArrayList<String>();
+            courses.add(null);
+            associates.put(EvalConstants.ITEM_CATEGORY_COURSE, courses);
+         }
+
+         // turn the map keys into a properly sorted list of types
+         List<String> associateTypes = new ArrayList<String>();
+         for (int i = 0; i < EvalConstants.ITEM_CATEGORY_ORDER.length; i++) {
+            if (associates.containsKey(EvalConstants.ITEM_CATEGORY_ORDER[i])) {
+               associateTypes.add(EvalConstants.ITEM_CATEGORY_ORDER[i]);
+            }
+         }
+
+         // loop through the associates
+         for (String associateType : associateTypes) {
+            List<String> associateIds = associates.get(associateType);
+            // assume the associateIds are in the correct render order
+            for (String associateId : associateIds) {
+               // handle the data creation for this associateId
+               TemplateItemGroup tig = new TemplateItemGroup(associateType, associateId);
+               tig.hierarchyNodeGroups = new ArrayList<HierarchyNodeGroup>();
+
+               // now handle the hierarchy levels
+               // top level first
+               List<EvalTemplateItem> templateItems = TemplateItemUtils.getNodeItems(nonChildItemsList, null);
+               if (templateItems.size() > 0) {
+                  HierarchyNodeGroup hng = new HierarchyNodeGroup(null);
+                  hng.templateItems = templateItems;
+                  tig.hierarchyNodeGroups.add(hng);
+               }
+
+               // then do the remaining nodes in order supplied
+               for (EvalHierarchyNode evalNode: hierarchyNodes) {
+                  templateItems = TemplateItemUtils.getNodeItems(nonChildItemsList, evalNode.id);
+                  if (templateItems.size() > 0) {
+                     HierarchyNodeGroup hng = new HierarchyNodeGroup(evalNode);
+                     hng.templateItems = templateItems;
+                     tig.hierarchyNodeGroups.add(hng);
+                  }
+               }
+            }
+         }
+      }
+
+      return tigs;
+   }
+
+
+
 
    /**
     * Check a list of {@link EvalTemplateItem} objects for a specific category
@@ -117,7 +203,7 @@ public class TemplateItemUtils {
    public static List<EvalTemplateItem> getCategoryTemplateItems(String itemTypeConstant, List<EvalTemplateItem> templateItemsList) {    
       List<EvalTemplateItem> catItemsList = new ArrayList<EvalTemplateItem>();
 
-      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList);
+      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList, false);
 
       for (int i=0; i<orderedItems.size(); i++) {
          EvalTemplateItem templateItem = (EvalTemplateItem) orderedItems.get(i);
@@ -132,24 +218,35 @@ public class TemplateItemUtils {
 
    /**
     * Reorder a list of templateItems to be in the correct displayOrder,
-    * this does not change the displayOrder values, it simply places everything in the
-    * correct order in the returned list
+    * this does not change the displayOrder values unless fixOrder is true, 
+    * it simply places everything in the correct order in the returned list
     * 
     * @param templateItemsList a List of {@link EvalTemplateItem} objects from a template
+    * @param fixOrder if true then this will correct the displayOrder (but not save it),
+    * otherwise the templateItems are placed in the correct order in the list but displayOrder is not changed<br/>
+    * <b>WARNING:</b> This MUST be the complete list of all templateItems in this template or this will corrupt the ordering badly!
     * @return a List of {@link EvalTemplateItem} objects
     */
-   public static List<EvalTemplateItem> orderTemplateItems(List<EvalTemplateItem> templateItemsList) {
+   public static List<EvalTemplateItem> orderTemplateItems(List<EvalTemplateItem> templateItemsList, boolean fixOrder) {
       List<EvalTemplateItem> orderedItemsList = new ArrayList<EvalTemplateItem>();
 
+      // get the ordered list of all non-children
       List<EvalTemplateItem> nonChildrenItems = getNonChildItems(templateItemsList);
       for (int i=0; i<nonChildrenItems.size(); i++) {
          EvalTemplateItem templateItem = (EvalTemplateItem) nonChildrenItems.get(i);
          String type = getTemplateItemType(templateItem);
+         if (fixOrder) {
+            templateItem.setDisplayOrder(i + 1);
+         }
          orderedItemsList.add(templateItem);
          if (EvalConstants.ITEM_TYPE_BLOCK_PARENT.equals(type)) {
+            // get the ordered list of all non-children
             List<EvalTemplateItem> childrenItems = getChildItems(templateItemsList, templateItem.getId());
             for (int j=0; j<childrenItems.size(); j++) {
                EvalTemplateItem childItem = (EvalTemplateItem) childrenItems.get(j);
+               if (fixOrder) {
+                  childItem.setDisplayOrder(j + 1);
+               }
                orderedItemsList.add(childItem);
             }
          }
@@ -198,7 +295,7 @@ public class TemplateItemUtils {
    public static List<EvalTemplateItem> getAnswerableTemplateItems(List<EvalTemplateItem> templateItemsList) {		
       List<EvalTemplateItem> answerableItemsList = new ArrayList<EvalTemplateItem>();
 
-      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList);
+      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList, false);
 
       for (int i=0; i<orderedItems.size(); i++) {
          EvalTemplateItem templateItem = (EvalTemplateItem) orderedItems.get(i);
@@ -241,7 +338,7 @@ public class TemplateItemUtils {
    public static List<EvalTemplateItem> getRequiredTemplateItems(List<EvalTemplateItem> templateItemsList) {       
       List<EvalTemplateItem> requiredItemsList = new ArrayList<EvalTemplateItem>();
 
-      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList);
+      List<EvalTemplateItem> orderedItems = orderTemplateItems(templateItemsList, false);
 
       for (int i=0; i<orderedItems.size(); i++) {
          EvalTemplateItem templateItem = (EvalTemplateItem) orderedItems.get(i);
@@ -275,7 +372,23 @@ public class TemplateItemUtils {
    }
 
    /**
-    * filter out the Block child items, and only return non-child items, return then
+    * Check if a templateItem is a blockChild
+    * <b>NOTE</b> use {@link #getChildItems(List, Long)} to get the child items for this block from a larger set
+    * @param templateItem a templateItem persistent object
+    * @return true if the item is a block child, false otherwise
+    */
+   public static boolean isBlockChild(EvalTemplateItem templateItem) {
+      boolean result = false;
+      if ( templateItem.getBlockParent() != null && 
+            templateItem.getBlockParent() == false &&
+            templateItem.getBlockId() != null) {
+         result = true;
+      }
+      return result;
+   }
+
+   /**
+    * filter out the Block child items, and only return non-child items, return them
     * in correctly sorted display order
     * 
     * @param tempItemsList a List of {@link EvalTemplateItem} objects in a template

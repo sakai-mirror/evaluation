@@ -401,6 +401,16 @@ public class EvalConstants {
     */
    public static final String ITEM_CATEGORY_ENVIRONMENT = "Environment";
 
+   /**
+    * Defines the correct rendering order for the item categories,
+    * also defines the complete list of item categories<br/>
+    * <b>NOTE:</b> make sure all item categories are listed here
+    */
+   public static final String[] ITEM_CATEGORY_ORDER = {
+      ITEM_CATEGORY_COURSE,
+      ITEM_CATEGORY_INSTRUCTOR,
+      ITEM_CATEGORY_ENVIRONMENT
+   };
 
    /**
     * Item scale display (scaleDisplaySetting) setting:
