@@ -195,7 +195,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       // set the date modified
       evaluation.setLastModified( new Date() );
 
-      if (created && EvalUtils.checkStateAfter(evaluation.getState(), EvalConstants.EVALUATION_STATE_PARTIAL, true)) {
+      if (created && EvalUtils.checkStateAfter(evaluation.getState(), EvalConstants.EVALUATION_STATE_PARTIAL, false)) {
          // created can only be true when this eval is in partial state
          created = false;
       }
@@ -328,28 +328,6 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 //            		+ "in a state ("+evalState+") that is after the partial state with "
 //                  + "a template that has not been copied yet, this is invalid as all evaluations must use copied "
 //                  + "templates, copy the template using the authoringService.copyTemplate method before saving this eval");
-         }
-      }
-      
-      // force the student/instructor dates based on the boolean settings
-      if (evaluation.studentViewResults != null && ! evaluation.studentViewResults) {
-         evaluation.setStudentsDate(null);
-      } else {
-         // fix up the dates
-         if (evaluation.getStudentsDate() == null) {
-            evaluation.setStudentsDate( evaluation.getViewDate() == null ? evaluation.getDueDate() : evaluation.getViewDate() );
-         } else if (evaluation.getViewDate() == null && evaluation.getStudentsDate() == null) {
-            evaluation.setStudentsDate( evaluation.getDueDate() );
-         }
-      }
-      if (evaluation.instructorViewResults != null && ! evaluation.instructorViewResults) {
-         evaluation.setInstructorsDate(null);
-      } else {
-         // fix up the dates
-         if (evaluation.getInstructorsDate() == null) {
-            evaluation.setInstructorsDate( evaluation.getViewDate() == null ? evaluation.getDueDate() : evaluation.getViewDate() );
-         } else if (evaluation.getViewDate() == null && evaluation.getInstructorsDate() == null) {
-            evaluation.setInstructorsDate( evaluation.getDueDate() );
          }
       }
 
@@ -532,22 +510,25 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          }
          dao.deleteSet(emailSet);
 
-         // remove template if needed
          if (removeTemplate) {
-            // remove the associated template if it is a copy (it should be)
-            EvalTemplate template = null;
-            if (evaluation.getTemplate() != null 
-                  || evaluation.getTemplate().getId() != null) {
-               // there is a template so get it and check to see if it needs to be removed
-               template = authoringService.getTemplateById(evaluation.getTemplate().getId());
-               if (template.getCopyOf() != null ||
-                     template.isHidden() == true) {
-                  // this is a copy so remove it and all children
-                  if (securityChecks.checkUserControlTemplate(userId, template)) {
-                     authoringService.deleteTemplate(template.getId(), userId);
-                  } else {
-                     log.warn("Could not remove the template ("+template.getId()+") associated with this "
-                           + "eval ("+evaluationId+") since this user has no permission, continuing to remove evaluation anyway");
+            // remove template if it is a copy
+            if (EvalUtils.checkStateAfter(evaluation.getState(), EvalConstants.EVALUATION_STATE_PARTIAL, false)) {
+               // this is not partial (partials do not have copies made yet)
+               // remove the associated template if it is a copy (it should be)
+               EvalTemplate template = null;
+               if (evaluation.getTemplate() != null 
+                     || evaluation.getTemplate().getId() != null) {
+                  // there is a template so get it and check to see if it needs to be removed
+                  template = authoringService.getTemplateById(evaluation.getTemplate().getId());
+                  if (template.getCopyOf() != null ||
+                        template.isHidden() == true) {
+                     // this is a copy so remove it and all children
+                     if (securityChecks.checkUserControlTemplate(userId, template)) {
+                        authoringService.deleteTemplate(template.getId(), userId);
+                     } else {
+                        log.warn("Could not remove the template ("+template.getId()+") associated with this "
+                              + "eval ("+evaluationId+") since this user has no permission, continuing to remove evaluation anyway");
+                     }
                   }
                }
             }
@@ -1214,7 +1195,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       if (eah.getInstructorsViewResults() == null) {
          Boolean instViewResults = (Boolean) settings.get(EvalSettings.INSTRUCTOR_ALLOWED_VIEW_RESULTS);
          if (instViewResults == null) {
-            if (eval.getInstructorsDate() != null) {
+            if (eval.getInstructorViewResults()) {
                eah.setInstructorsViewResults( Boolean.TRUE );
             } else {
                eah.setInstructorsViewResults( Boolean.FALSE );
@@ -1225,9 +1206,9 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       }
       // setStudentsViewResults
       if (eah.getStudentsViewResults() == null) {
-         Boolean studViewResults = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
+         Boolean studViewResults = (Boolean) settings.get(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS);
          if (studViewResults == null) {
-            if (eval.getStudentsDate() != null) {
+            if (eval.getStudentViewResults()) {
                eah.setStudentsViewResults( Boolean.TRUE );
             } else {
                eah.setStudentsViewResults( Boolean.FALSE );

@@ -1,19 +1,21 @@
 
 package org.sakaiproject.evaluation.tool.producers;
 
+import java.util.Set;
+
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.ReportingPermissions;
 import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.viewparams.ReportParameters;
+
 import uk.org.ponder.rsf.components.UIBranchContainer;
 import uk.org.ponder.rsf.components.UICommand;
 import uk.org.ponder.rsf.components.UIContainer;
 import uk.org.ponder.rsf.components.UIForm;
 import uk.org.ponder.rsf.components.UIInternalLink;
 import uk.org.ponder.rsf.components.UIMessage;
-import uk.org.ponder.rsf.components.UIOutput;
 import uk.org.ponder.rsf.components.UISelect;
 import uk.org.ponder.rsf.components.UISelectChoice;
 import uk.org.ponder.rsf.components.UISelectLabel;
@@ -112,9 +114,9 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
          EvalEvaluation evaluation = evaluationService.getEvaluationById(evaluationId);
 
          // do a permission check
-         String[] possibleGroupIdsToView = reportingPermissions.chooseGroupsPartialCheck(evaluation);
-         if (possibleGroupIdsToView.length == 0) {
-            UIOutput.make(tofill, "security-warning", "You cannot view responses for any of the groups.");
+         Set<String> evalGroupIds = reportingPermissions.getResultsViewableEvalGroupIdsForCurrentUser(evaluation);
+         if (evalGroupIds.isEmpty()) {
+            UIMessage.make(tofill, "security-warning", "viewreport.not.allowed");
             return;
          }
 
@@ -128,9 +130,13 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
          UIForm form = UIForm.make(tofill, "report-groups-form", rvp);
          UIMessage.make(form, "report-group-main-message", "reportgroups.main.message");
 
-         String[] possibleGroupTitlesToView = new String[possibleGroupIdsToView.length];
-         for (int i = 0; i < possibleGroupIdsToView.length; i++) {
-            possibleGroupTitlesToView[i] = externalLogic.makeEvalGroupObject(possibleGroupIdsToView[i]).title;
+         String[] possibleGroupIdsToView = new String[evalGroupIds.size()];
+         String[] possibleGroupTitlesToView = new String[evalGroupIds.size()];
+         int counter = 0;
+         for (String evalGroupId : evalGroupIds) {
+            possibleGroupIdsToView[counter] = evalGroupId;
+            possibleGroupTitlesToView[counter] = externalLogic.makeEvalGroupObject(evalGroupId).title;
+            counter++;
          }
          
          UISelect radios = UISelect.makeMultiple(form, "selectHolder", possibleGroupIdsToView, possibleGroupTitlesToView, "groupIds", null);

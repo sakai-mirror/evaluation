@@ -70,21 +70,25 @@ var EvalSystem = function() {
   
     /*
      *  This code is largely in exploration mode and obviously very broken
-     *  still. But shouldn't show up at all unless you've enabled adhoc groups
-     *  in the admin settings.
+     *  still, random things commented out here and there. But shouldn't show up 
+     *  at all unless you've enabled adhoc groups in the admin settings.
      *
      *  Evaluation will still compile, but this is not going to work until we
      *  move up to 0.7.3M2, but this functionality is disabled by default.
      */
   	initAssignAdhocGroupArea: function (saveButtonId,addMoreUsersButtonId,
-        groupNameInputId,emailInputId,emailListDivId,uvburl) {
+        groupNameInputId,emailInputId,emailListDivId,uvburl,cloneMemberBranchId) {
         var groupNameInput = $(escIdForJquery(groupNameInputId));
         var emailListInput = $(escIdForJquery(emailInputId));
         var emailListDiv = $(escIdForJquery(emailListDivId));
         var saveButton = $(escIdForJquery(saveButtonId));
         var addMoreUsersButton = $(escIdForJquery(addMoreUsersButtonId));
+        var cloneMemberBranch = $(escIdForJquery(cloneMemberBranchId));
         
         var adhocGroupId = null;
+        
+        var outbindings = ['adhocGroupsBean.adhocGroupId', 'adhocGroupsBean.acceptedInternalUsers',
+          'adhocGroupsBean.acceptedAdhocUsers', 'adhocGroupsBean.rejectedUsers'];
    
         var saveUpdateEmailsAction = function(event) {
             var inbindings = new Object();
@@ -92,20 +96,11 @@ var EvalSystem = function() {
             if (adhocGroupId == null) {
                 inbindings['adhocGroupsBean.adhocGroupTitle'] = groupNameInput.val();
                 inbindings['adhocGroupsBean.newAdhocGroupUsers'] = emailListInput.val();
-                outbindings.push('adhocGroupsBean.adhocGroupId');
-                outbindings.push('adhocGroupsBean.acceptedInternalUsers');
-                outbindings.push('adhocGroupsBean.acceptedAdhocUsers');
-                outbindings.push('adhocGroupsBean.rejectedUsers');
-                outbindings.push('adhocGroupsBean.participantDivUrl');
-                fireUVBRequest('atoken', uvburl, inbindings, outbindings, 'adhocGroupsBean.adNewAdHocGroup', saveCallback);
+                fireUVBRequest('atoken', uvburl, inbindings, outbindings, 'adhocGroupsBean.addNewAdHocGroup', saveCallback);
             }
             else {
                 inbindings['adhocGroupsBean.adhocGroupId'] = adhocGroupId;
                 inbindings['adhocGroupsBean.newAdhocGroupUsers'] = emailListInput.val();
-                outbindings.push('adhocGroupsBean.acceptedInternalUsers');
-                outbindings.push('adhocGroupsBean.acceptedAdhocUsers');
-                outbindings.push('adhocGroupsBean.rejectedUsers');
-                outbindings.push('adhocGroupsBean.participantDivUrl');
                 fireUVBRequest('atoken', uvburl, inbindings, outbindings, 'adhocGroupsBean.addUsersToAdHocGroup', saveCallback);
             }
             emailListInput.val('');
@@ -126,19 +121,18 @@ var EvalSystem = function() {
                 var UVB = RSF.accumulateUVBResponse(response.responseXML);
                 
                 var adhocGroupId = UVB.EL["adhocGroupsBean.adhocGroupId"];
-                var divurl = UVB.EL["adhocGroupsBean.participantDivUrl"];
-                //alert(UVB.EL["adhocGroupsBean.acceptedInternalUsers"]);
-                //alert(UVB.EL["adhocGroupsBean.acceptedAdhocUsers"]);
-                //alert(UVB.EL["adhocGroupsBean.rejectedUsers"]);
+                var acceptedInternalUsers = UVB.EL["adhocGroupsBean.acceptedInternalUsers"];
+                for (var i in acceptedInternalUsers) {
+                    var nextMember = cloneMemberBranch.clone();
+                    nextMember.find("td:eq(0)").text(acceptedInternalUsers[i]);
+                    nextMember.show().insertAfter(cloneMemberBranch);
+                }
+                alert(UVB.EL["adhocGroupsBean.acceptedInternalUsers"]);
+                alert(UVB.EL["adhocGroupsBean.acceptedAdhocUsers"]);
+                alert(UVB.EL["adhocGroupsBean.rejectedUsers"]);
                 
-                divurl = divurl.replace(/\\/g,'');
-                //alert("The DivURL: =" + divurl + "=");
                 saveButton.hide();
                 addMoreUsersButton.show();
-                //RSF.queueAJAXRequest(adhocGroupId,"GET",divurl,null,updateParticipantDiv);
-                //RSF.issueAJAXRequest("GET", divurl, [], updateParticipantDiv)
-                //emailListDiv.load("http://localhost:8080/portal/tool/bb5fb768-70ce-4c14-80a9-7297189de2b7/adhoc_group_participants_div?adhocGroupId=103");
-                emailListDiv.load(divurl);
             }
         }
         
@@ -166,6 +160,7 @@ var EvalSystem = function() {
         form.submit(function() {
             if (!passes) {
                 errorDiv.show();
+                RSF.getDOMModifyFirer().fireEvent();
             }
             return passes;
         });
@@ -219,6 +214,7 @@ var EvalSystem = function() {
             hideButton.show();
             area.show("normal");
             toggles.show("normal");
+            RSF.getDOMModifyFirer().fireEvent();
         }
 
         var hideAction = function(event) {
@@ -226,6 +222,7 @@ var EvalSystem = function() {
             hideButton.hide();
             area.hide("normal");
             toggles.hide("normal");
+            RSF.getDOMModifyFirer().fireEvent();
         }
 
         if (initialHide) {

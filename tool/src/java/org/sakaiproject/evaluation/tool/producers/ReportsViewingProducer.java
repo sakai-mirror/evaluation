@@ -155,25 +155,33 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
           * We only need to show the choose groups breadcrumb if it's actually 
           * possible for us to view more than one group.
           */
-         String[] viewableGroups = reportingPermissions.chooseGroupsPartialCheck(evaluationId);
-         if (viewableGroups.length > 1) {
+         Set<String> viewableGroups = reportingPermissions.getResultsViewableEvalGroupIdsForCurrentUser(evaluationId);
+         if (viewableGroups.isEmpty()) {
+            UIMessage.make(tofill, "security-warning", "viewreport.not.allowed");
+            return;
+         } else if (viewableGroups.size() == 1) {
+            // only one group to view
+            reportViewParams.groupIds = viewableGroups.toArray(new String[] {});
+         } else if (viewableGroups.size() > 1) {
+            // user can choose other groups so give them a link
             UIInternalLink.make(tofill, "report-groups-title", UIMessage.make("reportgroups.page.title"), 
                   new ReportParameters(ReportChooseGroupsProducer.VIEW_ID, reportViewParams.evaluationId));
+            if (reportViewParams.groupIds == null || reportViewParams.groupIds.length == 0) {
+               reportViewParams.groupIds = viewableGroups.toArray(new String[] {});
+            }
          }
-         String[] groupIds = (reportViewParams.groupIds == null ? new String[] {} : reportViewParams.groupIds);
-         reportViewParams.groupIds = groupIds;
 
          EvalEvaluation evaluation = evaluationService.getEvaluationById(evaluationId);
 
          // do a permission check
-         if (! reportingPermissions.canViewEvaluationResponses(evaluation, groupIds)) {
+         if (! reportingPermissions.canViewEvaluationResponses(evaluation, reportViewParams.groupIds)) {
             throw new SecurityException("Invalid user attempting to access reports page: " + currentUserId);
          }
 
          Long templateId = evaluation.getTemplate().getId();
 
          // Fetch most of all the data and metadata with the ultra TIDL object
-         TemplateItemDataList tidl = responseAggregator.prepareTemplateItemDataStructure(evaluation, groupIds);
+         TemplateItemDataList tidl = responseAggregator.prepareTemplateItemDataStructure(evaluation, reportViewParams.groupIds);
 
          List<EvalTemplateItem> allTemplateItems = tidl.getAllTemplateItems();
 
@@ -191,7 +199,7 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
 
             // The Groups we are viewing
             UIMessage.make(tofill, "selectedGroups", "viewreport.viewinggroups", 
-                  new String[] { responseAggregator.getCommaSeparatedGroupNames(groupIds) });
+                  new String[] { responseAggregator.getCommaSeparatedGroupNames(reportViewParams.groupIds) });
 
 
             // get the list of all instructors for this report and put the user objects for them into a map
@@ -500,10 +508,7 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
          UIInternalLink.make(tofill, "control-items-link",
                UIMessage.make("controlitems.page.title"), 
                new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
-      } else {
-         throw new SecurityException("User attempted to access " + 
-               VIEW_ID + " when they are not allowed");
-      }
+      } 
 
       if (beginEvaluation) {
          UIInternalLink.make(tofill, "control-evaluations-link",

@@ -23,7 +23,7 @@ package org.sakaiproject.evaluation.constant;
 public class EvalConstants {
 
    /**
-    * The current version of the app for updating purposes,
+    * The current version of the application for updating purposes,
     * this should always be the NEXT version of the tool if this is trunk code
     */
    public static String APP_VERSION = "1.2.0-RC6";

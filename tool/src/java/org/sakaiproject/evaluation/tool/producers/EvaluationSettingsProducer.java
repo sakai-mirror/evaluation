@@ -72,11 +72,10 @@ import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
 
 /**
  * This producer is used to render the evaluation settings page,
- * it is used to control all the settings related to a single evaluation
+ * it is used to control all the settings related to a single evaluation,
+ * complete rewrite from the original version
  * 
  * @author Aaron Zeckoski (aaronz@vt.edu)
- * @author Kapil Ahuja (kahuja@vt.edu)
- * @author Rui Feng (fengr@vt.edu)
  */
 public class EvaluationSettingsProducer implements ViewComponentProducer, ViewParamsReporter, ActionResultInterceptor {
 
@@ -352,7 +351,7 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
       boolean sameViewDateForAll = (Boolean) settings.get(EvalSettings.EVAL_USE_SAME_VIEW_DATES);
 
       // Student view date
-      Boolean studentViewResults = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
+      Boolean studentViewResults = (Boolean) settings.get(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS);
       UIBranchContainer showResultsToStudents = UIBranchContainer.make(form, "showResultsToStudents:");
       generateSettingsControlledCheckbox(showResultsToStudents, "studentViewResults", 
             evaluationOTP + "studentViewResults", studentViewResults, form, 
