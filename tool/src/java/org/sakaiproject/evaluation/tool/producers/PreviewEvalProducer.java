@@ -22,9 +22,9 @@ import java.util.Map;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic;
 import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
@@ -42,12 +42,14 @@ import org.sakaiproject.evaluation.utils.TemplateItemDataList.TemplateItemGroup;
 import uk.org.ponder.messageutil.MessageLocator;
 import uk.org.ponder.rsf.components.UIBranchContainer;
 import uk.org.ponder.rsf.components.UIContainer;
+import uk.org.ponder.rsf.components.UIInternalLink;
 import uk.org.ponder.rsf.components.UIMessage;
 import uk.org.ponder.rsf.components.UIOutput;
 import uk.org.ponder.rsf.components.UIVerbatim;
 import uk.org.ponder.rsf.components.decorators.UIStyleDecorator;
 import uk.org.ponder.rsf.view.ComponentChecker;
 import uk.org.ponder.rsf.view.ViewComponentProducer;
+import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
 
@@ -63,9 +65,9 @@ public class PreviewEvalProducer implements ViewComponentProducer, ViewParamsRep
       return VIEW_ID;
    }
 
-   private EvalExternalLogic external;
-   public void setExternal(EvalExternalLogic external) {
-      this.external = external;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -105,7 +107,7 @@ public class PreviewEvalProducer implements ViewComponentProducer, ViewParamsRep
     */
    public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
-      String currentUserId = external.getCurrentUserId();
+      String currentUserId = commonLogic.getCurrentUserId();
 
       EvalViewParameters previewEvalViewParams = (EvalViewParameters)viewparams;
       if (previewEvalViewParams.evaluationId == null && 
@@ -119,6 +121,10 @@ public class PreviewEvalProducer implements ViewComponentProducer, ViewParamsRep
       EvalEvaluation eval = null;
       EvalTemplate template = null;
 
+      UIInternalLink.make(tofill, "summary-link", 
+              UIMessage.make("summary.page.title"), 
+              new SimpleViewParameters(SummaryProducer.VIEW_ID));
+      
       if (evaluationId == null) {
          // previewing a template
          UIMessage.make(tofill, "preview-title", "previeweval.template.title");
@@ -148,7 +154,7 @@ public class PreviewEvalProducer implements ViewComponentProducer, ViewParamsRep
       if (evalGroupId == null) {
          UIMessage.make(groupTitle, "group-title", "previeweval.course.title.default");
       } else {
-         UIOutput.make(groupTitle, "group-title", external.getDisplayTitle(evalGroupId) );
+         UIOutput.make(groupTitle, "group-title", commonLogic.getDisplayTitle(evalGroupId) );
       }
 
       // show instructions if not null

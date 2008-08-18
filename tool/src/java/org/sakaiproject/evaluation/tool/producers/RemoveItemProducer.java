@@ -18,7 +18,7 @@ import java.util.List;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.model.EvalTemplate;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
@@ -56,9 +56,9 @@ public class RemoveItemProducer implements ViewComponentProducer, ViewParamsRepo
    }
 
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic external) {
-      this.externalLogic = external;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalAuthoringService authoringService;
@@ -110,6 +110,7 @@ public class RemoveItemProducer implements ViewComponentProducer, ViewParamsRepo
       String beanBinding = "templateBBean.";
       String actionBinding = "deleteItemAction";
 
+      int displayNum = 1;
       String itemOTPBinding = null;
       if (item == null) {
          // we are removing a template item
@@ -121,6 +122,9 @@ public class RemoveItemProducer implements ViewComponentProducer, ViewParamsRepo
                new Object[] {templateItem.getDisplayOrder(), templateItem.getTemplate().getTitle()});
          if (TemplateItemUtils.getTemplateItemType(templateItem).equals(EvalConstants.ITEM_TYPE_BLOCK_PARENT)) {
             UIMessage.make(tofill, "remove-item-block-text", "removeitem.block.text");
+         }
+         if (templateItem.getDisplayOrder() != null) {
+            displayNum = templateItem.getDisplayOrder();
          }
       } else {
          // we are removing an item
@@ -139,13 +143,13 @@ public class RemoveItemProducer implements ViewComponentProducer, ViewParamsRepo
             for (EvalTemplate template : templates) {
                UIBranchContainer itemsBranch = UIBranchContainer.make(inUseBranch, "items:");
                UIMessage.make(itemsBranch, "itemInfo", "removeitem.inuse.info", new Object[] {template.getId(), 
-                     externalLogic.getEvalUserById(template.getOwner()).displayName, template.getTitle()});
+                     commonLogic.getEvalUserById(template.getOwner()).displayName, template.getTitle()});
             }
          }
       }
 
       // use the renderer evolver to show the item
-      itemRenderer.renderItem(tofill, "item-to-remove:", null, templateItem, 0, true);
+      itemRenderer.renderItem(tofill, "item-to-remove:", null, templateItem, displayNum, true);
 
       UIMessage.make(tofill, "cancel-command-link", "general.cancel.button");
 

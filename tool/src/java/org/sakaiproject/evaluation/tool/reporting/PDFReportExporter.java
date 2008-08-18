@@ -10,10 +10,10 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalDeliveryService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalAnswer;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
@@ -32,11 +32,11 @@ import uk.org.ponder.messageutil.MessageLocator;
 public class PDFReportExporter implements ReportExporter {
    private static Log log = LogFactory.getLog(PDFReportExporter.class);
 
-   int displayNumber = 0;
-   
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   int displayNumber;
+
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -76,11 +76,11 @@ public class PDFReportExporter implements ReportExporter {
       if (useBannerImage != null && useBannerImage == true) {
          String bannerImageLocation = (String) evalSettings.get(EvalSettings.PDF_BANNER_IMAGE_LOCATION);
          if (bannerImageLocation != null) {
-            bannerImageBytes = externalLogic.getFileContent(bannerImageLocation);
+            bannerImageBytes = commonLogic.getFileContent(bannerImageLocation);
          }
       }
 
-      EvalUser user = externalLogic.getEvalUserById( externalLogic.getCurrentUserId() );
+      EvalUser user = commonLogic.getEvalUserById( commonLogic.getCurrentUserId() );
 
       DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
 
@@ -100,7 +100,7 @@ public class PDFReportExporter implements ReportExporter {
 
       // set title and instructions
       evalPDFReportBuilder.addIntroduction( evaluation.getTitle(), 
-            externalLogic.makePlainTextFromHTML(evaluation.getInstructions()) );
+            commonLogic.makePlainTextFromHTML(evaluation.getInstructions()) );
 
       // Reset question numbering
       displayNumber = 0;
@@ -159,7 +159,7 @@ public class PDFReportExporter implements ReportExporter {
    private void renderDataTemplateItem(EvalPDFReportBuilder evalPDFReportBuilder, DataTemplateItem dti) {
       EvalTemplateItem templateItem = dti.templateItem;
       EvalItem item = templateItem.getItem();
-      String questionText = externalLogic.makePlainTextFromHTML(item.getItemText());
+      String questionText = commonLogic.makePlainTextFromHTML(item.getItemText());
 
       List<EvalAnswer> itemAnswers = dti.getAnswers();
 

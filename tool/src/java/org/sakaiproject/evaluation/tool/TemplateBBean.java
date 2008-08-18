@@ -22,8 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.exceptions.BlankRequiredFieldException;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalTemplate;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
 import org.sakaiproject.evaluation.tool.locators.ItemBeanWBL;
@@ -48,9 +48,9 @@ public class TemplateBBean {
 
    private static Log log = LogFactory.getLog(TemplateBBean.class);
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private LocalTemplateLogic localTemplateLogic;
@@ -131,7 +131,7 @@ public class TemplateBBean {
     */
    public String copyTemplate() {
       log.debug("make a copy of a template ("+templateId+") at the users request");
-      String ownerId = externalLogic.getCurrentUserId();
+      String ownerId = commonLogic.getCurrentUserId();
       Long copiedId = authoringService.copyTemplate(templateId, null, ownerId, false, false);
       messages.addMessage( new TargettedMessage("controltemplates.copy.user.message", 
             new Object[] {templateId, copiedId}, TargettedMessage.SEVERITY_INFO) );
@@ -143,7 +143,7 @@ public class TemplateBBean {
     * templateId must be set
     */
    public String removeTemplate() {
-      String ownerId = externalLogic.getCurrentUserId();
+      String ownerId = commonLogic.getCurrentUserId();
       EvalTemplate template = authoringService.getTemplateById(templateId);
       authoringService.deleteTemplate(templateId, ownerId);
       messages.addMessage( new TargettedMessage("controltemplates.remove.user.message", 
@@ -171,7 +171,7 @@ public class TemplateBBean {
     */
    public String copyItem() {
       log.debug("make a copy of an item ("+itemId+") at the users request");
-      String ownerId = externalLogic.getCurrentUserId();
+      String ownerId = commonLogic.getCurrentUserId();
       Long[] copiedIds = authoringService.copyItems(new Long[] {itemId}, ownerId, false, false);
       messages.addMessage( new TargettedMessage("controlitems.copy.user.message", 
             new Object[] {itemId, copiedIds[0]}, TargettedMessage.SEVERITY_INFO) );
@@ -274,7 +274,7 @@ public class TemplateBBean {
     */
    public String copyScale() {
       log.debug("make a copy of a scale ("+scaleId+") at the users request");
-      String ownerId = externalLogic.getCurrentUserId();
+      String ownerId = commonLogic.getCurrentUserId();
       Long[] copiedIds = authoringService.copyScales(new Long[] {scaleId}, null, ownerId, false);
       messages.addMessage( new TargettedMessage("controlscales.copy.user.message", 
             new Object[] {scaleId, copiedIds[0]}, TargettedMessage.SEVERITY_INFO) );
@@ -426,6 +426,7 @@ public class TemplateBBean {
                templateItem.setBlockId(parentId);
                templateItem.setDisplayOrder(new Integer(orderedChildIdList.indexOf(itemId) + 1));
                templateItem.setCategory(parent.getCategory()); // set the child category to the parent category EVALSYS-441
+               templateItem.setUsesNA(parent.getUsesNA()); // child inherits parent NA setting EVALSYS-549
                // children have to inherit the parent hierarchy settings
                templateItem.setHierarchyLevel(parent.getHierarchyLevel());
                templateItem.setHierarchyNodeId(parent.getHierarchyNodeId());
@@ -470,6 +471,7 @@ public class TemplateBBean {
          for (EvalTemplateItem child : blockChildren) {
             child.setDisplayOrder(new Integer(orderedChildIdList.indexOf(child.getId().toString()) + 1));
             child.setCategory(parent.getCategory()); // EVALSYS-441
+            child.setUsesNA(parent.getUsesNA()); // child inherits parent NA setting EVALSYS-549
             // children have to inherit the parent hierarchy settings
             child.setHierarchyLevel(parent.getHierarchyLevel());
             child.setHierarchyNodeId(parent.getHierarchyNodeId());

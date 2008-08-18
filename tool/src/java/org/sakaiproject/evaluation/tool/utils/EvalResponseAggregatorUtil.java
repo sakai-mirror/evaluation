@@ -8,8 +8,8 @@ import java.util.Set;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalDeliveryService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic;
 import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
@@ -53,9 +53,9 @@ public class EvalResponseAggregatorUtil {
       this.messageLocator = locator;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setEvalExternalLogic(EvalExternalLogic logic) {
-      this.externalLogic = logic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    /**
@@ -160,7 +160,7 @@ public class EvalResponseAggregatorUtil {
          togo = messageLocator.getMessage("reporting.notapplicable.shortlabel");
       }
       else if (EvalConstants.ITEM_TYPE_TEXT.equals(itemType)) {
-         togo = externalLogic.makePlainTextFromHTML( answer.getText() );
+         togo = commonLogic.makePlainTextFromHTML( answer.getText() );
       } 
       else if (EvalConstants.ITEM_TYPE_MULTIPLEANSWER.equals(itemType)) {
          String labels[] = templateItem.getItem().getScale().getOptions();
@@ -281,7 +281,7 @@ public class EvalResponseAggregatorUtil {
     */
    public Map<String, EvalUser> getInstructorsInformation(Set<String> instructorIds) {
       Map<String, EvalUser> instructorIdtoEvalUser = new HashMap<String, EvalUser>();
-      List<EvalUser> instructors = externalLogic.getEvalUsersByIds(instructorIds.toArray(new String[] {}));
+      List<EvalUser> instructors = commonLogic.getEvalUsersByIds(instructorIds.toArray(new String[] {}));
       for (EvalUser evalUser : instructors) {
          instructorIdtoEvalUser.put(evalUser.userId, evalUser);
       }
@@ -332,7 +332,7 @@ public class EvalResponseAggregatorUtil {
          if (groupCounter > 0) {
             groupsString.append(", ");
          }
-         groupsString.append( externalLogic.getDisplayTitle(groupIds[groupCounter]) );
+         groupsString.append( commonLogic.getDisplayTitle(groupIds[groupCounter]) );
       }
       return groupsString.toString();
    }

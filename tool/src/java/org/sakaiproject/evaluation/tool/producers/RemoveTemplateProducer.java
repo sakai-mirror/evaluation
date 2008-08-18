@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.model.EvalTemplate;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateViewParameters;
 
@@ -49,9 +49,9 @@ public class RemoveTemplateProducer implements ViewComponentProducer, Navigation
 		return VIEW_ID;
 	}
 
-	private EvalExternalLogic externalLogic;
-	public void setExternalLogic(EvalExternalLogic externalLogic) {
-		this.externalLogic = externalLogic;
+	private EvalCommonLogic commonLogic;
+	public void setCommonLogic(EvalCommonLogic commonLogic) {
+		this.commonLogic = commonLogic;
 	}
 
    private EvalAuthoringService authoringService;
@@ -65,7 +65,7 @@ public class RemoveTemplateProducer implements ViewComponentProducer, Navigation
 	 */
 	public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
-		String currentUserId = externalLogic.getCurrentUserId();
+		String currentUserId = commonLogic.getCurrentUserId();
 
 		String actionBean = "templateBBean.";
 

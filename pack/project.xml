@@ -75,9 +75,9 @@
       <dependency>
          <groupId>generic-dao</groupId>
          <artifactId>generic-dao</artifactId>
-         <version>0.9.1</version>
+         <version>0.9.8</version>
          <properties>
-            <deploy.target>shared</deploy.target>
+            <war.bundle>true</war.bundle>
          </properties>
       </dependency>
 

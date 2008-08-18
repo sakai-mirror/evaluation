@@ -1,9 +1,11 @@
 package org.sakaiproject.evaluation.logic.externals;
 
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
+
 /** 
  * This inteface provides methods to get content from Sakai's Resource and File
  * system.
- * @see EvalExternalLogic
+ * @see EvalCommonLogic
  * 
  * @author Steven Githens (swgithen at mtu dot edu)
  */

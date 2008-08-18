@@ -19,10 +19,10 @@ import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEmailsLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.EvalJobLogic;
 import org.sakaiproject.evaluation.logic.model.EvalScheduledJob;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
@@ -45,9 +45,9 @@ public class EvalJobLogicImpl implements EvalJobLogic {
    protected final String EVENT_EVAL_VIEWABLE_INSTRUCTORS =    "eval.state.viewable.inst";
    protected final String EVENT_EVAL_VIEWABLE_STUDENTS =       "eval.state.viewable.stud";
 
-   protected EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   protected EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    protected EvalEvaluationService evaluationService;
@@ -185,25 +185,20 @@ public class EvalJobLogicImpl implements EvalJobLogic {
 
       } else if (EvalConstants.JOB_TYPE_CLOSED.equals(jobType)) {
          // schedule results viewable by owner - admin notification
-         if (eval.getViewDate() != null) {
-            scheduleJob(eval.getId(), eval.getViewDate(), EvalConstants.JOB_TYPE_VIEWABLE);
-            if (! EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing()) ) {
-               if (eval.getInstructorsDate() != null) {
-                  Date instructorViewDate = eval.getInstructorsDate();
-                  // schedule results viewable by instructors notification
-                  scheduleJob(eval.getId(), instructorViewDate,
-                        EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS);
-               }
-               if (eval.getStudentsDate() != null) {
-                  Date studentViewDate = eval.getStudentsDate();
-                  // schedule results viewable by students notification
-                  scheduleJob(eval.getId(), studentViewDate,
-                        EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS);
-               }
+         Date viewDate = eval.getViewDate() == null ? now : eval.getViewDate();
+         scheduleJob(eval.getId(), viewDate, EvalConstants.JOB_TYPE_VIEWABLE);
+
+         if (! EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing()) ) {
+            if (eval.getInstructorViewResults()) {
+               Date instructorViewDate = eval.getInstructorsDate() == null ? now : eval.getInstructorsDate();
+               // schedule results viewable by instructors notification
+               scheduleJob(eval.getId(), instructorViewDate, EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS);
             }
-         } else {
-            // viewable now
-            scheduleJob(eval.getId(), now, EvalConstants.JOB_TYPE_VIEWABLE);
+            if (eval.getStudentViewResults()) {
+               Date studentViewDate = eval.getStudentsDate() == null ? now : eval.getStudentsDate();
+               // schedule results viewable by students notification
+               scheduleJob(eval.getId(), studentViewDate, EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS);
+            }
          }
 
       } else if (EvalConstants.JOB_TYPE_VIEWABLE.equals(jobType)) {
@@ -211,12 +206,12 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          sendViewableEmail(evaluationId, jobType, EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing()) );
 
       } else if (EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS.equals(jobType)) {
-         externalLogic.registerEntityEvent(EVENT_EVAL_VIEWABLE_INSTRUCTORS, eval);
+         commonLogic.registerEntityEvent(EVENT_EVAL_VIEWABLE_INSTRUCTORS, eval);
          // send results viewable notification to owner if protected, or all if not
          sendViewableEmail(evaluationId, jobType, EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing()) );
 
       } else if (EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS.equals(jobType)) {
-         externalLogic.registerEntityEvent(EVENT_EVAL_VIEWABLE_STUDENTS, eval);
+         commonLogic.registerEntityEvent(EVENT_EVAL_VIEWABLE_STUDENTS, eval);
          // send results viewable notification to owner if protected, or all if not
          sendViewableEmail(evaluationId, jobType, EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing()) );
       }
@@ -280,7 +275,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
       // if the eval is already gone then we are not concerned with a security check
       if (evaluationService.checkEvaluationExists(evaluationId)) {
          // check perms if this evaluation exists
-         String userId = externalLogic.getCurrentUserId();
+         String userId = commonLogic.getCurrentUserId();
          if (! evaluationService.canControlEvaluation(userId, evaluationId)) {
             throw new SecurityException("User ("+userId+") not allowed to remove sceduled jobs for evaluation: " + evaluationId);
          }
@@ -340,13 +335,27 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          // make sure scheduleView job invocation start date matches EvalEvaluation view date
          checkInvocationDate(eval, EvalConstants.JOB_TYPE_VIEWABLE, eval.getViewDate());
 
-         // make sure scheduleView By Instructors job invocation start date matches
-         // EvalEvaluation instructor's date
-         checkInvocationDate(eval, EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS, eval.getInstructorsDate());
+         // make sure scheduleView By Instructors job invocation start date matches EvalEvaluation instructor's date
+         if (eval.getInstructorViewResults()) {
+            checkInvocationDate(eval, EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS, eval.getInstructorsDate());
+         } else {
+            // not allowed so remove the job
+            EvalScheduledJob[] jobs = commonLogic.findScheduledJobs(eval.getId(), EvalConstants.JOB_TYPE_VIEWABLE_INSTRUCTORS);
+            for (EvalScheduledJob evalScheduledJob : jobs) {
+               commonLogic.deleteScheduledJob(evalScheduledJob.uuid);               
+            }
+         }
 
-         // make sure scheduleView By Students job invocation start date matches EvalEvaluation
-         // student's date
-         checkInvocationDate(eval, EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS, eval.getStudentsDate());
+         // make sure scheduleView By Students job invocation start date matches EvalEvaluation student's date
+         if (eval.getStudentViewResults()) {
+            checkInvocationDate(eval, EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS, eval.getStudentsDate());
+         } else {
+            // not allowed so remove the job
+            EvalScheduledJob[] jobs = commonLogic.findScheduledJobs(eval.getId(), EvalConstants.JOB_TYPE_VIEWABLE_STUDENTS);
+            for (EvalScheduledJob evalScheduledJob : jobs) {
+               commonLogic.deleteScheduledJob(evalScheduledJob.uuid);               
+            }            
+         }
       }
    }
 
@@ -360,9 +369,9 @@ public class EvalJobLogicImpl implements EvalJobLogic {
       if (evaluationId == null || jobType == null) {
          throw new IllegalArgumentException("Invalid call to deleteInvocation, cannot have null evalId or jobType");
       }
-      EvalScheduledJob[] jobs = externalLogic.findScheduledJobs(evaluationId, jobType);
+      EvalScheduledJob[] jobs = commonLogic.findScheduledJobs(evaluationId, jobType);
       for (int i = 0; i < jobs.length; i++) {
-         externalLogic.deleteScheduledJob(jobs[i].uuid);
+         commonLogic.deleteScheduledJob(jobs[i].uuid);
       }
    }
 
@@ -399,7 +408,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          return;
 
       // get the jobs for this eval
-      EvalScheduledJob[] jobs = externalLogic.findScheduledJobs(eval.getId(), jobType);
+      EvalScheduledJob[] jobs = commonLogic.findScheduledJobs(eval.getId(), jobType);
 
       // if there are no invocations, return
       if (jobs.length == 0) {
@@ -414,13 +423,13 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          // if the dates differ
          if (job.date.compareTo(correctDate) != 0) {
             // remove the old invocation
-            externalLogic.deleteScheduledJob(job.uuid);
+            commonLogic.deleteScheduledJob(job.uuid);
             if (log.isDebugEnabled())
                log.debug("EvalJobLogicImpl.checkInvocationDate remove the old invocation "
                      + job.uuid + "," + job.contextId + "," + job.date);
 
             // and schedule a new invocation
-            String newJobId = externalLogic.createScheduledJob(correctDate, eval.getId(), jobType);
+            String newJobId = commonLogic.createScheduledJob(correctDate, eval.getId(), jobType);
             if (log.isDebugEnabled())
                log.debug("EvalJobLogicImpl.checkInvocationDate and schedule a new invocation: "
                      + newJobId + ", date=" + correctDate + "," + eval.getId() + "," + jobType + ")");
@@ -444,7 +453,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
       if (jobs.length > 1) {
          for (int i = 0; i < jobs.length; i++) {
             if (i > 0) {
-               externalLogic.deleteScheduledJob(jobs[i].uuid);
+               commonLogic.deleteScheduledJob(jobs[i].uuid);
             }
          }
       }
@@ -459,7 +468,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
    protected void fixReminder(Long evaluationId) {
       EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
       
-      EvalScheduledJob[] jobs = externalLogic.findScheduledJobs(evaluationId, EvalConstants.JOB_TYPE_REMINDER);
+      EvalScheduledJob[] jobs = commonLogic.findScheduledJobs(evaluationId, EvalConstants.JOB_TYPE_REMINDER);
       if (jobs.length > 0) {
          cleanupExtraJobs(jobs);
          EvalScheduledJob job = jobs[0];
@@ -468,7 +477,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          if (eval.getReminderDays().intValue() == 0 
                || reminderAt.after(eval.getDueDate())) {
             // remove reminder
-            externalLogic.deleteScheduledJob(job.uuid);
+            commonLogic.deleteScheduledJob(job.uuid);
             if (log.isDebugEnabled())
                log.debug("EvalJobLogicImpl.fixReminders remove reminder after the due date "
                      + job.uuid + "," + job.contextId + "," + job.date);
@@ -491,7 +500,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
          return; // FIXME throw exceptions or AT LEAST log warnings here
       }
 
-      String userId = externalLogic.getCurrentUserId();
+      String userId = commonLogic.getCurrentUserId();
       if (evaluationService.canControlEvaluation(userId, evaluationId)) {
          deleteInvocation(evaluationId, EvalConstants.JOB_TYPE_REMINDER);
       }
@@ -518,7 +527,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
       if (log.isDebugEnabled())
          log.debug("EvalJobLogicImpl.scheduleJob(" + evaluationId + "," + runDate + "," + jobType + ")");
 
-      String newJobId = externalLogic.createScheduledJob(runDate, evaluationId, jobType);
+      String newJobId = commonLogic.createScheduledJob(runDate, evaluationId, jobType);
 
       if (log.isDebugEnabled())
          log.debug("EvalJobLogicImpl.scheduleJob scheduledInvocationManager.createDelayedInvocation("
@@ -559,7 +568,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
 
       if ( scheduleAt != 0 
             && EvalConstants.EVALUATION_STATE_ACTIVE.equals(state) ) {
-         externalLogic.createScheduledJob(new Date(scheduleAt), evaluationId, EvalConstants.JOB_TYPE_REMINDER);
+         commonLogic.createScheduledJob(new Date(scheduleAt), evaluationId, EvalConstants.JOB_TYPE_REMINDER);
 
          if (log.isDebugEnabled())
             log.debug("EvalJobLogicImpl.scheduleReminders(" + evaluationId

@@ -93,43 +93,8 @@
 					</div>
 				</div>
 				
-				<div rsf:id="create-adhoc-groups-area:">
-				<!-- 3. Create new ad-hoc groups                             -->
-				<!-- This will be hidden if adhoc groups are disabled.       -->
-					<p>
-						<span>
-							<img src="/sakai-evaluation-tool/content/images/collapsed.png" rsf:id="show-button" id="" />
-							<img src="/sakai-evaluation-tool/content/images/uncollapsed.png" style="display:none" rsf:id="hide-button" id="" />
-						</span>
-						<span rsf:id="msg=assigneval.page.adhocgroups.title">I'd like to survey an ad-hoc group I'll specify now</span>
-					</p>
-					<div rsf:id="newadhocgroup-assignment-area" id="newadhocgroup-assignment-area">
-						<p>
-							<span>Give this group a name: </span>
-							<input rsf:id="adhoc-group-name" id="" type="textbox" />
-						</p>
-						<div rsf:id="adhoc-emails-area:" id="">
-							<table>
-								<!-- 
-								<tr><td>sgithens at caret.cam.ac.uk <img src="cross.png" alt="X"/></td></tr>
-								-->
-							</table>
-						</div>
-						<div>
-							<textarea rsf:id="adhoc-email-input" id="" rows="5" cols="80">
-						    	Paste or type the emails of the people you want to survey in this box. Separate the 
-						    	address usings commas, semi-colons, new lines, or just spaces.
-							</textarea>
-						</div>
-						<input rsf:id="adhoc-save-emails-button" id="" type="button" value="Save emails"/>	
-						<input style="display:none" rsf:id="adhoc-addmoreusers-button" id="" type="button" value="Add More Users" />
-						<!-- <input rsf:id="adhoc-clear-emails-button" id="" type="button" value="Clear all"/> -->
-					</div>
-				</div>
-				
-				
-				<div rsf:id="use-existing-adhoc-groups-area:">
-				<!-- 4. Use Existing ad-hoc groups                           -->
+				<div rsf:id="use-adhoc-groups-area:">
+				<!-- 3. Use Existing ad-hoc groups                           -->
 				<!-- This div will be hidden if adhoc groups are disabled,   -->
 				<!-- or you have no previous adhoc groups.                   -->
 					<p>
@@ -137,11 +102,35 @@
 							<img src="/sakai-evaluation-tool/content/images/collapsed.png" rsf:id="show-button" id="" />
 							<img src="/sakai-evaluation-tool/content/images/uncollapsed.png" style="display:none" rsf:id="hide-button" id="" />
 						</span>
-						<span>I'd like to survey a group I've previously surveyed</span>
+						<span rsf:id="msg=assigneval.page.adhocgroups.title">Assign to an adhoc group.</span>
 					</p>
-					<div rsf:id="previousadhocgroup-assignment-area" id="previousadhocgroup-assignment-area">
-						Previous Ad Group Assignment
+					<div rsf:id="evalgroups-assignment-area" id="evalgroups-assignment-area">
+						<a rsf:id="new-adhocgroup-link" href="#">Create a new Adhoc Group now.</a>
+						<table rsf:id="adhoc-groups-table" border="0" cellspacing="0" cellpadding="3" style="width:90%" class="listHier lines nolines" >
+							<thead>
+								<tr>
+									<th class="attach" >
+										<span rsf:id="msg=assigneval.select.header">Select</span>
+									</th>
+									<th>
+										<span rsf:id="msg=assigneval.name.header">Title</span>
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr rsf:id="groups:"> 
+									<td class="attach" >
+										<input class="evalgroupselect" rsf:id="evalGroupId" type="checkbox" id="evalGroupId" />
+									</td>
+									<td>
+										<label rsf:id="groupTitle" for="evalGroupId">group title</label>
+										<a href="" rsf:id="editGroupLink">edit group</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
+                    
 				</div>
 
 				<p class="act">	

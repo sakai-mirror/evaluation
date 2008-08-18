@@ -17,8 +17,8 @@ package org.sakaiproject.evaluation.tool.producers;
 import java.util.List;
 
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalItemGroup;
 import org.sakaiproject.evaluation.tool.viewparams.ExpertItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateViewParameters;
@@ -51,9 +51,9 @@ public class ExpertCategoryProducer implements ViewComponentProducer, ViewParams
       return VIEW_ID;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -73,8 +73,8 @@ public class ExpertCategoryProducer implements ViewComponentProducer, ViewParams
    public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
@@ -117,8 +117,6 @@ public class ExpertCategoryProducer implements ViewComponentProducer, ViewParams
 
       UIMessage.make(tofill, "page-title", "expert.category.page.title"); //$NON-NLS-1$ //$NON-NLS-2$
 
-      UIInternalLink.make(tofill, "summary-link", UIMessage.make("summary.page.title"), //$NON-NLS-1$ //$NON-NLS-2$
-            new SimpleViewParameters(SummaryProducer.VIEW_ID));
       UIInternalLink.make(tofill, "modify-template", UIMessage.make("modifytemplate.page.title"), //$NON-NLS-1$ //$NON-NLS-2$
             new TemplateViewParameters(ModifyTemplateItemsProducer.VIEW_ID, templateId) );
 

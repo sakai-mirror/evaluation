@@ -18,7 +18,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 
-
 /**
  * This is a simple bean which will initiate the data preloading sequence with locks
  * when it initializes if autoDDL is enabled
@@ -30,6 +29,7 @@ public class EvalDataPreloaderImpl {
    private static Log log = LogFactory.getLog(PreloadDataImpl.class);
 
    public static String EVAL_PRELOAD_LOCK = "data.preload.lock";
+   public static String EVAL_FIXUP_LOCK = "data.fixup.lock";
 
    private EvaluationDao dao;
    public void setDao(EvaluationDao evaluationDao) {
@@ -48,15 +48,18 @@ public class EvalDataPreloaderImpl {
 
    public void init() {
       boolean autoDDL = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_AUTO_DDL, false);
+      String serverId = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_SERVER_ID, "UNKNOWN_SERVER_ID");
       if (autoDDL) {
          log.info("Auto DDL enabled: Checking preload data exists...");
          if (! preloadData.checkCriticalDataPreloaded() ) {
             log.info("Preload data missing, preparing to preload critical evaluation system data");
-            String serverId = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_SERVER_ID, "UNKNOWN_SERVER_ID");
-            Boolean result = dao.lockAndExecuteRunnable(EVAL_PRELOAD_LOCK, serverId, preloadData);
-            if (result == null) {
-               throw new IllegalStateException("Failure attempting to obtain lock and preload evaluation system data, " +
-               		"see logs just before this for more details, system terminating...");
+            Boolean gotLock = dao.obtainLock(EVAL_PRELOAD_LOCK, serverId, 10000);
+            if (gotLock == null) {
+               throw new IllegalStateException("Failure attempting to obtain lock ("+EVAL_PRELOAD_LOCK+") and preload evaluation system data, " 
+                     + "see logs just before this for more details, system terminating...");               
+            } else if (gotLock) {
+               preloadData.preload();
+               dao.releaseLock(EVAL_PRELOAD_LOCK, serverId);
             }
          }
       } else {
@@ -68,6 +71,12 @@ public class EvalDataPreloaderImpl {
             		"you must either enable the auto.ddl flag or preload the critical system data (config settings, email templates, scales) " +
             		"manually, evaluation system shutting down...");
          }
+      }
+
+      Boolean gotLock = dao.obtainLock(EVAL_FIXUP_LOCK, serverId, 3000);
+      if (gotLock != null && gotLock) {
+         dao.fixupDatabase();
+         dao.releaseLock(EVAL_FIXUP_LOCK, serverId);
       }
    }
 

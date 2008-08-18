@@ -1,10 +1,12 @@
 
 package org.sakaiproject.evaluation.tool.producers;
 
+import java.util.Set;
+
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.ReportingPermissions;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.viewparams.ReportParameters;
 
@@ -38,9 +40,9 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
       return VIEW_ID;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -64,8 +66,8 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
    public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
@@ -112,8 +114,8 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
          EvalEvaluation evaluation = evaluationService.getEvaluationById(evaluationId);
 
          // do a permission check
-         String[] possibleGroupIdsToView = reportingPermissions.chooseGroupsPartialCheck(evaluation);
-         if (possibleGroupIdsToView.length == 0) {
+         Set<String> evalGroupIds = reportingPermissions.getResultsViewableEvalGroupIdsForCurrentUser(evaluation);
+         if (evalGroupIds.isEmpty()) {
             UIMessage.make(tofill, "security-warning", "viewreport.not.allowed");
             return;
          }
@@ -128,9 +130,13 @@ public class ReportChooseGroupsProducer implements ViewComponentProducer, ViewPa
          UIForm form = UIForm.make(tofill, "report-groups-form", rvp);
          UIMessage.make(form, "report-group-main-message", "reportgroups.main.message");
 
-         String[] possibleGroupTitlesToView = new String[possibleGroupIdsToView.length];
-         for (int i = 0; i < possibleGroupIdsToView.length; i++) {
-            possibleGroupTitlesToView[i] = externalLogic.makeEvalGroupObject(possibleGroupIdsToView[i]).title;
+         String[] possibleGroupIdsToView = new String[evalGroupIds.size()];
+         String[] possibleGroupTitlesToView = new String[evalGroupIds.size()];
+         int counter = 0;
+         for (String evalGroupId : evalGroupIds) {
+            possibleGroupIdsToView[counter] = evalGroupId;
+            possibleGroupTitlesToView[counter] = commonLogic.makeEvalGroupObject(evalGroupId).title;
+            counter++;
          }
          
          UISelect radios = UISelect.makeMultiple(form, "selectHolder", possibleGroupIdsToView, possibleGroupTitlesToView, "groupIds", null);

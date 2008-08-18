@@ -17,9 +17,11 @@ package org.sakaiproject.evaluation.logic;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -27,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.dao.EvaluationDao;
 import org.sakaiproject.evaluation.logic.exceptions.BlankRequiredFieldException;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.EvalSecurityChecksImpl;
 import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.model.EvalItemGroup;
@@ -73,9 +74,9 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       this.dao = dao;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic external) {
-      this.externalLogic = external;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalSettings settings;
@@ -153,7 +154,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          throw new IllegalArgumentException("Invalid sharing constant ("+scale.getSharing()+") set for scale ("+scale.getTitle()+"), cannot use SHARING_OWNER");
       } else if ( EvalConstants.SHARING_PUBLIC.equals(scale.getSharing()) ) {
          // test if non-admin trying to set public sharing
-         if (! externalLogic.isUserAdmin(userId) ) {
+         if (! commonLogic.isUserAdmin(userId) ) {
             throw new IllegalArgumentException("Only admins can set scale ("+scale.getTitle()+") sharing to public");
          }
       }
@@ -194,15 +195,15 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             throw new BlankRequiredFieldException("Cannot save a scale with a blank title", "title");
          } else {
             // cleanup for XSS scripting and strings
-            scale.setTitle( externalLogic.cleanupUserStrings(scale.getTitle()) );
+            scale.setTitle( commonLogic.cleanupUserStrings(scale.getTitle()) );
          }
 
          // now save the scale
          dao.save(scale);
          if (newScale) {
-            externalLogic.registerEntityEvent(EVENT_SCALE_CREATE, scale);
+            commonLogic.registerEntityEvent(EVENT_SCALE_CREATE, scale);
          } else {
-            externalLogic.registerEntityEvent(EVENT_SCALE_UPDATE, scale);
+            commonLogic.registerEntityEvent(EVENT_SCALE_UPDATE, scale);
          }
          log.info("User ("+userId+") saved scale ("+scale.getId()+"), title: " + scale.getTitle());
          return;
@@ -227,7 +228,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       // check perms and remove
       if (securityChecks.checkUserControlScale(userId, scale)) {
          dao.delete(scale);
-         externalLogic.registerEntityEvent(EVENT_SCALE_DELETE, scale);
+         commonLogic.registerEntityEvent(EVENT_SCALE_DELETE, scale);
          log.info("User ("+userId+") deleted scale ("+scale.getId()+"), title: " + scale.getTitle());
          return;
       }
@@ -248,7 +249,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       }
 
       // admin always gets all of the templates of a type
-      if (externalLogic.isUserAdmin(userId)) {
+      if (commonLogic.isUserAdmin(userId)) {
          userId = null;
       }
 
@@ -367,7 +368,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          throw new IllegalArgumentException("Invalid sharing constant ("+item.getSharing()+") set for item ("+item.getItemText()+"), cannot use SHARING_OWNER");
       } else if ( EvalConstants.SHARING_PUBLIC.equals(item.getSharing()) ) {
          // test if non-admin trying to set public sharing
-         if (! externalLogic.isUserAdmin(userId) ) {
+         if (! commonLogic.isUserAdmin(userId) ) {
             throw new IllegalArgumentException("Only admins can set item ("+item.getItemText()+") sharing to public");
          }
       }
@@ -405,16 +406,16 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          }
 
          // cleanup for XSS scripting and strings
-         item.setItemText( externalLogic.cleanupUserStrings(item.getItemText()) );
-         item.setDescription( externalLogic.cleanupUserStrings(item.getDescription()) );
-         item.setExpertDescription( externalLogic.cleanupUserStrings(item.getExpertDescription()) );
+         item.setItemText( commonLogic.cleanupUserStrings(item.getItemText()) );
+         item.setDescription( commonLogic.cleanupUserStrings(item.getDescription()) );
+         item.setExpertDescription( commonLogic.cleanupUserStrings(item.getExpertDescription()) );
 
          // save the item
          dao.save(item);
          if (newItem) {
-            externalLogic.registerEntityEvent(EVENT_ITEM_CREATE, item);
+            commonLogic.registerEntityEvent(EVENT_ITEM_CREATE, item);
          } else {
-            externalLogic.registerEntityEvent(EVENT_ITEM_UPDATE, item);
+            commonLogic.registerEntityEvent(EVENT_ITEM_UPDATE, item);
          }
          log.info("User ("+userId+") saved item ("+item.getId()+"), title: " + item.getItemText());
 
@@ -445,10 +446,11 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 //    }
 
       if (securityChecks.checkUserControlItem(userId, item)) {
+
          EvalScale scale = item.getScale(); // LAZY LOAD
          String itemClassification = item.getClassification();
          dao.delete(item);
-         externalLogic.registerEntityEvent(EVENT_ITEM_DELETE, item);
+         commonLogic.registerEntityEvent(EVENT_ITEM_DELETE, item);
          log.info("User ("+userId+") removed item ("+item.getId()+"), title: " + item.getItemText());
 
          // unlock associated scales if there were any
@@ -479,7 +481,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       }
 
       // admin always gets all of the templates of a type
-      if (externalLogic.isUserAdmin(userId)) {
+      if (commonLogic.isUserAdmin(userId)) {
          userId = null;
       }
 
@@ -624,13 +626,13 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             entitySets[2] = templateSet;
 
             dao.saveMixedSet(entitySets);
-            externalLogic.registerEntityEvent(EVENT_TEMPLATEITEM_CREATE, templateItem);
+            commonLogic.registerEntityEvent(EVENT_TEMPLATEITEM_CREATE, templateItem);
          } else {
             // existing item so just save it
             // TODO - make sure the item and template do not change for existing templateItems
 
             dao.save(templateItem);
-            externalLogic.registerEntityEvent(EVENT_TEMPLATEITEM_UPDATE, templateItem);
+            commonLogic.registerEntityEvent(EVENT_TEMPLATEITEM_UPDATE, templateItem);
          }
 
          // Should not be locking this here -AZ
@@ -671,7 +673,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       if (naAllowed.booleanValue()) {
          // can set NA
          if (templateItem.getUsesNA() == null) {
-            templateItem.setUsesNA( Boolean.FALSE );
+            templateItem.setUsesNA(item.getUsesNA() == null ? Boolean.FALSE : item.getUsesNA());
          }
       } else {
          templateItem.setUsesNA( Boolean.FALSE );
@@ -680,7 +682,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       if (usesComments.booleanValue()) {
          // can use comments
          if (templateItem.getUsesComment() == null) {
-            templateItem.setUsesComment( Boolean.FALSE );
+            templateItem.setUsesComment(item.getUsesComment() == null ? Boolean.FALSE : item.getUsesComment());
          }
       } else {
          templateItem.setUsesComment( Boolean.FALSE );
@@ -738,7 +740,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          // attempt to unlock the related item
          dao.lockItem(item, Boolean.FALSE);
          // fire event
-         externalLogic.registerEntityEvent(EVENT_TEMPLATEITEM_DELETE, templateItem);
+         commonLogic.registerEntityEvent(EVENT_TEMPLATEITEM_DELETE, templateItem);
          return;
       }
 
@@ -939,7 +941,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       }
 
       // check only admin can create expert item groups
-      if ( itemGroup.getExpert().booleanValue() && ! externalLogic.isUserAdmin(userId) ) {
+      if ( itemGroup.getExpert().booleanValue() && ! commonLogic.isUserAdmin(userId) ) {
          throw new IllegalArgumentException("Only admins can create expert item groups");
       }
 
@@ -1108,7 +1110,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          // test if non-admin trying to set public sharing
          String system_sharing = (String) settings.get(EvalSettings.TEMPLATE_SHARING_AND_VISIBILITY);
          if (! EvalConstants.SHARING_PUBLIC.equals(system_sharing) &&
-               ! externalLogic.isUserAdmin(userId) ) {
+               ! commonLogic.isUserAdmin(userId) ) {
             throw new IllegalArgumentException("Only admins can set template ("+template.getTitle()+") sharing to public");
          }
       }
@@ -1136,17 +1138,17 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          }
 
          // cleanup for XSS scripting and strings
-         template.setTitle( externalLogic.cleanupUserStrings(template.getTitle()) );
-         template.setDescription( externalLogic.cleanupUserStrings(template.getDescription()) );
-         template.setExpertDescription( externalLogic.cleanupUserStrings(template.getExpertDescription()) );
+         template.setTitle( commonLogic.cleanupUserStrings(template.getTitle()) );
+         template.setDescription( commonLogic.cleanupUserStrings(template.getDescription()) );
+         template.setExpertDescription( commonLogic.cleanupUserStrings(template.getExpertDescription()) );
 
          dao.save(template);
          log.info("User ("+userId+") saved template ("+template.getId()+"), title: " + template.getTitle());
 
          if (newTemplate) {
-            externalLogic.registerEntityEvent(EVENT_TEMPLATE_CREATE, template);
+            commonLogic.registerEntityEvent(EVENT_TEMPLATE_CREATE, template);
          } else {
-            externalLogic.registerEntityEvent(EVENT_TEMPLATE_UPDATE, template);
+            commonLogic.registerEntityEvent(EVENT_TEMPLATE_UPDATE, template);
          }
 
          // validate and save all related template items
@@ -1244,7 +1246,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
          dao.delete(template);
          // fire the template deleted event
-         externalLogic.registerEntityEvent(EVENT_TEMPLATE_DELETE, template);
+         commonLogic.registerEntityEvent(EVENT_TEMPLATE_DELETE, template);
          return;
       }
 
@@ -1271,7 +1273,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       }
 
       // admin always gets all of the templates of a type
-      if (externalLogic.isUserAdmin(userId)) {
+      if (commonLogic.isUserAdmin(userId)) {
          userId = null;
       }
 
@@ -1329,7 +1331,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
    public boolean canCreateTemplate(String userId) {
       log.debug("userId: " + userId);
       boolean allowed = false;
-      if ( externalLogic.isUserAdmin(userId) ) {
+      if ( commonLogic.isUserAdmin(userId) ) {
          // the system super user can create templates always
          allowed = true;
       } else {
@@ -1341,7 +1343,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
           * TODO - make this check system wide and not evalGroupId specific - aaronz.
           */
          if ( ((Boolean)settings.get(EvalSettings.INSTRUCTOR_ALLOWED_CREATE_EVALUATIONS)).booleanValue() && 
-               externalLogic.countEvalGroupsForUser(userId, EvalConstants.PERM_WRITE_TEMPLATE) > 0 ) {
+               commonLogic.countEvalGroupsForUser(userId, EvalConstants.PERM_WRITE_TEMPLATE) > 0 ) {
             allowed = true;
          }
       }
@@ -1402,7 +1404,8 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
       return template;
    }
 
-   
+
+
    // COPYING
 
    @SuppressWarnings("unchecked")
@@ -1520,8 +1523,8 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
                toTemplate = getTemplateById(templateId);
             } else {
                if (! toTemplate.getId().equals(templateId)) {
-                  throw new IllegalArgumentException("All templateItems must be from the same template when doing a copies within a template,"
-                           + " if you want to copy templateItems from multiple templates into the same templates they are currently in you must "
+                  throw new IllegalArgumentException("All templateItems must be from the same template when doing a copy within a template, "
+                           + "if you want to copy templateItems from multiple templates into the same templates they are currently in you must "
                         	+ "do it in batches where each set if from one template");
                }
             }
@@ -1543,43 +1546,56 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
       // iterate though in display order and copy the template items
       int counter = 0;
+      int displayOrder = 0;
       Long[] copiedIds = new Long[templateItemsList.size()];
-      for (int i = 0; i < nonChildItems.size(); i++) {
-         EvalTemplateItem original = nonChildItems.get(i);
+      for (EvalTemplateItem original : nonChildItems) {
+         templateItemsList.remove(original); // take this out of the list
          if (TemplateItemUtils.isBlockParent(original)) {
             // this is a block parent so copy it and its children
             Long originalBlockParentId = original.getId();
-            templateItemsList.remove(original); // take this out of the list
-            // copy and save the parent
-            EvalTemplateItem copyParent = copyTemplateItem(original, toTemplate, ownerId, hidden, includeChildren);
-            copyParent.setDisplayOrder(itemCount + i); // fix up display order
-            copyParent.setBlockId(null);
-            copyParent.setBlockParent(true);
-            dao.save(copyParent);
-            copiedIds[counter++] = copyParent.getId();
-            Long blockParentId = copyParent.getId();
-
-            // loop through and copy all the children and assign them to the parent
             List<EvalTemplateItem> childItems = TemplateItemUtils.getChildItems(templateItemsList, originalBlockParentId);
-            for (int j = 0; j < childItems.size(); j++) {
-               EvalTemplateItem child = childItems.get(j);
-               templateItemsList.remove(child); // take this out of the list
-               // copy the child item
-               EvalTemplateItem copy = copyTemplateItem(child, toTemplate, ownerId, hidden, includeChildren);
-               copy.setDisplayOrder(j); // fix up display order
-               copy.setBlockId(blockParentId);
-               copy.setBlockParent(false);
-               dao.save(copy);
-               copiedIds[counter++] = copy.getId();
+            if (childItems.size() > 0) {
+               // copy and save the parent only if there are children in this set of items
+               EvalTemplateItem copyParent = copyTemplateItem(original, toTemplate, ownerId, hidden, includeChildren);
+               copyParent.setDisplayOrder(itemCount + displayOrder); // fix up display order
+               copyParent.setBlockId(null);
+               copyParent.setBlockParent(true);
+               dao.save(copyParent);
+               copiedIds[counter++] = copyParent.getId();
+               Long blockParentId = copyParent.getId();
+   
+               // loop through and copy all the children and assign them to the parent
+               for (int j = 0; j < childItems.size(); j++) {
+                  EvalTemplateItem child = childItems.get(j);
+                  templateItemsList.remove(child); // take this out of the list
+                  // copy the child item
+                  EvalTemplateItem copy = copyTemplateItem(child, toTemplate, ownerId, hidden, includeChildren);
+                  copy.setDisplayOrder(j); // fix up display order
+                  copy.setBlockId(blockParentId);
+                  copy.setBlockParent(false);
+                  dao.save(copy);
+                  copiedIds[counter++] = copy.getId();
+               }
             }
          } else {
-            // not in a block
+            // not a block parent
             EvalTemplateItem copy = copyTemplateItem(original, toTemplate, ownerId, hidden, includeChildren);
-            copy.setDisplayOrder(itemCount + i); // fix up display order
+            copy.setDisplayOrder(itemCount + displayOrder); // fix up display order
             dao.save(copy);
             copiedIds[counter++] = copy.getId();
          }
+         displayOrder++;
       }
+
+      // now copy any remaining orphaned block children
+      for (EvalTemplateItem original : templateItemsList) {
+         displayOrder++;
+         EvalTemplateItem copy = copyTemplateItem(original, toTemplate, ownerId, hidden, includeChildren);
+         copy.setDisplayOrder(itemCount + counter); // fix up display order
+         dao.save(copy);
+         copiedIds[counter] = copy.getId();
+      }
+
       return copiedIds;
    }
 
@@ -1588,29 +1604,21 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
     * inherits the display order from the original
     * 
     * @param original the original item to copy
-    * @param toTemplate
-    * @param ownerId
-    * @param hidden
-    * @param includeChildren
+    * @param toTemplate the template to copy this templateItem to
+    * @param ownerId set as the owner of this copy
+    * @param hidden if true then the resulting copy will be marked as hidden 
+    * @param includeChildren also make persistent copies of children if true
     * @return the copy of the templateItem (not persisted)
     */
    private EvalTemplateItem copyTemplateItem(EvalTemplateItem original, EvalTemplate toTemplate,
          String ownerId, boolean hidden, boolean includeChildren) {
-      EvalTemplateItem copy = new EvalTemplateItem(new Date(), ownerId, toTemplate, null, original.getDisplayOrder(),
-            original.getCategory(), original.getHierarchyLevel(), original.getHierarchyNodeId(), original.getDisplayRows(),
-            original.getScaleDisplaySetting(), original.getUsesNA(), original.getUsesComment(), null, null, original.getResultsSharing());
+      EvalTemplateItem copy = TemplateItemUtils.makeCopyOfTemplateItem(original, toTemplate, ownerId, hidden);
       // copy the item as well if needed
-      EvalItem item = null;
       if (includeChildren) {
          Long[] itemIds = copyItems(new Long[] {original.getItem().getId()}, ownerId, hidden, includeChildren);
-         item = getItemById(itemIds[0]);
-      } else {
-         item = original.getItem();
+         EvalItem item = getItemById(itemIds[0]);
+         copy.setItem(item);
       }
-      copy.setItem(item);
-      // set the other copy fields correctly
-      copy.setCopyOf(original.getId());
-      copy.setHidden(hidden);
       fixUpTemplateItem(copy); // fix up to ensure fields are set correctly
       return copy;
    }
@@ -1682,6 +1690,217 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
          templates.add( getTemplateById(templateId) );
       }
       return templates;
+   }
+
+
+
+   /* (non-Javadoc)
+    * @see org.sakaiproject.evaluation.logic.EvalAuthoringService#getAutoUseTemplateItems(java.lang.String, java.lang.String, java.lang.String)
+    */
+   @SuppressWarnings("unchecked")
+   public List<EvalTemplateItem> getAutoUseTemplateItems(String templateAutoUseTag, String templateItemAutoUseTag, String itemAutoUseTag) {
+
+      List<EvalTemplateItem> items = new ArrayList<EvalTemplateItem>();
+      // first add in the templates items
+      if (! EvalUtils.isBlank(templateAutoUseTag)) {
+         List<EvalTemplate> templates = dao.findByProperties(EvalTemplate.class, 
+               new String[] {"autoUseTag"}, 
+               new Object[] {templateAutoUseTag}, 
+               new int[] {ByPropsFinder.EQUALS},
+               new String[] {"id"}
+         );
+         for (EvalTemplate template : templates) {
+            List<EvalTemplateItem> templateItemsList = getTemplateItemsForTemplate(template.getId(), new String[] {}, null, null); // only hierarchy nodes
+            items.addAll( TemplateItemUtils.orderTemplateItems(templateItemsList, false) );
+         }
+      }
+
+      // now the template items (only if not already there)
+      if (! EvalUtils.isBlank(templateItemAutoUseTag)) {
+         List<EvalTemplateItem> templateItems = dao.findByProperties(EvalTemplateItem.class, 
+               new String[] {"autoUseTag"}, 
+               new Object[] {templateItemAutoUseTag}, 
+               new int[] {ByPropsFinder.EQUALS},
+               new String[] {"displayOrder", "id"}
+         );
+         for (EvalTemplateItem templateItem : templateItems) {
+            if (! items.contains(templateItem)) {
+               items.add(templateItem);
+            }
+         }
+      }
+
+      // finally put in the items wrapper in a templateItem
+      if (! EvalUtils.isBlank(itemAutoUseTag)) {
+         List<EvalItem> evalItems = dao.findByProperties(EvalItem.class, 
+               new String[] {"autoUseTag"}, 
+               new Object[] {itemAutoUseTag}, 
+               new int[] {ByPropsFinder.EQUALS},
+               new String[] {"id"}
+         );
+         for (EvalItem evalItem : evalItems) {
+            items.add( TemplateItemUtils.makeTemplateItem(evalItem) );
+         }
+      }
+
+      return items;
+   }
+
+   /* (non-Javadoc)
+    * @see org.sakaiproject.evaluation.logic.EvalAuthoringService#doAutoUseInsertion(java.lang.String, java.lang.Long, java.lang.String, boolean)
+    */
+   @SuppressWarnings("unchecked")
+   public List<EvalTemplateItem> doAutoUseInsertion(String autoUseTag, Long templateId, String insertionPointConstant, boolean saveAll) {
+      List<EvalTemplateItem> allTemplateItems = null;
+      // get all the autoUse items
+      List<EvalTemplateItem> autoUseItems = getAutoUseTemplateItems(autoUseTag, autoUseTag, autoUseTag);
+      if (autoUseItems.size() > 0) {
+         log.info("Found "+autoUseItems.size()+" autoUse items to insert for tag (" + autoUseTag + ") into template (id="+templateId+")");
+         allTemplateItems = new ArrayList<EvalTemplateItem>();
+         EvalTemplate template = getTemplateOrFail(templateId);
+         String ownerId = template.getOwner();
+
+         // get all current template items sorted
+         List<EvalTemplateItem> currentItems = null;
+         List<EvalTemplateItem> currentTemplateItems = TemplateItemUtils.orderTemplateItems(
+            getTemplateItemsForTemplate(templateId, new String[] {}, new String[] {}, new String[] {}), false );
+         if (saveAll) {
+            currentItems = currentTemplateItems;
+         } else {
+            // make copies of all the current items as well since we are not saving them
+            currentItems = new ArrayList<EvalTemplateItem>();
+            for (EvalTemplateItem original : currentTemplateItems) {
+               EvalTemplateItem copy = TemplateItemUtils.makeCopyOfTemplateItem(original, template, template.getOwner(), true);
+               currentItems.add(copy);
+            }
+         }
+
+         // copy and update all insertion items to have the correct value in the insertion field
+         List<EvalTemplateItem> insertionItems = new ArrayList<EvalTemplateItem>();
+         Long[] copiedTIIds = new Long[0];
+         if (saveAll) {
+            // filter out the non-persistent TIs and make lists of all ids per template
+            List<EvalTemplateItem> unsavedTIs = new ArrayList<EvalTemplateItem>();
+            Map<Long, List<Long>> templateToTIsMap = new HashMap<Long, List<Long>>();
+            for (EvalTemplateItem templateItem : autoUseItems) {
+               Long templateItemId = templateItem.getId();
+               if (templateItem.getId() != null) {
+                  Long currentTemplateId = templateItem.getTemplate().getId();
+                  if (templateToTIsMap.containsKey(currentTemplateId)) {
+                     templateToTIsMap.get(currentTemplateId).add(templateItemId);
+                  } else {
+                     List<Long> templateTIIds = new ArrayList<Long>();
+                     templateTIIds.add(templateItemId);
+                     templateToTIsMap.put(currentTemplateId, templateTIIds);
+                  }
+               } else {
+                  unsavedTIs.add(templateItem);
+               }
+            }
+            // use the copy method to make persistent copies of all template items and children
+            for (Long currentTemplateId : templateToTIsMap.keySet()) {
+               List<Long> TIIds = templateToTIsMap.get(currentTemplateId);
+               Long[] copiedIds = copyTemplateItems(TIIds.toArray(new Long[] {}), ownerId, true, template.getId(), true);
+               copiedTIIds = ArrayUtils.appendArrays(copiedTIIds, copiedIds);
+            }
+            // fetch the new copies based on the ids
+            List<EvalTemplateItem> templateItemsList = dao.findByProperties(EvalTemplateItem.class, new String[] {"id"}, new Object[] { copiedTIIds });
+            // now put the copied items into the list in the order of the copied ids
+            for (int i = 0; i < copiedTIIds.length; i++) {
+               Long id = copiedTIIds[i];
+               for (EvalTemplateItem templateItem : templateItemsList) {
+                  if (id.equals(templateItem.getId())) {
+                     insertionItems.add(templateItem);
+                     templateItemsList.remove(templateItem);
+                     break;
+                  }
+               }
+            }
+            // save all unsaved items
+            for (EvalTemplateItem templateItem : unsavedTIs) {
+               templateItem.setTemplate(template);
+               templateItem.setOwner(ownerId);
+               saveTemplateItem(templateItem, ownerId);
+               insertionItems.add(templateItem);
+            }
+         } else {
+            // just make a simple non-persistent copy of all the items
+            for (EvalTemplateItem original : autoUseItems) {
+               EvalTemplateItem copy = TemplateItemUtils.makeCopyOfTemplateItem(original, template, template.getOwner(), true);
+               // preserve the block data
+               copy.setBlockId(original.getBlockId());
+               copy.setBlockParent(original.getBlockParent());
+               // now add in the autouse data
+               copy.setAutoUseInsertionTag(autoUseTag);
+               insertionItems.add(copy);
+            }
+         }
+
+         // set the autoUse insertion value
+         for (EvalTemplateItem insertedTemplateItem : insertionItems) {
+            insertedTemplateItem.setAutoUseInsertionTag(autoUseTag);
+         }
+
+         if (EvalConstants.EVALUATION_AUTOUSE_INSERTION_BEFORE.equals(insertionPointConstant)) {
+            // inserting autoUse items before the existing ones
+            allTemplateItems.addAll(insertionItems);
+            allTemplateItems.addAll(currentItems);
+         } else if (EvalConstants.EVALUATION_AUTOUSE_INSERTION_AFTER.equals(insertionPointConstant)) {
+            // inserting autoUse items after the existing ones
+            allTemplateItems.addAll(currentItems);
+            allTemplateItems.addAll(insertionItems);
+         } else {
+            throw new IllegalArgumentException("Do not know how to handle autoUse insertion point of: " + insertionPointConstant);
+         }
+
+         // now we update the displayOrders to the current list order (which should be correct)
+         int displayOrder = 1;
+         for (EvalTemplateItem templateItem : allTemplateItems) {
+            if (! TemplateItemUtils.isBlockChild(templateItem)) {
+               // only update the order of non-block children
+               templateItem.setDisplayOrder(displayOrder++);
+            }
+         }
+
+         // save if set and then return the list of all copied items with corrected display order
+         if (saveAll) {
+            // save all the templateItems
+            Set<EvalTemplateItem> allItems = new HashSet<EvalTemplateItem>(allTemplateItems);
+            dao.saveSet( allItems );
+            // add the full list to the template and save it
+            template.setTemplateItems( allItems );
+            dao.save(template);
+            log.info("Saved and inserted "+autoUseItems.size()+" autoUse items for tag (" + autoUseTag + ") into template (id="+templateId+")");
+         }
+      } else {
+         log.info("No autoUse items can be found to insert for tag: " + autoUseTag);
+      }
+      return allTemplateItems;
+   }
+
+
+   /**
+    * @param scaleId the unique id for an {@link EvalScale}
+    * @return true if this scale is used in any items
+    */
+   public boolean isUsedItem(Long itemId) {
+      return dao.isUsedItem(itemId);
+   }
+
+   /**
+    * @param itemId the unique id for an {@link EvalItem}
+    * @return true if this item is used in any template (i.e. connected to any template item)
+    */
+   public boolean isUsedScale(Long scaleId) {
+      return dao.isUsedScale(scaleId);
+   }
+
+   /**
+    * @param templateId the unique id for an {@link EvalTemplate}
+    * @return true if this template is used in any evalautions
+    */
+   public boolean isUsedTemplate(Long templateId) {
+      return dao.isUsedTemplate(templateId);
    }
 
 }

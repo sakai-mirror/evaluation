@@ -17,8 +17,8 @@ package org.sakaiproject.evaluation.tool.producers;
 import java.util.List;
 
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.tool.EvalToolConstants;
@@ -55,9 +55,9 @@ public class ControlItemsProducer implements ViewComponentProducer {
    }
 
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalAuthoringService authoringService;
@@ -81,8 +81,8 @@ public class ControlItemsProducer implements ViewComponentProducer {
       UIMessage.make(tofill, "page-title", "controlitems.page.title");
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
@@ -162,7 +162,7 @@ public class ControlItemsProducer implements ViewComponentProducer {
                UIOutput.make(itemBranch, "item-scale", scaleDisplaySettingLabel);
             }
 
-            EvalUser owner = externalLogic.getEvalUserById( item.getOwner() );
+            EvalUser owner = commonLogic.getEvalUserById( item.getOwner() );
             UIOutput.make(itemBranch, "item-owner", owner.displayName );
             if (item.getExpert().booleanValue() == true) {
                // label expert items

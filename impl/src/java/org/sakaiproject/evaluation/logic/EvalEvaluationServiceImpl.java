@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.dao.EvaluationDao;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.EvalSecurityChecksImpl;
 import org.sakaiproject.evaluation.logic.model.EvalGroup;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
@@ -38,6 +37,8 @@ import org.sakaiproject.evaluation.model.EvalTemplate;
 import org.sakaiproject.evaluation.utils.ArrayUtils;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 import org.sakaiproject.genericdao.api.finders.ByPropsFinder;
+import org.sakaiproject.genericdao.api.search.Restriction;
+import org.sakaiproject.genericdao.api.search.Search;
 
 
 /**
@@ -61,9 +62,9 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
       this.dao = dao;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalSecurityChecksImpl securityChecks;
@@ -185,13 +186,13 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
             // will only save the state if this eval is already saved
             if ( (evaluation.getId() != null) && saveState) {
                if ( EvalConstants.EVALUATION_STATE_ACTIVE.equals(trueState) ) {
-                  externalLogic.registerEntityEvent(EVENT_EVAL_STATE_START, evaluation);
+                  commonLogic.registerEntityEvent(EVENT_EVAL_STATE_START, evaluation);
                } else if ( EvalConstants.EVALUATION_STATE_GRACEPERIOD.equals(trueState) ) {
-                  externalLogic.registerEntityEvent(EVENT_EVAL_STATE_DUE, evaluation);
+                  commonLogic.registerEntityEvent(EVENT_EVAL_STATE_DUE, evaluation);
                } else if ( EvalConstants.EVALUATION_STATE_CLOSED.equals(trueState) ) {
-                  externalLogic.registerEntityEvent(EVENT_EVAL_STATE_STOP, evaluation);
+                  commonLogic.registerEntityEvent(EVENT_EVAL_STATE_STOP, evaluation);
                } else if ( EvalConstants.EVALUATION_STATE_VIEWABLE.equals(trueState) ) {
-                  externalLogic.registerEntityEvent(EVENT_EVAL_STATE_VIEWABLE, evaluation);
+                  commonLogic.registerEntityEvent(EVENT_EVAL_STATE_VIEWABLE, evaluation);
                }
                dao.update(evaluation);
             }
@@ -206,7 +207,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
       Set<String> userIds = null;
       if (EvalConstants.EVAL_INCLUDE_NONTAKERS.equals(includeConstant)) {
          // get all users who have NOT responded
-         userIds = externalLogic.getUserIdsForEvalGroup(evalGroupId,
+         userIds = commonLogic.getUserIdsForEvalGroup(evalGroupId,
                EvalConstants.PERM_TAKE_EVALUATION);
          Set<String> respondedUserIds = dao.getResponseUserIds(evaluationId,
                new String[] { evalGroupId });
@@ -218,7 +219,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
          userIds = dao.getResponseUserIds(evaluationId, new String[] { evalGroupId });
       } else if (EvalConstants.EVAL_INCLUDE_ALL.equals(includeConstant)) {
          // get all users permitted to take the evaluation
-         userIds = externalLogic.getUserIdsForEvalGroup(evalGroupId,
+         userIds = commonLogic.getUserIdsForEvalGroup(evalGroupId,
                EvalConstants.PERM_TAKE_EVALUATION);
       }
       if (userIds == null) {
@@ -237,11 +238,51 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
          for (int i=0; i<groups.size(); i++) {
             EvalAssignGroup eac = (EvalAssignGroup) groups.get(i);
             String evalGroupId = eac.getEvalGroupId();
-            int enrollmentCount = externalLogic.countUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
+            int enrollmentCount = commonLogic.countUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
             totalEnrollments = totalEnrollments + enrollmentCount;
          }
       }
       return totalEnrollments;
+   }
+
+   /**
+    * JIRA EvalSys-588
+    */
+   public boolean isEvalGroupValidForEvaluation(String evalGroupId, Long evaluationId) {
+      // grab the evaluation itself first
+      EvalEvaluation eval = getEvaluationOrFail(evaluationId);
+
+      // check the evaluation state
+      String state = EvalUtils.getEvaluationState(eval, false);
+      if ( ! EvalConstants.EVALUATION_STATE_ACTIVE.equals(state) &&
+            ! EvalConstants.EVALUATION_STATE_GRACEPERIOD.equals(state) ) {
+         //log.info("User (" + userId + ") cannot take evaluation (" + evaluationId + ") when eval state is: " + state);
+         return false;
+      } 
+
+      if (evalGroupId != null) {
+         // TODO note that this could be more efficient if there was an index on groupId and instructorApproval and a count was used
+         // check that the evalGroupId is valid for this evaluation
+         List<EvalAssignGroup> ags = dao.findBySearch(EvalAssignGroup.class, 
+               new Search( new Restriction[] {
+                     new Restriction("evaluation.id", evaluationId),
+                     new Restriction("evalGroupId", evalGroupId)
+               } ) );
+         if (ags.size() <= 0) {
+            //log.info("User (" + userId + ") cannot take evaluation (" + evaluationId + ") in this evalGroupId (" + evalGroupId + "), not assigned");
+            return false;
+         } else {
+            // make sure instructor approval is true
+            EvalAssignGroup eag = ags.get(0);
+            if (! eag.getInstructorApproval().booleanValue() ) {
+               //log.info("User (" + userId + ") cannot take evaluation (" + evaluationId + ") in this evalGroupId (" + evalGroupId + "), instructor has not approved");
+               return false;
+            }
+         }
+      }
+      
+      return true;
+      
    }
 
 
@@ -249,7 +290,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
 
    public boolean canBeginEvaluation(String userId) {
       log.debug("Checking begin eval for: " + userId);
-      boolean isAdmin = externalLogic.isUserAdmin(userId);
+      boolean isAdmin = commonLogic.isUserAdmin(userId);
       if ( isAdmin && (dao.countAll(EvalTemplate.class) > 0) ) {
          // admin can access all templates and create an evaluation if 
          // there is at least one template
@@ -257,7 +298,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
       }
       Boolean instructorAllowedCreateEvals = (Boolean) settings.get(EvalSettings.INSTRUCTOR_ALLOWED_CREATE_EVALUATIONS);
       if (instructorAllowedCreateEvals != null && instructorAllowedCreateEvals) {
-         if ( externalLogic.countEvalGroupsForUser(userId, EvalConstants.PERM_ASSIGN_EVALUATION) > 0 ) {
+         if ( commonLogic.countEvalGroupsForUser(userId, EvalConstants.PERM_ASSIGN_EVALUATION) > 0 ) {
             log.debug("User has permission to assign evaluation in at least one group");
             /*
              * TODO - this check needs to be more robust at some point
@@ -309,7 +350,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
       } else {
          // no groupId is supplied so do a simpler check
          log.info("No evalGroupId supplied, doing abbreviated check for evalId=" + evaluationId + ", userId=" + userId);
-         if ( externalLogic.isUserAdmin(userId) ) {
+         if ( commonLogic.isUserAdmin(userId) ) {
             // admin trumps being in a group
             log.info("ADMIN take eval permission override: User (" + userId + "), evaluation (" + evaluationId + "), evalGroupId (" + evalGroupId + ")");
             return true;
@@ -335,14 +376,14 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
          return false;
       } else if ( EvalConstants.EVALUATION_AUTHCONTROL_AUTH_REQ.equals(eval.getAuthControl()) ) {
          if (evalGroupId == null) {
-            if (externalLogic.isUserAdmin(userId) ) {
+            if (commonLogic.isUserAdmin(userId) ) {
                // short circuit the attempt to lookup every group in the system for the admin
                return true;
             }
 
             // if no groupId is supplied then simply check to see if the user is in any of the groups assigned,
             // hopefully this is faster than checking if the user has the right permission in every group -AZ
-            List<EvalGroup> userEvalGroups = externalLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
+            List<EvalGroup> userEvalGroups = commonLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
             if (userEvalGroups.size() > 0) {
                // only try to do this check if there is at least one userEvalGroup
                String[] evalGroupIds = new String[userEvalGroups.size()];
@@ -361,11 +402,11 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
             }
          } else {
             // check the user permissions
-            if ( externalLogic.isUserAdmin(userId) ) {
+            if ( commonLogic.isUserAdmin(userId) ) {
                // need to short circuit the checks below because the count is not the real count when does as an admin
                return true;
             } else {
-               if (! externalLogic.isUserAllowedInEvalGroup(userId, EvalConstants.PERM_TAKE_EVALUATION, evalGroupId) ) {
+               if (! commonLogic.isUserAllowedInEvalGroup(userId, EvalConstants.PERM_TAKE_EVALUATION, evalGroupId) ) {
                   log.info("User (" + userId + ") cannot take evaluation (" + evaluationId + ") without permission");
                   return false;
                }
@@ -418,11 +459,30 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
 
    // EVAL AND ASSIGN GROUPS
 
-   public int countEvaluationGroups(Long evaluationId) {
+   public int countEvaluationGroups(Long evaluationId, boolean includeUnApproved) {
       log.debug("evalId: " + evaluationId);
+
+      List<String> props = new ArrayList<String>();
+      List<Object> values = new ArrayList<Object>();
+      List<Number> comparisons = new ArrayList<Number>();
+
+      // basic search params
+      props.add("evaluation.id");
+      values.add(evaluationId);
+      comparisons.add(ByPropsFinder.EQUALS);
+
+      if (! includeUnApproved) {
+         // only include those that are approved
+         props.add("instructorApproval");
+         values.add(Boolean.TRUE);
+         comparisons.add(ByPropsFinder.EQUALS);
+      }
+
       int count = dao.countByProperties(EvalAssignGroup.class, 
-            new String[] {"evaluation.id"}, 
-            new Object[] {evaluationId});
+            props.toArray(new String[props.size()]), 
+            values.toArray(new Object[values.size()]), 
+            ArrayUtils.listToIntArray(comparisons)
+         );
       return count;
    }
 
@@ -558,7 +618,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
          List<EvalGroup> newList = new ArrayList<EvalGroup>();
          for (int i=0; i<innerList.size(); i++) {
             EvalAssignGroup eag = innerList.get(i);
-            newList.add( externalLogic.makeEvalGroupObject( eag.getEvalGroupId() ) );
+            newList.add( commonLogic.makeEvalGroupObject( eag.getEvalGroupId() ) );
          }
          evals.put(evalId, newList);
       }
@@ -706,7 +766,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
 
       if (userId != null && userId.length() > 0) {
          // admin can see all responses
-         if (! externalLogic.isUserAdmin(userId) ) {
+         if (! commonLogic.isUserAdmin(userId) ) {
             props.add("owner");
             values.add(userId);
             comparisons.add(ByPropsFinder.EQUALS);
@@ -768,7 +828,7 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
       }
 
       // admin can see all
-      if (! externalLogic.isUserAdmin(userId) ) {
+      if (! commonLogic.isUserAdmin(userId) ) {
          props.add("owner");
          values.add(userId);
          comparisons.add(ByPropsFinder.EQUALS);

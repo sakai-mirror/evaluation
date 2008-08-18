@@ -22,10 +22,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.ReportingPermissions;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalAnswer;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
@@ -84,9 +84,9 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
       this.responseAggregator = bean;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -122,7 +122,7 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
     */
    public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
       ReportParameters reportViewParams = (ReportParameters) viewparams;
-      String currentUserId = externalLogic.getCurrentUserId();
+      String currentUserId = commonLogic.getCurrentUserId();
 
       if (VIEWMODE_ALLESSAYS.equals(reportViewParams.viewmode)) {
          currentViewMode = VIEWMODE_ALLESSAYS;
@@ -155,19 +155,19 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
           * We only need to show the choose groups breadcrumb if it's actually 
           * possible for us to view more than one group.
           */
-         String[] viewableGroups = reportingPermissions.chooseGroupsPartialCheck(evaluationId);
-         if (viewableGroups.length == 0) {
+         Set<String> viewableGroups = reportingPermissions.getResultsViewableEvalGroupIdsForCurrentUser(evaluationId);
+         if (viewableGroups.isEmpty()) {
             UIMessage.make(tofill, "security-warning", "viewreport.not.allowed");
             return;
-         } else if (viewableGroups.length == 1) {
+         } else if (viewableGroups.size() == 1) {
             // only one group to view
-            reportViewParams.groupIds = viewableGroups;
-         } else if (viewableGroups.length > 1) {
+            reportViewParams.groupIds = viewableGroups.toArray(new String[] {});
+         } else if (viewableGroups.size() > 1) {
             // user can choose other groups so give them a link
             UIInternalLink.make(tofill, "report-groups-title", UIMessage.make("reportgroups.page.title"), 
                   new ReportParameters(ReportChooseGroupsProducer.VIEW_ID, reportViewParams.evaluationId));
             if (reportViewParams.groupIds == null || reportViewParams.groupIds.length == 0) {
-               reportViewParams.groupIds = viewableGroups;
+               reportViewParams.groupIds = viewableGroups.toArray(new String[] {});
             }
          }
 
@@ -328,8 +328,6 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
             }
          }
 
-         UIMessage.make(scaled, "responsesCount", "viewreport.responses.count", new Object[] {responsesCount});
-
          if (dti.usesComments()) {
             // render the comments
             UIBranchContainer showCommentsBranch = UIBranchContainer.make(tofill, "showComments:");
@@ -474,8 +472,8 @@ public class ReportsViewingProducer implements ViewComponentProducer, ViewParams
    private void renderTopLinks(UIContainer tofill) {
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 

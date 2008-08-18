@@ -21,8 +21,8 @@ import java.util.GregorianCalendar;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalSettings;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 
@@ -38,9 +38,9 @@ public class EvalBeanUtils {
 
    private static Log log = LogFactory.getLog(EvalBeanUtils.class);
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic external) {
-      this.externalLogic = external;
+   private EvalCommonLogic commonLogic;   
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalSettings settings;
@@ -59,7 +59,7 @@ public class EvalBeanUtils {
     */
    public int getResponsesNeededToViewForResponseRate(int responsesCount, int enrollmentsCount) {
       int responsesNeeded = 1;
-      if ( externalLogic.isUserAdmin( externalLogic.getCurrentUserId() ) ) {
+      if ( commonLogic.isUserAdmin( commonLogic.getCurrentUserId() ) ) {
          responsesNeeded = 0;
       } else {
          int minResponses = ((Integer) settings.get(EvalSettings.RESPONSES_REQUIRED_TO_VIEW_RESULTS)).intValue();
@@ -86,7 +86,7 @@ public class EvalBeanUtils {
     */
    public boolean checkUserPermission(String userId, String ownerId) {
       boolean allowed = false;
-      if ( externalLogic.isUserAdmin(userId) ) {
+      if ( commonLogic.isUserAdmin(userId) ) {
          allowed = true;
       } else if ( ownerId.equals(userId) ) {
          allowed = true;
@@ -170,44 +170,38 @@ public class EvalBeanUtils {
          eval.setViewDate(null);
       }
 
+      // handle the view dates default
+      Boolean useSameViewDates = (Boolean) settings.get(EvalSettings.EVAL_USE_SAME_VIEW_DATES);
+      Date sharedDate = eval.getViewDate() == null ? eval.getDueDate() : eval.getViewDate();
+      if (eval.getStudentsDate() == null || useSameViewDates) {
+         eval.setStudentsDate(sharedDate);
+      }
+      if (eval.getInstructorsDate() == null || useSameViewDates) {
+         eval.setInstructorsDate(sharedDate);
+      }
+
       // results viewable settings
       Date studentsDate = null;
-      Boolean studentsView = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
-      eval.studentViewResults = studentsView;
-      if (studentsView == null || studentsView) {
-         eval.studentViewResults = true;
-         studentsDate = eval.getViewDate() == null ? eval.getDueDate() : eval.getViewDate();
-      }
-      if (eval.getStudentsDate() == null) {
-         eval.setStudentsDate(studentsDate);
-      }
-      if (eval.getStudentsDate() == null) {
-         eval.studentViewResults = false;
+      Boolean studentsView = (Boolean) settings.get(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS);
+      if (studentsView != null) {
+         eval.setStudentViewResults( studentsView );
       }
 
       Date instructorsDate = null;
-      Boolean instructorsView = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
-      eval.instructorViewResults = instructorsView;
-      if (instructorsView == null || instructorsView) {
-         eval.instructorViewResults = true;
-         instructorsDate = eval.getViewDate() == null ? eval.getDueDate() : eval.getViewDate();
-      }
-      if (eval.getInstructorsDate() == null) {
-         eval.setInstructorsDate(instructorsDate);
-      }
-      if (eval.getInstructorsDate() == null) {
-         eval.instructorViewResults = false;
+      Boolean instructorsView = (Boolean) settings.get(EvalSettings.INSTRUCTOR_ALLOWED_VIEW_RESULTS);
+      if (instructorsView != null) {
+         eval.setInstructorViewResults( instructorsView );
       }
 
       if (eval.getResultsSharing() == null) {
          eval.setResultsSharing( EvalConstants.SHARING_VISIBLE );
       }
       if (EvalConstants.SHARING_PRIVATE.equals(eval.getResultsSharing())) {
-         eval.studentViewResults = false;
-         eval.instructorViewResults = false;
+         eval.setStudentViewResults(  false );
+         eval.setInstructorViewResults( false );
       } else if (EvalConstants.SHARING_PUBLIC.equals(eval.getResultsSharing())) {
-         eval.studentViewResults = true;
-         eval.instructorViewResults = true;
+         eval.setStudentViewResults( true );
+         eval.setInstructorViewResults( true );
          studentsDate = eval.getViewDate();
          eval.setStudentsDate(studentsDate);
          instructorsDate = eval.getViewDate();
@@ -323,19 +317,19 @@ public class EvalBeanUtils {
        */ 
       boolean sameViewDateForAll = ((Boolean) settings.get(EvalSettings.EVAL_USE_SAME_VIEW_DATES));
       if (sameViewDateForAll) {
-         if (eval.studentViewResults) {
+         if (eval.getStudentViewResults()) {
             eval.setStudentsDate( eval.getViewDate() );
          }
-         if (eval.instructorViewResults) {
+         if (eval.getInstructorViewResults()) {
             eval.setInstructorsDate( eval.getViewDate() );
          }
       }
 
       // force the student/instructor dates null based on the boolean settings
-      if (! eval.studentViewResults) {
+      if (! eval.getStudentViewResults()) {
          eval.setStudentsDate(null);
       }
-      if (! eval.instructorViewResults) {
+      if (! eval.getInstructorViewResults()) {
          eval.setInstructorsDate(null);
       }
    }

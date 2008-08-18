@@ -18,6 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.beans.EvalBeanUtils;
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.model.EvalAdhocGroup;
 import org.sakaiproject.evaluation.model.EvalAdhocUser;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
@@ -44,9 +45,9 @@ public class EvalSecurityChecksImpl {
 
    private static Log log = LogFactory.getLog(EvalSecurityChecksImpl.class);
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalBeanUtils evalBeanUtils;
@@ -267,7 +268,7 @@ public class EvalSecurityChecksImpl {
       }
 
       String state = EvalUtils.getEvaluationState(eval, false);
-      if (EvalConstants.EVALUATION_STATE_INQUEUE.equals(state)) {
+      if (EvalUtils.checkStateBefore(state, EvalConstants.EVALUATION_STATE_INQUEUE, true)) {
          checkControlAssignGroup(userId, assignGroup);
       } else {
          throw new IllegalStateException("User ("+userId+") cannot remove this assign evalGroupId ("+assignGroup.getId()+"), invalid eval state");
@@ -348,7 +349,7 @@ public class EvalSecurityChecksImpl {
       // special check for admin control over default templates
       if (emailTemplate != null  
             && emailTemplate.getDefaultType() != null
-            && externalLogic.isUserAdmin(userId) ) {
+            && commonLogic.isUserAdmin(userId) ) {
                allowed = true;         
       } else {
          if (emailTemplate == null || 

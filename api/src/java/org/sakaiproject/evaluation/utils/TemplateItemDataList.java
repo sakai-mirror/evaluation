@@ -210,8 +210,43 @@ public class TemplateItemDataList {
       return ids;
    }
 
+   private Map<String, List<EvalTemplateItem>> autoInsertMap = null;
+   /**
+    * @return a map of all auto inserted items (autoUseTag -> List[templateItems]),
+    * this will be empty if there are none, the size of the map is the number
+    * of auto inserted tags
+    */
+   public Map<String, List<EvalTemplateItem>> getAutoInsertedItems() {
+      if (autoInsertMap == null) {
+         autoInsertMap = new HashMap<String, List<EvalTemplateItem>>();
+         for (EvalTemplateItem templateItem : this.allTemplateItems) {
+            String autoUseTag = templateItem.getAutoUseInsertionTag();
+            if (autoUseTag != null) {
+               if (autoInsertMap.containsKey(autoUseTag)) {
+                  autoInsertMap.get(autoUseTag).add(templateItem);
+               } else {
+                  List<EvalTemplateItem> autoUseItems = new ArrayList<EvalTemplateItem>();
+                  autoUseItems.add(templateItem);
+                  autoInsertMap.put(autoUseTag, autoUseItems);
+               }
+            }
+         }
+      }
+      return autoInsertMap;
+   }
 
-   // BUILD the flat list and return it
+   /**
+    * @return the count of all auto inserted items
+    */
+   public int countAutoInsertedItems() {
+      int count = 0;
+      Map<String, List<EvalTemplateItem>> aiis = getAutoInsertedItems();
+      for (String key : aiis.keySet()) {
+         count += aiis.get(key).size();
+      }
+      return count;
+   }
+
 
    /**
     * This turns the data structure into a flattened list of {@link DataTemplateItem}s
@@ -509,6 +544,22 @@ public class TemplateItemDataList {
       }
 
       /**
+       * @return true if this item is required (i.e. must be answered),
+       * false otherwise
+       * @see TemplateItemUtils#isRequired(EvalTemplateItem)
+       */
+      public boolean isRequired() {
+         return TemplateItemUtils.isRequired(this.templateItem);
+      }
+
+      /**
+       * @return the auto insertion tag for this item or null if none found
+       */
+      public String getAutoInsertionTag() {
+         return this.templateItem.getAutoUseInsertionTag();
+      }
+
+      /**
        * @return true if this item is set to use comments
        */
       public boolean usesComments() {
@@ -720,7 +771,7 @@ public class TemplateItemDataList {
    /**
     * A helper method to get the list of unique instructor userIds 
     * for the {@link EvalConstants#ITEM_CATEGORY_INSTRUCTOR} type item answers from the list of answers<br/>
-    * <b>NOTE:</b> Use getEvalUsersByIds(String[]) from externalLogic to turn this into a set of EvalUsers if needed
+    * <b>NOTE:</b> Use getEvalUsersByIds(String[]) from commonLogic to turn this into a set of EvalUsers if needed
     * 
     * @param answers a list of {@link EvalAnswer}
     * @return the set of userIds

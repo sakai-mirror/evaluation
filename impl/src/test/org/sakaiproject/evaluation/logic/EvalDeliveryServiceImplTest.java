@@ -69,14 +69,14 @@ public class EvalDeliveryServiceImplTest extends BaseTestEvalLogic {
       // create the other needed logic impls
       EvalAuthoringServiceImpl authoringServiceImpl = new EvalAuthoringServiceImpl();
       authoringServiceImpl.setDao(evaluationDao);
-      authoringServiceImpl.setExternalLogic( new MockEvalExternalLogic() );
+      authoringServiceImpl.setCommonLogic(commonLogic);
       authoringServiceImpl.setSettings(settings);
       authoringServiceImpl.setSecurityChecks(securityChecks);
 
       // create and setup the object to be tested
       deliveryService = new EvalDeliveryServiceImpl();
       deliveryService.setDao(evaluationDao);
-      deliveryService.setExternalLogic( new MockEvalExternalLogic() );
+      deliveryService.setCommonLogic(commonLogic);
       deliveryService.setHierarchyLogic( new MockExternalHierarchyLogic() );
       deliveryService.setEvaluationService(evaluationService);
       deliveryService.setSettings(settings);
@@ -91,21 +91,21 @@ public class EvalDeliveryServiceImplTest extends BaseTestEvalLogic {
       evaluationClosedTwo = new EvalEvaluation(EvalConstants.EVALUATION_TYPE_EVALUATION, 
             EvalTestDataLoad.ADMIN_USER_ID, "Eval closed two", null, 
             etdl.threeDaysAgo, etdl.yesterday, 
-            etdl.yesterday, etdl.tomorrow, null, null,
-            EvalConstants.EVALUATION_STATE_CLOSED, EvalConstants.SHARING_VISIBLE, 
-            EvalConstants.INSTRUCTOR_OPT_IN, Integer.valueOf(2), null, null, null, null, etdl.templateAdmin, null,
-            Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, EvalTestDataLoad.LOCKED, EvalConstants.EVALUATION_AUTHCONTROL_AUTH_REQ,
-            null);
+            etdl.yesterday, etdl.tomorrow, false, null,
+            false, null, 
+            EvalConstants.EVALUATION_STATE_CLOSED, EvalConstants.SHARING_VISIBLE, EvalConstants.INSTRUCTOR_OPT_IN, Integer.valueOf(2), null, null, null, null,
+            etdl.templateAdmin, null, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE,
+            EvalTestDataLoad.LOCKED, EvalConstants.EVALUATION_AUTHCONTROL_AUTH_REQ, null);
       evaluationDao.save(evaluationClosedTwo);
 
       // Evaluation Active (ends today), viewable tomorrow
       evaluationActiveTwo = new EvalEvaluation(EvalConstants.EVALUATION_TYPE_EVALUATION, 
             EvalTestDataLoad.MAINT_USER_ID, "Eval active two", null, 
-            etdl.yesterday, etdl.today, etdl.today, etdl.tomorrow, null, null,
-            EvalConstants.EVALUATION_STATE_ACTIVE, EvalConstants.SHARING_VISIBLE, 
-            EvalConstants.INSTRUCTOR_OPT_IN, new Integer(0), null, null, null, null, etdl.templateUnused, null,
-            Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, EvalConstants.EVALUATION_AUTHCONTROL_AUTH_REQ,
-            null);
+            etdl.yesterday, etdl.today, etdl.today, etdl.tomorrow, false, null,
+            false, null, 
+            EvalConstants.EVALUATION_STATE_ACTIVE, EvalConstants.SHARING_VISIBLE, EvalConstants.INSTRUCTOR_OPT_IN, new Integer(0), null, null, null, null,
+            etdl.templateUnused, null, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE,
+            Boolean.FALSE, EvalConstants.EVALUATION_AUTHCONTROL_AUTH_REQ, null);
       evaluationDao.save(evaluationActiveTwo);
 
       EvalAssignGroup assign1 = new EvalAssignGroup( EvalTestDataLoad.MAINT_USER_ID, 

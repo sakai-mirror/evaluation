@@ -42,9 +42,9 @@ import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationSetupService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.imports.EvalImport;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEmailTemplate;
@@ -97,10 +97,12 @@ public class EvalImportImpl implements EvalImport {
 	public void setEvalEvaluationsLogic(EvalEvaluationSetupService evalEvaluationsLogic) {
 		this.evalEvaluationsLogic = evalEvaluationsLogic;
 	}
-	private EvalExternalLogic externalLogic;
-	public void setExternalLogic(EvalExternalLogic externalLogic) {
-		this.externalLogic = externalLogic;
-	}
+
+	private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
+   }
+
    private EvalAuthoringService authoringService;
    public void setAuthoringService(EvalAuthoringService authoringService) {
       this.authoringService = authoringService;
@@ -115,7 +117,8 @@ public class EvalImportImpl implements EvalImport {
 	private String currentUserId;
 	private int numPersisted;
 	
-	//error messages during processing to surface to UI
+	// error messages during processing to surface to UI 
+	// TODO collecting parameter pattern
 	private List<String> messages = new ArrayList<String>();
 	
 	public void init() {
@@ -234,7 +237,7 @@ public class EvalImportImpl implements EvalImport {
 					
 					//save or update
 					authoringService.saveScale(scale, currentUserId);
-					externalLogic.registerEntityEvent(event, scale);
+					commonLogic.registerEntityEvent(event, scale);
 					scalesSaved++;
 					
 					//ping session to keep it alive
@@ -304,7 +307,7 @@ public class EvalImportImpl implements EvalImport {
 					
 					//save or update
 					authoringService.saveItem(item, currentUserId);
-					externalLogic.registerEntityEvent(event, item);
+					commonLogic.registerEntityEvent(event, item);
 					itemsSaved++;
 					
 					//ping session to keep it alive
@@ -378,7 +381,7 @@ public class EvalImportImpl implements EvalImport {
 					}
 					
 					authoringService.saveTemplate(template, currentUserId);
-					externalLogic.registerEntityEvent(event, template);
+					commonLogic.registerEntityEvent(event, template);
 					templatesSaved++;
 					
 					//ping session to keep it alive
@@ -446,7 +449,7 @@ public class EvalImportImpl implements EvalImport {
 						event = EVENT_TEMPLATEITEM_UPDATE;
 					}
 					authoringService.saveTemplateItem(templateItem, currentUserId);
-					externalLogic.registerEntityEvent(event, templateItem);
+					commonLogic.registerEntityEvent(event, templateItem);
 					templateItemsSaved++;
 					
 					//ping session to keep it alive
@@ -522,7 +525,7 @@ public class EvalImportImpl implements EvalImport {
 					
 					//save or update
 					evalEvaluationsLogic.saveEvaluation(evaluation, currentUserId, false);
-					externalLogic.registerEntityEvent(event, evaluation);
+					commonLogic.registerEntityEvent(event, evaluation);
 					evaluationsSaved++;
 					
 					//ping session to keep it alive
@@ -587,8 +590,8 @@ public class EvalImportImpl implements EvalImport {
 					
 					//TODO remove: testing
 					String evalGroupId = element.getChildText("PROVIDER_ID");
-					Set userIds = externalLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
-					userIds = externalLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_BE_EVALUATED);
+					Set userIds = commonLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
+					userIds = commonLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_BE_EVALUATED);
 					//TODO remove: testing
 					
 					if(evalAssignGroup == null) {
@@ -605,7 +608,7 @@ public class EvalImportImpl implements EvalImport {
 					
 					//save or update
 					evaluationSetupService.saveAssignGroup(evalAssignGroup, currentUserId);
-					externalLogic.registerEntityEvent(event, evalAssignGroup);
+					commonLogic.registerEntityEvent(event, evalAssignGroup);
 					assignGroupsSaved++;
 					
 					//ping session to keep it alive
@@ -1283,10 +1286,10 @@ public class EvalImportImpl implements EvalImport {
 
 			//new evaluation
 			EvalEvaluation evaluation = new EvalEvaluation(EvalConstants.EVALUATION_TYPE_EVALUATION, owner, title, instructions, startDate, dueDate,
-				stopDate, viewDate, studentsDate, instructorsDate, state, EvalConstants.SHARING_VISIBLE, instructorOpt,
-				reminderDays, reminderFromEmail, termId, availableEmailTemplate, reminderEmailTemplate, template,
-				new HashSet(0), blankResponsesAllowed, modifyResponsesAllowed, unregisteredAllowed, locked,
-				authControl, evalCategory);
+				stopDate, viewDate, false, studentsDate, false, instructorsDate, state,
+				EvalConstants.SHARING_VISIBLE, instructorOpt, reminderDays, reminderFromEmail, termId, availableEmailTemplate,
+				reminderEmailTemplate, template, new HashSet(0), blankResponsesAllowed, modifyResponsesAllowed,
+				unregisteredAllowed, locked, authControl, evalCategory);
 			evaluation.setEid(eid);
 			return evaluation;
 		}

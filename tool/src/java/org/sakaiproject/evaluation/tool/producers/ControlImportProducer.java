@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.sakaiproject.content.api.FilePickerHelper;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.ToolSession;
 
@@ -64,9 +64,9 @@ public class ControlImportProducer implements
 	}
 	
 	// Spring injection 
-	private EvalExternalLogic externalLogic;
-	public void setExternalLogic(EvalExternalLogic externalLogic) {
-		this.externalLogic = externalLogic;
+	private EvalCommonLogic commonLogic;
+	public void setCommonLogic(EvalCommonLogic commonLogic) {
+		this.commonLogic = commonLogic;
 	}
 	
 	private SessionManager sessionManager;
@@ -76,8 +76,8 @@ public class ControlImportProducer implements
 
 	public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
 
       if (!userAdmin) {
          // Security check and denial

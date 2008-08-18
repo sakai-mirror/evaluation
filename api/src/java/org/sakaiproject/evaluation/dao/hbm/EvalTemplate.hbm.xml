@@ -42,7 +42,7 @@
         <!-- the expert description for use of this template -->
         <property name="expertDescription" type="text" />
 		<!-- maps from templates to items via the itemtemplate joining table -->
-        <set name="templateItems" inverse="true" fetch="join">
+        <set name="templateItems" inverse="true">
             <key column="template_id" not-null="true" />
             <one-to-many class="org.sakaiproject.evaluation.model.EvalTemplateItem" />
         </set>
@@ -55,6 +55,10 @@
         </property>
         <property name="hidden" type="java.lang.Boolean">
             <column name="HIDDEN" />
+        </property>
+        <!-- Allows for linking this data to evals automatically when they are created -->
+        <property name="autoUseTag" type="java.lang.String">
+            <column name="AUTO_USE_TAG" length="255" />
         </property>
     </class>
 </hibernate-mapping>

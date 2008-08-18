@@ -20,9 +20,9 @@ import java.util.Map;
 
 import org.sakaiproject.evaluation.beans.EvalBeanUtils;
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationSetupService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 
 import uk.org.ponder.beanutil.BeanLocator;
@@ -37,9 +37,9 @@ public class EvaluationBeanLocator implements BeanLocator {
    public static final String NEW_PREFIX = "new";
    public static String NEW_1 = NEW_PREFIX + "1";
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic external) {
-      this.externalLogic = external;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -64,7 +64,7 @@ public class EvaluationBeanLocator implements BeanLocator {
       EvalEvaluation togo = delivered.get(name);
       if (togo == null) {
          if (name.startsWith(NEW_PREFIX)) {
-            togo = new EvalEvaluation(EvalConstants.EVALUATION_TYPE_EVALUATION, externalLogic.getCurrentUserId(),
+            togo = new EvalEvaluation(EvalConstants.EVALUATION_TYPE_EVALUATION, commonLogic.getCurrentUserId(),
                   null, null, EvalConstants.EVALUATION_STATE_PARTIAL, null, null, null);
             // set the defaults for this newly created evaluation
             evalBeanUtils.setEvaluationDefaults(togo, EvalConstants.EVALUATION_TYPE_EVALUATION);
@@ -85,7 +85,7 @@ public class EvaluationBeanLocator implements BeanLocator {
          }
          // fix up all the dates before saving
          evalBeanUtils.fixupEvaluationDates(evaluation);
-         evaluationSetupService.saveEvaluation(evaluation, externalLogic.getCurrentUserId(), false);
+         evaluationSetupService.saveEvaluation(evaluation, commonLogic.getCurrentUserId(), false);
       }
    }
 

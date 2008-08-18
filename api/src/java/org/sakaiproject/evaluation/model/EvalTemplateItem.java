@@ -63,6 +63,20 @@ public class EvalTemplateItem implements java.io.Serializable {
     */
    private boolean hidden = false;
 
+   /**
+    * If this is not null then template item will be added to the copy of the template 
+    * used for the evaluations with the related linking autoUseTag when the eval is created
+    */
+   private String autoUseTag;
+
+   /**
+    * If this is not null then it means that this item was saved into the template as part of an autoUseInsertion
+    * and this field will be the autoUseTag which caused the insertion, primarily used to cause the item
+    * to be displayed specially
+    */
+   private String autoUseInsertionTag;
+
+
    // NON-persistent fields
 
    /**
@@ -118,6 +132,12 @@ public class EvalTemplateItem implements java.io.Serializable {
       this.blockId = blockId;
       this.resultsSharing = resultsSharing;
    }
+
+   @Override
+   public String toString() {
+      return this.id + ":cat=" + this.category + ":order=" + this.displayOrder + ":copyOf=" + this.copyOf;
+   }
+
 
    // Property accessors
    public Long getId() {
@@ -270,6 +290,26 @@ public class EvalTemplateItem implements java.io.Serializable {
 
    public void setHidden(boolean hidden) {
       this.hidden = hidden;
+   }
+
+   
+   public String getAutoUseTag() {
+      return autoUseTag;
+   }
+
+   
+   public void setAutoUseTag(String autoUseTag) {
+      this.autoUseTag = autoUseTag;
+   }
+
+   
+   public String getAutoUseInsertionTag() {
+      return autoUseInsertionTag;
+   }
+
+   
+   public void setAutoUseInsertionTag(String autoUseInsertionTag) {
+      this.autoUseInsertionTag = autoUseInsertionTag;
    }
 
 }

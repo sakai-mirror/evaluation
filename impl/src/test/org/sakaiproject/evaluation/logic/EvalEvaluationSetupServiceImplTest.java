@@ -44,6 +44,7 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
 
    protected EvalEvaluationSetupServiceImpl evaluationSetupService;
    private EvalEvaluationService evaluationService;
+   private EvalAuthoringService authoringService;
 
    // run this before each test starts
    protected void onSetUpBeforeTransaction() throws Exception {
@@ -69,21 +70,22 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
       // setup the mock objects if needed
       EvalEmailsLogicImpl emailsLogicImpl = new EvalEmailsLogicImpl();
       emailsLogicImpl.setEvaluationService(evaluationService);
-      emailsLogicImpl.setExternalLogic( new MockEvalExternalLogic() );
+      emailsLogicImpl.setCommonLogic(commonLogic);
       emailsLogicImpl.setSettings(settings);
 
       // create the other needed logic impls
       EvalAuthoringServiceImpl authoringServiceImpl = new EvalAuthoringServiceImpl();
       authoringServiceImpl.setDao(evaluationDao);
-      authoringServiceImpl.setExternalLogic( new MockEvalExternalLogic() );
-      authoringServiceImpl.setSettings(settings);
+      authoringServiceImpl.setCommonLogic(commonLogic);
       authoringServiceImpl.setSecurityChecks(securityChecks);
+      authoringServiceImpl.setSettings(settings);
+      authoringService = authoringServiceImpl;
 
 
       // create and setup the object to be tested
       evaluationSetupService = new EvalEvaluationSetupServiceImpl();
       evaluationSetupService.setDao(evaluationDao);
-      evaluationSetupService.setExternalLogic( new MockEvalExternalLogic() );
+      evaluationSetupService.setCommonLogic(commonLogic);
       evaluationSetupService.setHierarchyLogic( new MockExternalHierarchyLogic() );
       evaluationSetupService.setSettings(settings);
       evaluationSetupService.setSecurityChecks(securityChecks);
@@ -132,21 +134,24 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
       evaluationSetupService.saveEvaluation( partialEval, EvalTestDataLoad.MAINT_USER_ID, false );
       checkEval = evaluationService.getEvaluationById(partialEval.getId());
       assertNotNull(checkEval);
+      assertEquals(EvalConstants.EVALUATION_STATE_PARTIAL, partialEval.getState());
 
       // check that the template was NOT copied
       assertEquals(etdl.templatePublic.getId(), partialEval.getTemplate().getId());
       assertFalse(partialEval.getTemplate().isHidden());
       assertNull(partialEval.getTemplate().getCopyOf());
 
+      // now save the partial eval and complete
+      evaluationSetupService.saveEvaluation( partialEval, EvalTestDataLoad.MAINT_USER_ID, true );
+      assertEquals(EvalConstants.EVALUATION_STATE_INQUEUE, partialEval.getState());
 
-      // save a valid evaluation (due and stop date identical)
+      // save a valid evaluation (due and stop date identical), and create
       evaluationSetupService.saveEvaluation( new EvalEvaluation( EvalConstants.EVALUATION_TYPE_EVALUATION, 
             EvalTestDataLoad.MAINT_USER_ID, "Eval valid title", 
             etdl.today, etdl.tomorrow, etdl.tomorrow, etdl.threeDaysFuture, 
             EvalConstants.EVALUATION_STATE_INQUEUE, 
             EvalConstants.SHARING_VISIBLE, Integer.valueOf(1), etdl.templatePublic), 
-            EvalTestDataLoad.MAINT_USER_ID, false );
-
+            EvalTestDataLoad.MAINT_USER_ID, true );
 
       // test view date can be same as due date and stop date can be null
       evaluationSetupService.saveEvaluation( new EvalEvaluation( EvalConstants.EVALUATION_TYPE_EVALUATION, 
@@ -162,7 +167,7 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
             etdl.today, null, null, null,
             EvalConstants.EVALUATION_STATE_INQUEUE, 
             EvalConstants.SHARING_VISIBLE, Integer.valueOf(1), etdl.templatePublic),
-            EvalTestDataLoad.MAINT_USER_ID, false );
+            EvalTestDataLoad.MAINT_USER_ID, true );
 
       // try to save invalid evaluations
 
@@ -301,15 +306,17 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
     */
    public void testDeleteEvaluation() {
       // remove evaluation which has not started (uses 2 email templates)
-      Long availableId = etdl.evaluationNew.getAvailableEmailTemplate().getId();
-      Long reminderId = etdl.evaluationNew.getReminderEmailTemplate().getId();
+      EvalEvaluation unStarted = evaluationDao.findById(EvalEvaluation.class, etdl.evaluationNew.getId());
+      assertNotNull(unStarted);
+      Long availableId = unStarted.getAvailableEmailTemplate().getId();
+      Long reminderId = unStarted.getReminderEmailTemplate().getId();
       int countEmailTemplates = evaluationDao.countByProperties(EvalEmailTemplate.class, 
             new String[] { "id" }, 
             new Object[] { new Long[] {availableId, reminderId} });
       assertEquals(2, countEmailTemplates);
 
-      evaluationSetupService.deleteEvaluation(etdl.evaluationNew.getId(), EvalTestDataLoad.MAINT_USER_ID);
-      EvalEvaluation eval = evaluationService.getEvaluationById(etdl.evaluationNew.getId());
+      evaluationSetupService.deleteEvaluation(unStarted.getId(), EvalTestDataLoad.MAINT_USER_ID);
+      EvalEvaluation eval = evaluationService.getEvaluationById(unStarted.getId());
       assertNull(eval);
 
       // check to make sure the associated email templates were also removed
@@ -378,6 +385,27 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
 
       // test for an invalid Eval that it does not cause an exception
       evaluationSetupService.deleteEvaluation( EvalTestDataLoad.INVALID_LONG_ID, EvalTestDataLoad.MAINT_USER_ID);
+
+      // http://jira.sakaiproject.org/jira/browse/EVALSYS-545 - removing partial eval will remove copied template as well
+      // test that removing an eval with a copied template does not remove the template if still partial
+      Long templateId545 = authoringService.copyTemplate(etdl.templatePublic.getId(), "copy 545", EvalTestDataLoad.MAINT_USER_ID, true, false);
+      EvalTemplate template545 = authoringService.getTemplateById(templateId545);
+      EvalEvaluation evalTest545 = new EvalEvaluation( EvalConstants.EVALUATION_TYPE_EVALUATION, 
+            EvalTestDataLoad.MAINT_USER_ID, "Eval valid title", 
+            etdl.today, etdl.tomorrow, etdl.threeDaysFuture, etdl.fourDaysFuture, 
+            EvalConstants.EVALUATION_STATE_PARTIAL, 
+            EvalConstants.SHARING_VISIBLE, Integer.valueOf(1), template545);
+      evaluationSetupService.saveEvaluation( evalTest545, EvalTestDataLoad.MAINT_USER_ID, false ); // partial
+      EvalEvaluation checkEval545 = evaluationService.getEvaluationById(evalTest545.getId());
+      assertNotNull(checkEval545);
+      Long checkEval545templateId = checkEval545.getTemplate().getId();
+      assertEquals(templateId545, checkEval545templateId);
+
+      evalIdToRemove = evalTest545.getId();
+      evaluationSetupService.deleteEvaluation(evalIdToRemove, EvalTestDataLoad.ADMIN_USER_ID);
+      assertNull( evaluationService.getEvaluationById(evalIdToRemove) );
+      assertNotNull( evaluationDao.findById(EvalTemplate.class, checkEval545templateId) );
+
    }
 
    public void testCloseEvaluation() {
@@ -412,6 +440,11 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
    public void testGetEvaluationsForUser() {
       List<EvalEvaluation> evals = null;
       List<Long> ids = null;
+
+      // testing instructor approval
+      EvalAssignGroup eag = (EvalAssignGroup) evaluationDao.findById(EvalAssignGroup.class, etdl.assign5.getId());
+      eag.setInstructorApproval(false);
+      evaluationDao.save(eag);
 
       // get all evaluations for user
       evals = evaluationSetupService.getEvaluationsForUser(EvalTestDataLoad.USER_ID, null, null, true);
@@ -876,7 +909,7 @@ public class EvalEvaluationSetupServiceImplTest extends BaseTestEvalLogic {
       Long eacId = eac1.getId();
       evaluationSetupService.deleteAssignGroup( eacId, EvalTestDataLoad.MAINT_USER_ID );
 
-      evaluationSetupService.deleteAssignGroup( etdl.assign6.getId(), EvalTestDataLoad.MAINT_USER_ID );
+      evaluationSetupService.deleteAssignGroup( etdl.assign8.getId(), EvalTestDataLoad.MAINT_USER_ID );
 
       // check save worked
       l = evaluationDao.findByProperties(EvalAssignGroup.class, 

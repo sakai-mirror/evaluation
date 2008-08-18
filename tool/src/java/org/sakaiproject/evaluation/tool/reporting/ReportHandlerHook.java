@@ -21,9 +21,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.ReportingPermissions;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.viewparams.CSVReportViewParams;
 import org.sakaiproject.evaluation.tool.viewparams.DownloadReportViewParams;
@@ -44,9 +44,9 @@ public class ReportHandlerHook implements HandlerHook {
 
    private static Log log = LogFactory.getLog(ReportHandlerHook.class);
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -100,7 +100,7 @@ public class ReportHandlerHook implements HandlerHook {
       // get evaluation and template from DAO
       EvalEvaluation evaluation = evaluationService.getEvaluationById(drvp.evalId);
 
-      String currentUserId = externalLogic.getCurrentUserId();
+      String currentUserId = commonLogic.getCurrentUserId();
 
       // do a permission check
       if (!reportingPermissions.canViewEvaluationResponses(evaluation, drvp.groupIds)) {

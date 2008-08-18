@@ -618,4 +618,66 @@ public interface EvalAuthoringService {
     */
    public List<EvalTemplate> getTemplatesUsingItem(Long itemId);
 
+   // AUTO USE tags
+
+   /**
+    * Find all templates, templaeItems, and items with the given autoUseTag on them,
+    * items from the templates found will be returned (without the template but in the correct order),
+    * {@link EvalItem}s will be wrapped in a non-persisted {@link EvalTemplateItem},
+    * will not return 2 copies of the same templateItem but if an item is used in a templateItem
+    * then you may end up with 2 templateItems that appear to be the same<br/>
+    * <b>NOTE:</b> does not check if this authoring object is visible so care should be taken to
+    * control which items/template items/templates are allowed to have autoUseTags placed on them
+    * 
+    * @param templateAutoUseTag the autoUseTag field from {@link EvalTemplate},
+    * will return all the templateItems from any templates with this tag,
+    * null means skip checking for templates
+    * @param templateItemAutoUseTag the autoUseTag field from {@link EvalTemplateItem},
+    * will return all the templateItems with this tag,
+    * null means skip checking for templateItems
+    * @param itemAutoUseTag  the autoUseTag field from {@link EvalItem},
+    * will return all the items with this tag (wrapped in a non-persisted templateItem),
+    * null means skip checking for items
+    * @return a list of template items
+    */
+   public List<EvalTemplateItem> getAutoUseTemplateItems(String templateAutoUseTag, String templateItemAutoUseTag, String itemAutoUseTag);
+
+   /**
+    * Insert all the autoUse items that have the given tag into the template identified by the given id,
+    * this will automatically fixup the ordering and handle all the saves (if saveAll is set to true)<br/>
+    * <b>NOTE:</b> saveAll allows you to simply retrieve the template with the autoUse items inserted (for preview purposes),
+    * these templateItems are not appropriate for copying and only appropriate for previewing purposes
+    * 
+    * @param autoUseTag the autoUse tag which will be used to find items to insert into this template
+    * @param templateId the unique id of an {@link EvalTemplate}
+    * @param insertionPointConstant the constant to indicate where to insert the items in the template, 
+    * example: {@link EvalConstants#EVALUATION_AUTOUSE_INSERTION_AFTER}
+    * @param saveAll if this is true then the items will be inserted and the template will be updated and saved,
+    * if this is false then no changes will be made to persistent objects and instead you receive back a list of
+    * copies which have not been saved (and should not be saved)
+    * @return a list of all templateItems in correct order after the insertion IF one was made, 
+    * otherwise this will return null if no insertions were made
+    */
+   public List<EvalTemplateItem> doAutoUseInsertion(String autoUseTag, Long templateId, String insertionPointConstant, boolean saveAll);
+
+   // IN USE checks
+
+   /**
+    * @param scaleId the unique id for an {@link EvalScale}
+    * @return true if this scale is used in any items
+    */
+   public boolean isUsedScale(Long scaleId);
+
+   /**
+    * @param itemId the unique id for an {@link EvalItem}
+    * @return true if this item is used in any template (i.e. connected to any template item)
+    */
+   public boolean isUsedItem(Long itemId);
+
+   /**
+    * @param templateId the unique id for an {@link EvalTemplate}
+    * @return true if this template is used in any evalautions
+    */
+   public boolean isUsedTemplate(Long templateId);
+
 }

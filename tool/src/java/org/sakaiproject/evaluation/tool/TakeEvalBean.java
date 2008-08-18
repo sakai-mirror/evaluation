@@ -19,8 +19,8 @@ import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.exceptions.ResponseSaveException;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.locators.ResponseBeanLocator;
 
@@ -46,9 +46,9 @@ public class TakeEvalBean {
       this.responseBeanLocator = responseBeanLocator;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private TargettedMessageList messages;
@@ -73,7 +73,7 @@ public class TakeEvalBean {
          return "failure";
       }
       messages.addMessage( new TargettedMessage("evaluations.take.message",
-            new Object[] { eval.getTitle(), externalLogic.getDisplayTitle(evalGroupId) }, 
+            new Object[] { eval.getTitle(), commonLogic.getDisplayTitle(evalGroupId) }, 
             TargettedMessage.SEVERITY_INFO));
       return "success";
    }

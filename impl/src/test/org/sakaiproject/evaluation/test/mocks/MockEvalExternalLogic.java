@@ -17,9 +17,11 @@ package org.sakaiproject.evaluation.test.mocks;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
@@ -29,8 +31,6 @@ import org.sakaiproject.evaluation.logic.model.EvalScheduledJob;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.test.EvalTestDataLoad;
 import org.sakaiproject.evaluation.utils.EvalUtils;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 /**
@@ -309,14 +309,14 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
 	 * Always assume the current evalGroupId is CONTEXT1
 	 */
 	public String getCurrentEvalGroup() {
-		return EvalTestDataLoad.SITE1_REF;
+		return currentGroupId;
 	}
 
 	/**
 	 * Always assume the current user is USER_ID
 	 */
 	public String getCurrentUserId() {
-		return EvalTestDataLoad.USER_ID;
+		return currentUserId;
 	}
 
 	/* (non-Javadoc)
@@ -358,14 +358,6 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
       }
       EvalUser user = getEvalUserById(userId);
       return user;
-   }
-
-   public List<EvalUser> getEvalUsersByIds(String[] userIds) {
-      List<EvalUser> users = new ArrayList<EvalUser>();
-      for (String userId : userIds) {
-         users.add( getEvalUserById(userId) );
-      }
-      return users;
    }
 
 	/**
@@ -504,17 +496,17 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
    
    public String createScheduledJob(Date executionDate, Long evaluationId, String jobType) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
    public void deleteScheduledJob(String jobID) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
    public EvalScheduledJob[] findScheduledJobs(Long evaluationId, String jobType) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
 
@@ -536,6 +528,29 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
     */
    public void resetEmailsSentCounter() {
       emailsSentCounter = 0;
+   }
+
+   private String currentUserId = EvalTestDataLoad.USER_ID;
+   public void setCurrentUserId(String userId) {
+      currentUserId = userId;
+   }
+
+   private String currentGroupId = EvalTestDataLoad.SITE1_REF;
+   public void setCurrentGroupId(String evalGroupId) {
+      currentGroupId = evalGroupId;
+   }
+
+   public <T> T getBean(Class<T> type) {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public Map<String, EvalUser> getEvalUsersByIds(String[] userIds) {
+      Map<String, EvalUser> users = new HashMap<String, EvalUser>();
+      for (String userId : userIds) {
+         users.put(userId, getEvalUserById(userId) );
+      }
+      return users;
    }
 
 }

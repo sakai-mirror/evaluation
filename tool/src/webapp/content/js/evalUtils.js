@@ -18,134 +18,8 @@ var EvalSystem = function() {
   function escIdForJquery(value) {
     return value != null ? "#" + value.replace(/:/g, "\\:") : null;
   }
-  
-  /**
-   * NOTE: THis is moving to RSF TRunk. as soon as we upgrade to 0.7.3M3 we 
-   *       should start using this from the RSF Namespace.
-   *
-   * This is the meat and potatos RSF UVB function I've always wanted,
-   * designed for the UVB enthusiast who knows what they want. It takes
-   * the UVB URL, the bindings/values to send over, the bindings you 
-   * want back, and an optional action binding.
-   *
-   * @token A special token depicting this request. You can often put in whatever
-   * you like, but this can be used to stop the dreaded double submission effects.
-   * If a post with the same token is already being processed, subsequent ones
-   * will be ignored.
-   *
-   * @uvburl The url. In practice this usually looks something like,
-   *   http://server/myapp/faces/UVBview, though it's best to generate it with
-   *   viewStateHandler.getFullURL(new SimpleViewParameters(UVBProducer.VIEW_ID))
-   *
-   * @inbindings This should be a standard object hash of bindings to values.
-   *   ex. inbindings['mybean.value1'] = 'one';  
-   *       inbindings['mybean.value2'] = 'two';
-   *
-   * @outbindings This should be an array of bindings you want back from the request.
-   *   ex. outbindings[0] = 'mybean.value3'
-   *       outbindings[1] = 'mybean.value4'
-   *
-   * @actionbinding This should a String with the actionbinding. Can be null if
-   *   you don't want one.  ex. 'mybean.execute'
-   *
-   * @callback This should be a standard javascript object containing the usual
-   * callback functions such as success.
-   */
-  function fireUVBRequest(token, uvburl, inbindings, outbindings, actionbinding, callback) {
-    var queries = new Array();
-    for (var i in inbindings) {
-      queries.push(RSF.renderBinding(i,inbindings[i]));
-    }
-    if (actionbinding != null) {
-      queries.push(RSF.renderActionBinding(actionbinding));
-    }
-    for (var i in outbindings) {
-      queries.push(RSF.renderUVBQuery(outbindings[i]));
-    }
-    var body = queries.join("&");
-    RSF.queueAJAXRequest(token,"POST",uvburl,body,callback);
-  }
 
   return {
-  
-    /*
-     *  This code is largely in exploration mode and obviously very broken
-     *  still. But shouldn't show up at all unless you've enabled adhoc groups
-     *  in the admin settings.
-     *
-     *  Evaluation will still compile, but this is not going to work until we
-     *  move up to 0.7.3M2, but this functionality is disabled by default.
-     */
-  	initAssignAdhocGroupArea: function (saveButtonId,addMoreUsersButtonId,
-        groupNameInputId,emailInputId,emailListDivId,uvburl) {
-        var groupNameInput = $(escIdForJquery(groupNameInputId));
-        var emailListInput = $(escIdForJquery(emailInputId));
-        var emailListDiv = $(escIdForJquery(emailListDivId));
-        var saveButton = $(escIdForJquery(saveButtonId));
-        var addMoreUsersButton = $(escIdForJquery(addMoreUsersButtonId));
-        
-        var adhocGroupId = null;
-   
-        var saveUpdateEmailsAction = function(event) {
-            var inbindings = new Object();
-            var outbindings = new Array();
-            if (adhocGroupId == null) {
-                inbindings['adhocGroupsBean.adhocGroupTitle'] = groupNameInput.val();
-                inbindings['adhocGroupsBean.newAdhocGroupUsers'] = emailListInput.val();
-                outbindings.push('adhocGroupsBean.adhocGroupId');
-                outbindings.push('adhocGroupsBean.acceptedInternalUsers');
-                outbindings.push('adhocGroupsBean.acceptedAdhocUsers');
-                outbindings.push('adhocGroupsBean.rejectedUsers');
-                outbindings.push('adhocGroupsBean.participantDivUrl');
-                fireUVBRequest('atoken', uvburl, inbindings, outbindings, 'adhocGroupsBean.adNewAdHocGroup', saveCallback);
-            }
-            else {
-                inbindings['adhocGroupsBean.adhocGroupId'] = adhocGroupId;
-                inbindings['adhocGroupsBean.newAdhocGroupUsers'] = emailListInput.val();
-                outbindings.push('adhocGroupsBean.acceptedInternalUsers');
-                outbindings.push('adhocGroupsBean.acceptedAdhocUsers');
-                outbindings.push('adhocGroupsBean.rejectedUsers');
-                outbindings.push('adhocGroupsBean.participantDivUrl');
-                fireUVBRequest('atoken', uvburl, inbindings, outbindings, 'adhocGroupsBean.addUsersToAdHocGroup', saveCallback);
-            }
-            emailListInput.val('');
-        }
-        
-        var clearEmailsAction = function(event) {
-            //alert("Clearing emails");
-        }
-        
-        var updateParticipantDiv = {
-            success: function(response) {
-                //alert("What??" + response.responseXML);
-            }
-        }
-        
-        var saveCallback = {
-            success: function(response) {
-                var UVB = RSF.accumulateUVBResponse(response.responseXML);
-                
-                var adhocGroupId = UVB.EL["adhocGroupsBean.adhocGroupId"];
-                var divurl = UVB.EL["adhocGroupsBean.participantDivUrl"];
-                //alert(UVB.EL["adhocGroupsBean.acceptedInternalUsers"]);
-                //alert(UVB.EL["adhocGroupsBean.acceptedAdhocUsers"]);
-                //alert(UVB.EL["adhocGroupsBean.rejectedUsers"]);
-                
-                divurl = divurl.replace(/\\/g,'');
-                //alert("The DivURL: =" + divurl + "=");
-                saveButton.hide();
-                addMoreUsersButton.show();
-                //RSF.queueAJAXRequest(adhocGroupId,"GET",divurl,null,updateParticipantDiv);
-                //RSF.issueAJAXRequest("GET", divurl, [], updateParticipantDiv)
-                //emailListDiv.load("http://localhost:8080/portal/tool/bb5fb768-70ce-4c14-80a9-7297189de2b7/adhoc_group_participants_div?adhocGroupId=103");
-                emailListDiv.load(divurl);
-            }
-        }
-        
-        saveButton.click( function (event) { saveUpdateEmailsAction(event) });
-        addMoreUsersButton.click();
-        //clearButton.click( function (event) { clearEmailsAction(event) });
-  	},
     
     /**
      *  A little bit of javascript to validate the Eval Assign Page. At the 
@@ -166,6 +40,7 @@ var EvalSystem = function() {
         form.submit(function() {
             if (!passes) {
                 errorDiv.show();
+                RSF.getDOMModifyFirer().fireEvent();
             }
             return passes;
         });
@@ -219,6 +94,7 @@ var EvalSystem = function() {
             hideButton.show();
             area.show("normal");
             toggles.show("normal");
+            RSF.getDOMModifyFirer().fireEvent();
         }
 
         var hideAction = function(event) {
@@ -226,6 +102,7 @@ var EvalSystem = function() {
             hideButton.hide();
             area.hide("normal");
             toggles.hide("normal");
+            RSF.getDOMModifyFirer().fireEvent();
         }
 
         if (initialHide) {

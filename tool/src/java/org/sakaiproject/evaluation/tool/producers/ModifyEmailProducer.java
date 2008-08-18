@@ -15,8 +15,8 @@
 package org.sakaiproject.evaluation.tool.producers;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalEmailTemplate;
 import org.sakaiproject.evaluation.tool.locators.EmailTemplateWBL;
 import org.sakaiproject.evaluation.tool.viewparams.EmailViewParameters;
@@ -49,9 +49,9 @@ public class ModifyEmailProducer implements ViewComponentProducer, ViewParamsRep
       return VIEW_ID;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -95,8 +95,8 @@ public class ModifyEmailProducer implements ViewComponentProducer, ViewParamsRep
       String emailTemplateOTP = emailTemplateLocator + emailTemplateId + ".";
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
 
       if (emailViewParams.evaluationId == null) {
          /*

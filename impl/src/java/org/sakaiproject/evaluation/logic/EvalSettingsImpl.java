@@ -26,7 +26,7 @@ import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.model.EvalConfig;
 import org.sakaiproject.evaluation.utils.SettingsLogicUtils;
-
+import org.sakaiproject.genericdao.api.search.Search;
 
 /**
  * Implementation for the settings control
@@ -57,11 +57,14 @@ public class EvalSettingsImpl implements EvalSettings {
     */
    public void init() {
       log.debug("init");
+      
+      log.debug("BOOLEAN_SETTINGS " + BOOLEAN_SETTINGS);
 
       // convert the array into a Set to make it easier to work with
       for (int i = 0; i < BOOLEAN_SETTINGS.length; i++) {
          booleanSettings.add(BOOLEAN_SETTINGS[i]);
-      }      
+      }
+      
 
       // count the current config settings
       int count = dao.countAll(EvalConfig.class);
@@ -187,8 +190,8 @@ public class EvalSettingsImpl implements EvalSettings {
          }
       }
       if (! found) {
-         List<EvalConfig> l = dao.findByProperties(EvalConfig.class, 
-               new String[] {"name"}, new Object[] {name});
+         List<EvalConfig> l = dao.findBySearch(EvalConfig.class, 
+               new Search("name", name) );
          if (l.size() > 0) {
             config = (EvalConfig) l.get(0);
          } else {

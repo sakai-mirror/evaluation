@@ -73,6 +73,27 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
    }
 
 
+   public void fixupDatabase() {
+      // fix up some of the null fields
+      int count = 0;
+      count = countByProperties(EvalEvaluation.class, new String[] {"studentViewResults"}, new Object[] {""}, new int[] {EvaluationDao.NULL});
+      if (count > 0) {
+         int counter = 0;
+         counter += getHibernateTemplate().bulkUpdate("update EvalEvaluation eval set eval.studentViewResults = false where eval.studentsDate is null");
+         counter += getHibernateTemplate().bulkUpdate("update EvalEvaluation eval set eval.studentViewResults = true where eval.studentsDate is not null");
+         log.info("Updated " + counter + " EvalEvaluation.studentViewResults fields from null to boolean values based on studentsDate values");
+      }
+      count = countByProperties(EvalEvaluation.class, new String[] {"instructorViewResults"}, new Object[] {""}, new int[] {EvaluationDao.NULL});
+      if (count > 0) {
+         int counter = 0;
+         counter += getHibernateTemplate().bulkUpdate("update EvalEvaluation eval set eval.instructorViewResults = false where eval.instructorsDate is null");
+         counter += getHibernateTemplate().bulkUpdate("update EvalEvaluation eval set eval.instructorViewResults = true where eval.instructorsDate is not null");
+         log.info("Updated " + counter + " EvalEvaluation.instructorViewResults fields from null to boolean values based on instructorsDate values");
+      }
+      
+   }
+
+
    /**
     * Construct the HQL to do the sharing query based on sharing constants and userId
     * @return the HQL query string
@@ -257,7 +278,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
             props, values, comparisons, order, options);
       log.debug("getSharedEntitiesForUser: HQL=" + hql);
       Map<String, Object> params = new HashMap<String, Object>();
-      List<T> l = executeHqlQuery(hql, params, start, limit);
+      List<T> l = (List<T>) executeHqlQuery(hql, params, start, limit);
       return l;
    }
 
@@ -370,7 +391,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
          String hql = "select eval from EvalEvaluation as eval " 
             + " where 1=1 " + activeHQL + groupsHQL //+ responsesHQL 
             + " order by eval.dueDate, eval.title, eval.id";
-         evals = executeHqlQuery(hql, params, startResult, maxResults);
+         evals = (List<EvalEvaluation>) executeHqlQuery(hql, params, startResult, maxResults);
          Collections.sort(evals, new ComparatorsUtils.EvaluationDateTitleIdComparator());
       }
       return evals;
@@ -437,7 +458,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       String hql = "select eval from EvalEvaluation as eval " 
          + " where 1=1 " + stateHQL + recentHQL + ownerGroupHQL 
          + " order by eval.dueDate, eval.title, eval.id";
-      evals = executeHqlQuery(hql, params, startResult, maxResults);
+      evals = (List<EvalEvaluation>) executeHqlQuery(hql, params, startResult, maxResults);
       Collections.sort(evals, new ComparatorsUtils.EvaluationDateTitleIdComparator());
       return evals;
    }
@@ -477,7 +498,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
          + " order by ansswerresp.id, answer.id";
       // TODO optimize this once we are using a newer version of hibernate that supports "with"
 
-      List<EvalAnswer> results = executeHqlQuery(hql, params, 0, 0);
+      List<EvalAnswer> results = (List<EvalAnswer>) executeHqlQuery(hql, params, 0, 0);
       return results;
    }
 
@@ -909,7 +930,7 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
          // select b.baz from Foo f join f.bars b"
          // select g.* from EVAL_ADHOC_GROUP g join EVAL_ADHOC_PARTICIPANTS p on p.ID = g.ID and p.USER_ID = 'aaronz' order by g.ID
          String hql = "from EvalAdhocGroup ag join ag." + permCheck + " userIds  where userIds.id = :userId order by ag.id";
-         results = executeHqlQuery(hql, params, 0, 0);
+         results = (List<EvalAdhocGroup>) executeHqlQuery(hql, params, 0, 0);
       } else {
          results = new ArrayList<EvalAdhocGroup>();
       }
@@ -1197,11 +1218,9 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       return l.toArray(new Long[] {});
    }
 
-
-   /*
-    * (non-Javadoc)
-    * 
-    * @see org.sakaiproject.evaluation.dao.EvaluationDaoImpl#isUsedScale(java.lang.Long)
+   /**
+    * @param scaleId
+    * @return true if this scale is used in any items
     */
    public boolean isUsedScale(Long scaleId) {
       log.debug("scaleId: " + scaleId);
@@ -1213,10 +1232,9 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       return false;
    }
 
-   /*
-    * (non-Javadoc)
-    * 
-    * @see org.sakaiproject.evaluation.dao.EvaluationDaoImpl#isUsedItem(java.lang.Long)
+   /**
+    * @param itemId
+    * @return true if this item is used in any template (via a template item)
     */
    public boolean isUsedItem(Long itemId) {
       log.debug("itemId: " + itemId);
@@ -1228,10 +1246,9 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       return false;
    }
 
-   /*
-    * (non-Javadoc)
-    * 
-    * @see org.sakaiproject.evaluation.dao.EvaluationDaoImpl#isUsedTemplate(java.lang.Long)
+   /**
+    * @param templateId
+    * @return true if this template is used in any evalautions
     */
    public boolean isUsedTemplate(Long templateId) {
       log.debug("templateId: " + templateId);
@@ -1242,60 +1259,6 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       }
       return false;
    }
-
-   /**
-    * Provides an easy way to execute an hql query with named parameters
-    * 
-    * @param hql
-    *           a hibernate query language query
-    * @param params
-    *           the map of named parameters
-    * @param start
-    *           the entry number to start on (based on current sort rules), first entry is 0
-    * @param limit
-    *           the maximum number of entries to return, 0 returns as many entries as possible
-    * @return a list of whatever you requested in the HQL
-    */
-   @SuppressWarnings("unchecked")
-   private List executeHqlQuery(String hql, Map<String, Object> params, int start, int limit) {
-      List l = null;
-      try {
-         Query query = getSession().createQuery(hql);
-         query.setFirstResult(start);
-         if (limit > 0) {
-            query.setMaxResults(limit);
-         }
-         setParameters(query, params);
-         l = query.list();
-      } catch (org.hibernate.exception.SQLGrammarException e) {
-         // failed to execute the query
-         StringBuilder info = new StringBuilder();
-         info.append("Failure info: errorCode=" + e.getErrorCode());
-         info.append(", SQLstate=" + e.getSQLState());
-         info.append(", SQL=" + e.getSQL());
-         throw new RuntimeException("Unable to execute query: " + e.getMessage() + " :: HQL=" + hql + " :: " + info, e);
-      }
-      return l;
-   }
-
-
-   /**
-    * This is supported natively in Hibernate 3.2.x and up
-    * 
-    * @param query
-    * @param params
-    */
-   private void setParameters(Query query, Map<String, Object> params) {
-      for (String name : params.keySet()) {
-         Object param = params.get(name);
-         if (param.getClass().isArray()) {
-            query.setParameterList(name, (Object[]) param);
-         } else {
-            query.setParameter(name, param);
-         }
-      }
-   }
-
 
 
    /**
@@ -1420,80 +1383,6 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
       return releasedLock;
    }
 
-   /**
-    * Allows for an easy way to run some code ONLY if a lock can be obtained by
-    * the executer, if the lock can be obtained then the Runnable is executed,
-    * if not, then nothing happens<br/>
-    * This is primarily useful for ensuring only a single server in the cluster
-    * is executing some code<br/>
-    * <b>NOTE:</b> This intentionally returns a null on failure rather than an exception since exceptions will
-    * cause a rollback which makes the current session effectively dead, this also makes it impossible to 
-    * control the failure so instead we return null as a marker
-    * @param lockId the name of the lock which we are seeking
-    * @param executerId a unique id for the executer of this code (normally a server id)
-    * @param toExecute a {@link Runnable} which will have the run method executed if a lock can be obtained
-    * 
-    * @return true if the code was executed, false if someone else has the lock, null if there was a failure
-    */
-   @SuppressWarnings("unchecked")
-   public Boolean lockAndExecuteRunnable(String lockId, String executerId, Runnable toExecute) {
-      if (executerId == null || 
-            "".equals(executerId)) {
-         throw new IllegalArgumentException("The executer Id must be set");
-      }
-      if (lockId == null || 
-            "".equals(lockId)) {
-         throw new IllegalArgumentException("The lock Id must be set");
-      }
-      if (toExecute == null) {
-         throw new IllegalArgumentException("The toExecute Runnable must not be null");
-      }
-
-      // basically we are opening a transaction to get the current lock and set it if it is not there
-      Boolean loadingData = false;
-      try {
-         // check the lock
-         List<EvalLock> locks = findByProperties(EvalLock.class, 
-               new String[] {"name"},
-               new Object[] {lockId});
-         if (locks.size() > 0) {
-            // check if this is my lock, if not, then exit, if so then go ahead
-            EvalLock lock = locks.get(0);
-            if (lock.getHolder().equals(executerId)) {
-               loadingData = true;
-            } else {
-               loadingData = false;
-            }
-         } else {
-            // obtain the lock
-            EvalLock lock = new EvalLock(lockId, executerId);
-            getHibernateTemplate().save(lock);
-            getHibernateTemplate().flush(); // this should commit the data immediately
-            loadingData = true;
-         }
-         locks.clear(); // clear the locks list
-
-         if (loadingData) {
-            // execute the runnable method
-            toExecute.run();
-
-            // clear the lock
-            locks = findByProperties(EvalLock.class, 
-                  new String[] {"name"},
-                  new Object[] {lockId});
-            getHibernateTemplate().deleteAll(locks);
-            // commit preload and lock removal
-            getHibernateTemplate().flush();
-         }
-      } catch (RuntimeException e) {
-         loadingData = null; // null indicates the failure
-         cleanupLockAfterFailure(lockId);
-         log.fatal("Lock and execute failure for lock ("+lockId+"): " + e.getMessage(), e);
-      }
-
-      return loadingData;
-   }
-
 
    /**
     * Cleans up lock if there was a failure
@@ -1514,5 +1403,6 @@ public class EvaluationDaoImpl extends HibernateCompleteGenericDao implements Ev
          log.error("Could not cleanup the lock ("+lockId+") after failure: " + ex.getMessage(), ex);
       }
    }
+
 
 }

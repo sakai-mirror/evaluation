@@ -23,10 +23,10 @@ import java.util.Locale;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.entity.EvalCategoryEntityProvider;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.model.EvalTemplate;
@@ -72,11 +72,10 @@ import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
 
 /**
  * This producer is used to render the evaluation settings page,
- * it is used to control all the settings related to a single evaluation
+ * it is used to control all the settings related to a single evaluation,
+ * complete rewrite from the original version
  * 
  * @author Aaron Zeckoski (aaronz@vt.edu)
- * @author Kapil Ahuja (kahuja@vt.edu)
- * @author Rui Feng (fengr@vt.edu)
  */
 public class EvaluationSettingsProducer implements ViewComponentProducer, ViewParamsReporter, ActionResultInterceptor {
 
@@ -90,9 +89,9 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
       this.settings = settings;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -140,8 +139,8 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
       String currentEvalState = evaluationService.returnAndFixEvalState(evaluation, true);
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
@@ -264,7 +263,7 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
                      UIBranchContainer.make(chooseTemplate, "templateOptions:", i + "");
                   UISelectChoice.make(radiobranch, "radioValue", selectID, i);
                   UISelectLabel.make(radiobranch, "radioLabel", selectID, i);
-                  EvalUser owner = externalLogic.getEvalUserById( template.getOwner() );
+                  EvalUser owner = commonLogic.getEvalUserById( template.getOwner() );
                   UIOutput.make(radiobranch, "radioOwner", owner.displayName );
                   UIInternalLink.make(radiobranch, "viewPreview_link", 
                         UIMessage.make("starteval.view.preview.link"), 
@@ -352,7 +351,7 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
       boolean sameViewDateForAll = (Boolean) settings.get(EvalSettings.EVAL_USE_SAME_VIEW_DATES);
 
       // Student view date
-      Boolean studentViewResults = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
+      Boolean studentViewResults = (Boolean) settings.get(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS);
       UIBranchContainer showResultsToStudents = UIBranchContainer.make(form, "showResultsToStudents:");
       generateSettingsControlledCheckbox(showResultsToStudents, "studentViewResults", 
             evaluationOTP + "studentViewResults", studentViewResults, form, 
@@ -406,7 +405,8 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
          // If "EvalSettings.INSTRUCTOR_MUST_USE_EVALS_FROM_ABOVE" is set as configurable 
          // i.e. NULL in the database then show the instructor opt select box. Else just show the value as label
          String instUseFromAboveValue = (String) settings.get(EvalSettings.INSTRUCTOR_MUST_USE_EVALS_FROM_ABOVE);
-         if (instUseFromAboveValue == null) {
+         if (instUseFromAboveValue == null || 
+               EvalToolConstants.ADMIN_BOOLEAN_CONFIGURABLE.equals(instUseFromAboveValue)) {
             UISelect instOpt = UISelect.make(form, "instructorOpt", EvalToolConstants.INSTRUCTOR_OPT_VALUES, 
                   EvalToolConstants.INSTRUCTOR_OPT_LABELS, evaluationOTP + "instructorOpt").setMessageKeys();
             if ( EvalUtils.checkStateAfter(currentEvalState, EvalConstants.EVALUATION_STATE_INQUEUE, true) ) {
@@ -457,7 +457,7 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
             UIInput.make(categoryBranch, "eval-category", evaluationOTP + "evalCategory");
             if (evaluation.getEvalCategory() != null) {
                UILink.make(categoryBranch, "eval-category-direct-link", UIMessage.make("general.direct.link"), 
-                     externalLogic.getEntityURL(EvalCategoryEntityProvider.ENTITY_PREFIX, evaluation.getEvalCategory()) )
+                     commonLogic.getEntityURL(EvalCategoryEntityProvider.ENTITY_PREFIX, evaluation.getEvalCategory()) )
                      .decorate( new UITooltipDecorator( UIMessage.make("general.direct.link.title") ) );
             }
          }

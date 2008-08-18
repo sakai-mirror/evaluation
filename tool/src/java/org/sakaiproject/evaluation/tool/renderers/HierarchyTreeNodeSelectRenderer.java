@@ -3,7 +3,7 @@ package org.sakaiproject.evaluation.tool.renderers;
 import java.util.List;
 import java.util.Set;
 
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic;
 import org.sakaiproject.evaluation.logic.model.EvalGroup;
 import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
@@ -33,9 +33,9 @@ public class HierarchyTreeNodeSelectRenderer {
        this.hierarchyLogic = logic;
     }
     
-    private EvalExternalLogic externalLogic;
-    public void setExternalLogic(EvalExternalLogic externalLogic) {
-       this.externalLogic = externalLogic;
+    private EvalCommonLogic commonLogic;
+    public void setCommonLogic(EvalCommonLogic commonLogic) {
+       this.commonLogic = commonLogic;
     }
     
     String groupsSelectID; 
@@ -103,7 +103,7 @@ public class HierarchyTreeNodeSelectRenderer {
        
        Set<String> groupIDs = hierarchyLogic.getEvalGroupsForNode(node.id);
        for (String groupID: groupIDs) {
-           EvalGroup evalGroupObj = externalLogic.makeEvalGroupObject(groupID);
+           EvalGroup evalGroupObj = commonLogic.makeEvalGroupObject(groupID);
            renderRow(tofill, "hierarchy-level-row:", level+1, evalGroupObj);
        }
        

@@ -37,6 +37,7 @@ import org.sakaiproject.evaluation.logic.externals.EvalJobLogic;
 import org.sakaiproject.evaluation.logic.externals.EvalSecurityChecksImpl;
 import org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic;
 import org.sakaiproject.evaluation.logic.model.EvalGroup;
+import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalAssignHierarchy;
 import org.sakaiproject.evaluation.model.EvalEmailTemplate;
@@ -66,9 +67,9 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       this.dao = dao;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic external) {
-      this.externalLogic = external;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic common) {
+      this.commonLogic = common;
    }
 
    private EvalSettings settings;
@@ -132,7 +133,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          @SuppressWarnings("unchecked")
          @Override
          public void run() {
-            String serverId = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_SERVER_ID, "UNKNOWN_SERVER_ID");
+            String serverId = commonLogic.getConfigurationSetting(EvalExternalLogic.SETTING_SERVER_ID, "UNKNOWN_SERVER_ID");
             Boolean lockObtained = dao.obtainLock(EVAL_UPDATE_TIMER, serverId, repeatInterval);
             // only execute the code if we have an exclusive lock
             if (lockObtained != null && lockObtained) {
@@ -153,7 +154,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                         // purge out partial evaluations older than the partial purge time
                         if (evaluation.getLastModified().getTime() < partialPurgeTime) {
                            log.info("Purging partial evaluation ("+evaluation.getId()+") from " + evaluation.getLastModified());
-                           deleteEvaluation(evaluation.getId(), EvalExternalLogic.ADMIN_USER_ID);
+                           deleteEvaluation(evaluation.getId(), EvalCommonLogic.ADMIN_USER_ID);
                         }
                      } else {
                         String currentEvalState = evaluation.getState();
@@ -193,6 +194,11 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
       // set the date modified
       evaluation.setLastModified( new Date() );
+
+      if (created && EvalUtils.checkStateAfter(evaluation.getState(), EvalConstants.EVALUATION_STATE_PARTIAL, false)) {
+         // created can only be true when this eval is in partial state
+         created = false;
+      }
 
       // check for required fields first
       if (EvalUtils.isBlank(evaluation.getTitle())) {
@@ -316,33 +322,12 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
             Long copiedTemplateId = authoringService.copyTemplate(template.getId(), null, evaluation.getOwner(), true, true);
             EvalTemplate copy = authoringService.getTemplateById(copiedTemplateId);
             evaluation.setTemplate(copy);
+            template = copy; // set the new template to the template variable
             // alternative is to throw an exception to force the user to do this, but we may as well handle it
 //            throw new IllegalStateException("This evaluation ("+evaluation.getId()+") is being saved "
 //            		+ "in a state ("+evalState+") that is after the partial state with "
 //                  + "a template that has not been copied yet, this is invalid as all evaluations must use copied "
 //                  + "templates, copy the template using the authoringService.copyTemplate method before saving this eval");
-         }
-      }
-      
-      // force the student/instructor dates based on the boolean settings
-      if (evaluation.studentViewResults != null && ! evaluation.studentViewResults) {
-         evaluation.setStudentsDate(null);
-      } else {
-         // fix up the dates
-         if (evaluation.getStudentsDate() == null) {
-            evaluation.setStudentsDate( evaluation.getViewDate() == null ? evaluation.getDueDate() : evaluation.getViewDate() );
-         } else if (evaluation.getViewDate() == null && evaluation.getStudentsDate() == null) {
-            evaluation.setStudentsDate( evaluation.getDueDate() );
-         }
-      }
-      if (evaluation.instructorViewResults != null && ! evaluation.instructorViewResults) {
-         evaluation.setInstructorsDate(null);
-      } else {
-         // fix up the dates
-         if (evaluation.getInstructorsDate() == null) {
-            evaluation.setInstructorsDate( evaluation.getViewDate() == null ? evaluation.getDueDate() : evaluation.getViewDate() );
-         } else if (evaluation.getViewDate() == null && evaluation.getInstructorsDate() == null) {
-            evaluation.setInstructorsDate( evaluation.getDueDate() );
          }
       }
 
@@ -396,10 +381,10 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       evaluation.setInstructorOpt(EvalConstants.INSTRUCTOR_REQUIRED);
 
       // cleanup for XSS scripting and strings
-      evaluation.setTitle( externalLogic.cleanupUserStrings(evaluation.getTitle()) );
-      evaluation.setInstructions( externalLogic.cleanupUserStrings(evaluation.getInstructions()) );
-      evaluation.setReminderFromEmail( externalLogic.cleanupUserStrings(evaluation.getReminderFromEmail()) );
-      evaluation.setEvalCategory( externalLogic.cleanupUserStrings(evaluation.getEvalCategory()) );
+      evaluation.setTitle( commonLogic.cleanupUserStrings(evaluation.getTitle()) );
+      evaluation.setInstructions( commonLogic.cleanupUserStrings(evaluation.getInstructions()) );
+      evaluation.setReminderFromEmail( commonLogic.cleanupUserStrings(evaluation.getReminderFromEmail()) );
+      evaluation.setEvalCategory( commonLogic.cleanupUserStrings(evaluation.getEvalCategory()) );
 
       // save the eval
       dao.save(evaluation);
@@ -408,13 +393,23 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       // initialize the scheduling for the eval jobs (only if state is not partial)
       if ( EvalUtils.checkStateAfter(evalState, EvalConstants.EVALUATION_STATE_PARTIAL, false) ) {
          if (created) {
-            externalLogic.registerEntityEvent(EVENT_EVAL_CREATE, evaluation);
+            commonLogic.registerEntityEvent(EVENT_EVAL_CREATE, evaluation);
             // call logic to manage Quartz scheduled jobs
             evalJobLogic.processEvaluationStateChange(evaluation.getId(), EvalJobLogic.ACTION_CREATE);
          } else {
-            externalLogic.registerEntityEvent(EVENT_EVAL_UPDATE, evaluation);
+            commonLogic.registerEntityEvent(EVENT_EVAL_UPDATE, evaluation);
             // call logic to manage Quartz scheduled jobs
             evalJobLogic.processEvaluationStateChange(evaluation.getId(), EvalJobLogic.ACTION_UPDATE);
+         }
+      }
+
+      // support for autoUse insertion of items on eval creation
+      if (created) {
+         if (! EvalUtils.isBlank(evaluation.getAutoUseInsertion())
+               && ! EvalUtils.isBlank(evaluation.getAutoUseTag()) ) {
+            // the tag and the AutoUseInsertion values are set so we should try to find any autoUse items and add them in
+            Long templateId = evaluation.getTemplate().getId();
+            authoringService.doAutoUseInsertion(evaluation.getAutoUseTag(), templateId, evaluation.getAutoUseInsertion(), true);
          }
       }
 
@@ -440,49 +435,22 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
       if ( securityChecks.canUserRemoveEval(userId, evaluation) ) {
 
-         Set[] entitySets = new HashSet[3];
          // remove associated AssignGroups
          List<EvalAssignGroup> acs = dao.findByProperties(EvalAssignGroup.class, 
                new String[] {"evaluation.id"}, 
                new Object[] {evaluationId});
          Set<EvalAssignGroup> assignGroupSet = new HashSet<EvalAssignGroup>(acs);
-         entitySets[0] = assignGroupSet;
+         dao.deleteSet(assignGroupSet);
 
          // remove associated assigned hierarchy nodes
          List<EvalAssignHierarchy> ahs = dao.findByProperties(EvalAssignHierarchy.class, 
                new String[] {"evaluation.id"}, 
                new Object[] {evaluationId});
          Set<EvalAssignHierarchy> assignHierSet = new HashSet<EvalAssignHierarchy>(ahs);
-         entitySets[1] = assignHierSet;
+         dao.deleteSet(assignHierSet);
 
-         // remove associated unused email templates
-         Set<EvalEmailTemplate> emailSet = new HashSet<EvalEmailTemplate>();
-         entitySets[2] = emailSet;
-         if (evaluation.getAvailableEmailTemplate() != null) {
-            if (evaluation.getAvailableEmailTemplate().getDefaultType() == null) {
-               // only remove non-default templates
-               Long emailTemplateId = evaluation.getAvailableEmailTemplate().getId();
-               int evalsUsingTemplate = dao.countByProperties(EvalEvaluation.class, 
-                     new String[] {"availableEmailTemplate.id"}, 
-                     new Object[] {emailTemplateId}) ;
-               if ( evalsUsingTemplate <= 1 ) {
-                  // template was only used in this evaluation
-                  emailSet.add( evaluation.getAvailableEmailTemplate() );
-               }
-            }
-         }
-         if (evaluation.getReminderEmailTemplate() != null) {
-            if (evaluation.getReminderEmailTemplate().getDefaultType() == null) {
-               Long emailTemplateId = evaluation.getReminderEmailTemplate().getId();
-               int evalsUsingTemplate = dao.countByProperties(EvalEvaluation.class, 
-                     new String[] {"reminderEmailTemplate.id"}, 
-                     new Object[] {emailTemplateId}) ;
-               if ( evalsUsingTemplate <= 1 ) {
-                  // template was only used in this evaluation
-                  emailSet.add( evaluation.getReminderEmailTemplate() );
-               }
-            }
-         }
+         EvalEmailTemplate available = evaluation.getAvailableEmailTemplate();
+         EvalEmailTemplate reminder = evaluation.getReminderEmailTemplate();
 
          // unlock the evaluation (this will clear the other locks)
          dao.lockEvaluation(evaluation, false);
@@ -493,44 +461,74 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          if (responseIds.size() > 0) {
             // cannot remove this evaluation, there are responses, we will just set the state to deleted
             evaluation.setState(EvalConstants.EVALUATION_STATE_DELETED);
+            // clear email templates
+            evaluation.setAvailableEmailTemplate(null);
+            evaluation.setReminderEmailTemplate(null);
+            // save the new state
             dao.save(evaluation);
+
             // old method was to actually remove data
             // dao.removeResponses( responseIds.toArray(new Long[responseIds.size()]) );
          } else {
             // remove the evaluation and copied template since there are no responses
             removeTemplate = true;
-
-            // add eval to a set to be removed
-            Set evalSet = new HashSet();
-            evalSet.add(evaluation);
-            entitySets = ArrayUtils.appendArray(entitySets, evalSet);
+            dao.delete(evaluation);
          }
 
          // fire the evaluation deleted event
-         externalLogic.registerEntityEvent(EVENT_EVAL_DELETE, evaluation);
-
-         // remove the evaluation and related data (except template) in one transaction
-         dao.deleteMixedSet(entitySets);
+         commonLogic.registerEntityEvent(EVENT_EVAL_DELETE, evaluation);
 
          // remove any remaining scheduled jobs
          evalJobLogic.processEvaluationStateChange(evaluationId, EvalJobLogic.ACTION_DELETE);
 
          // this has to be after the removal of the evaluation
+
+         // remove associated unused email templates
+         Set<EvalEmailTemplate> emailSet = new HashSet<EvalEmailTemplate>();
+         if (available != null) {
+            if (available.getDefaultType() == null) {
+               // only remove non-default templates
+               int evalsUsingTemplate = dao.countByProperties(EvalEvaluation.class, 
+                     new String[] {"availableEmailTemplate.id"}, 
+                     new Object[] {available.getId()}) ;
+               if ( evalsUsingTemplate <= 1 ) {
+                  // template was only used in this evaluation
+                  emailSet.add( available );
+               }
+            }
+         }
+         if (reminder != null) {
+            if (reminder.getDefaultType() == null) {
+               int evalsUsingTemplate = dao.countByProperties(EvalEvaluation.class, 
+                     new String[] {"reminderEmailTemplate.id"}, 
+                     new Object[] {reminder.getId()}) ;
+               if ( evalsUsingTemplate <= 1 ) {
+                  // template was only used in this evaluation
+                  emailSet.add( reminder );
+               }
+            }
+         }
+         dao.deleteSet(emailSet);
+
          if (removeTemplate) {
-            // remove the associated template if it is a copy (it should be)
-            EvalTemplate template = null;
-            if (evaluation.getTemplate() != null 
-                  || evaluation.getTemplate().getId() != null) {
-               // there is a template so get it and check to see if it needs to be removed
-               template = authoringService.getTemplateById(evaluation.getTemplate().getId());
-               if (template.getCopyOf() != null ||
-                     template.isHidden() == true) {
-                  // this is a copy so remove it and all children
-                  if (securityChecks.checkUserControlTemplate(userId, template)) {
-                     authoringService.deleteTemplate(template.getId(), userId);
-                  } else {
-                     log.warn("Could not remove the template ("+template.getId()+") associated with this "
-                           + "eval ("+evaluationId+") since this user has no permission, continuing to remove evaluation anyway");
+            // remove template if it is a copy
+            if (EvalUtils.checkStateAfter(evaluation.getState(), EvalConstants.EVALUATION_STATE_PARTIAL, false)) {
+               // this is not partial (partials do not have copies made yet)
+               // remove the associated template if it is a copy (it should be)
+               EvalTemplate template = null;
+               if (evaluation.getTemplate() != null 
+                     || evaluation.getTemplate().getId() != null) {
+                  // there is a template so get it and check to see if it needs to be removed
+                  template = authoringService.getTemplateById(evaluation.getTemplate().getId());
+                  if (template.getCopyOf() != null ||
+                        template.isHidden() == true) {
+                     // this is a copy so remove it and all children
+                     if (securityChecks.checkUserControlTemplate(userId, template)) {
+                        authoringService.deleteTemplate(template.getId(), userId);
+                     } else {
+                        log.warn("Could not remove the template ("+template.getId()+") associated with this "
+                              + "eval ("+evaluationId+") since this user has no permission, continuing to remove evaluation anyway");
+                     }
                   }
                }
             }
@@ -574,7 +572,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          saveEvaluation(evaluation, userId, false);
    
          // fire the evaluation closed event
-         externalLogic.registerEntityEvent(EVENT_EVAL_CLOSED, evaluation);
+         commonLogic.registerEntityEvent(EVENT_EVAL_CLOSED, evaluation);
       } else {
          log.warn(userId + " tried to close eval that is already closed ("+evaluationId+"): " + evaluation.getTitle());
       }
@@ -597,13 +595,13 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       }
 
       String[] evalGroupIds = null;
-      if (externalLogic.isUserAdmin(userId)) {
+      if (commonLogic.isUserAdmin(userId)) {
          // null out the userId so we get all evaluations
          userId = null;
       } else {
          if (showNotOwned) {
             // Get the list of EvalGroup where user has "eval.be.evaluated" permission.
-            List<EvalGroup> evaluatedGroups = externalLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_BE_EVALUATED);
+            List<EvalGroup> evaluatedGroups = commonLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_BE_EVALUATED);
             if (evaluatedGroups.size() > 0) {
                evalGroupIds = new String[evaluatedGroups.size()];
                for (int i = 0; i < evaluatedGroups.size(); i++) {
@@ -625,7 +623,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
     */
    @SuppressWarnings("unchecked")
    public List<EvalEvaluation> getEvaluationsForUser(String userId, Boolean activeOnly, Boolean untakenOnly, Boolean includeAnonymous) {
-      List<EvalGroup> takeGroups = externalLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
+      List<EvalGroup> takeGroups = commonLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
 
       String[] evalGroupIds = new String[takeGroups.size()];
       for (int i=0; i<takeGroups.size(); i++) {
@@ -703,7 +701,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                new String[] {"startDate"});
       } else {
          // get all evals for a specific user for a category
-         List takeGroups = externalLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
+         List takeGroups = commonLogic.getEvalGroupsForUser(userId, EvalConstants.PERM_TAKE_EVALUATION);
 
          String[] evalGroupIds = new String[takeGroups.size()];
          for (int i=0; i<takeGroups.size(); i++) {
@@ -836,7 +834,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       }
 
       // check if this evaluation can be modified
-      String userId = externalLogic.getCurrentUserId();
+      String userId = commonLogic.getCurrentUserId();
       if (securityChecks.checkCreateAssignGroup(userId, eval)) {
 
          // first we have to get all the assigned hierarchy nodes for this eval
@@ -872,7 +870,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
          // then remove the duplicates so we end up with the filtered list to only new ones
          nodeIdsSet.removeAll(currentNodeIds);
-         nodeIds = nodeIdsSet.toArray(nodeIds);
+         nodeIds = nodeIdsSet.toArray(new String[] {});
 
          // now we need to create all the persistent hierarchy assignment objects
          Set<EvalAssignHierarchy> nodeAssignments = new HashSet<EvalAssignHierarchy>();
@@ -921,10 +919,11 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          }
 
          // next we need to expand all the assigned hierarchy nodes into a massive set of eval assign groups
-         Set<String> allNodeIds = new HashSet<String>();
-         allNodeIds.addAll(nodeIdsSet);
+         Set<EvalHierarchyNode> nodes = hierarchyLogic.getNodesByIds(nodeIdsSet.toArray(new String[] {}));
+         // expand the actual new set of nodes into a complete list of nodes including children
+         Set<String> allNodeIds = hierarchyLogic.getAllChildrenNodes(nodes, true);
          allNodeIds.addAll(currentNodeIds);
-         Map<String, Set<String>> allEvalGroupIds = hierarchyLogic.getEvalGroupsForNodes( allNodeIds.toArray(nodeIds) );
+         Map<String, Set<String>> allEvalGroupIds = hierarchyLogic.getEvalGroupsForNodes( allNodeIds.toArray(new String[] {}) );
 
          // now eliminate the evalgroupids from the evalGroupIds array which happen to be contained in the nodes,
          // this leaves us with only the group ids which are not contained in the nodes which are already assigned
@@ -934,14 +933,14 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
          // then remove the eval groups ids which are already assigned to this eval so we only have new ones
          evalGroupIdsSet.removeAll(currentEvalGroupIds);
-         evalGroupIds = evalGroupIdsSet.toArray(evalGroupIds);
+         evalGroupIds = evalGroupIdsSet.toArray(new String[] {});
 
          // now we need to create all the persistent group assignment objects for the new groups
          Set<EvalAssignGroup> groupAssignments = new HashSet<EvalAssignGroup>();
          groupAssignments.addAll( makeAssignGroups(eval, userId, evalGroupIdsSet, null) );
 
-         // finally we add in the groups for all the new expanded assign groups
-         for (String nodeId : nodeIdsSet) {
+         // finally we add in the groups for all the new expanded assign groups for the expanded nodes set
+         for (String nodeId : allNodeIds) {
             if (allEvalGroupIds.containsKey(nodeId)) {
                groupAssignments.addAll( makeAssignGroups(eval, userId, allEvalGroupIds.get(nodeId), nodeId) );               
             }
@@ -966,7 +965,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
    @SuppressWarnings("unchecked")
    public void deleteAssignHierarchyNodesById(Long[] assignHierarchyIds) {
-      String userId = externalLogic.getCurrentUserId();
+      String userId = commonLogic.getCurrentUserId();
       // get the list of hierarchy assignments
       List<EvalAssignHierarchy> l = dao.findByProperties(EvalAssignHierarchy.class,
             new String[] { "id" }, new Object[] { assignHierarchyIds });
@@ -1029,7 +1028,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
          emailTemplate.setDefaultType(null);
 
       } else {
-         boolean userAdmin = externalLogic.isUserAdmin(userId);
+         boolean userAdmin = commonLogic.isUserAdmin(userId);
          // existing template
 
          if (! userAdmin) {
@@ -1063,8 +1062,8 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       }
 
       // cleanup for XSS scripting and strings
-      emailTemplate.setMessage( externalLogic.cleanupUserStrings(emailTemplate.getMessage()) );
-      emailTemplate.setSubject( externalLogic.cleanupUserStrings(emailTemplate.getSubject()) );
+      emailTemplate.setMessage( commonLogic.cleanupUserStrings(emailTemplate.getMessage()) );
+      emailTemplate.setSubject( commonLogic.cleanupUserStrings(emailTemplate.getSubject()) );
 
       // save the template if allowed
       dao.save(emailTemplate);
@@ -1196,7 +1195,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       if (eah.getInstructorsViewResults() == null) {
          Boolean instViewResults = (Boolean) settings.get(EvalSettings.INSTRUCTOR_ALLOWED_VIEW_RESULTS);
          if (instViewResults == null) {
-            if (eval.getInstructorsDate() != null) {
+            if (eval.getInstructorViewResults()) {
                eah.setInstructorsViewResults( Boolean.TRUE );
             } else {
                eah.setInstructorsViewResults( Boolean.FALSE );
@@ -1207,9 +1206,9 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
       }
       // setStudentsViewResults
       if (eah.getStudentsViewResults() == null) {
-         Boolean studViewResults = (Boolean) settings.get(EvalSettings.STUDENT_VIEW_RESULTS);
+         Boolean studViewResults = (Boolean) settings.get(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS);
          if (studViewResults == null) {
-            if (eval.getStudentsDate() != null) {
+            if (eval.getStudentViewResults()) {
                eah.setStudentsViewResults( Boolean.TRUE );
             } else {
                eah.setStudentsViewResults( Boolean.FALSE );

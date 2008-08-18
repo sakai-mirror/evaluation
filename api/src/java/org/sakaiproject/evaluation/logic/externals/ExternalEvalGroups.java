@@ -18,12 +18,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.model.EvalGroup;
 
 /**
  * This interface provides methods to get EvalGroups (user collections) information
  * into the evaluation system and permissions related to those EvalGroups,
- * @see EvalExternalLogic
+ * @see EvalCommonLogic
  * 
  * @author Aaron Zeckoski (aaronz@vt.edu)
  */
@@ -47,14 +48,6 @@ public interface ExternalEvalGroups {
 	 * @return an {@link EvalGroup} object (special return if not found)
 	 */
 	public EvalGroup makeEvalGroupObject(String evalGroupId);
-
-	/**
-	 * Get the title associated with an evalGroup
-	 * 
-	 * @param evalGroupId the internal unique ID for an evalGroup
-	 * @return the displayable title or default text "--------" if it cannot be found
-	 */
-	public String getDisplayTitle(String evalGroupId);
 
 
 	// ENROLLMENTS

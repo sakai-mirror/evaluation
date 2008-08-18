@@ -24,11 +24,11 @@ import java.util.Set;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationSetupService;
 import org.sakaiproject.evaluation.logic.exceptions.BlankRequiredFieldException;
 import org.sakaiproject.evaluation.logic.exceptions.InvalidDatesException;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic;
 import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.model.EvalAssignHierarchy;
@@ -93,9 +93,9 @@ public class SetupEvalBean {
       this.evaluationService = evaluationService;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private ExternalHierarchyLogic hierarchyLogic;
@@ -133,8 +133,11 @@ public class SetupEvalBean {
       this.locale=locale;
    }
 
-
    DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
+
+   /**
+    * sets he locale on the date formatter correctly
+    */
    public void init() {
       df = DateFormat.getDateInstance(DateFormat.LONG, locale);
    }
@@ -150,7 +153,7 @@ public class SetupEvalBean {
          throw new IllegalArgumentException("evaluationId cannot be null");
       }
       EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
-      evaluationSetupService.deleteEvaluation(evaluationId, externalLogic.getCurrentUserId());
+      evaluationSetupService.deleteEvaluation(evaluationId, commonLogic.getCurrentUserId());
       messages.addMessage( new TargettedMessage("controlevaluations.delete.user.message",
             new Object[] { eval.getTitle() }, TargettedMessage.SEVERITY_INFO));
       return "success";
@@ -163,7 +166,7 @@ public class SetupEvalBean {
       if (evaluationId == null) {
          throw new IllegalArgumentException("evaluationId cannot be null");
       }
-      EvalEvaluation eval = evaluationSetupService.closeEvaluation(evaluationId, externalLogic.getCurrentUserId());
+      EvalEvaluation eval = evaluationSetupService.closeEvaluation(evaluationId, commonLogic.getCurrentUserId());
       messages.addMessage( new TargettedMessage("controlevaluations.closed.user.message",
             new Object[] { eval.getTitle() }, TargettedMessage.SEVERITY_INFO));
       return "success";
@@ -178,7 +181,7 @@ public class SetupEvalBean {
       }
       EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
       // TODO reopen action
-      //evaluationSetupService.deleteEvaluation(evaluationId, externalLogic.getCurrentUserId());
+      //evaluationSetupService.deleteEvaluation(evaluationId, commonLogic.getCurrentUserId());
       messages.addMessage( new TargettedMessage("controlevaluations.reopen.user.message",
             new Object[] { eval.getTitle() }, TargettedMessage.SEVERITY_INFO));
       return "success";
@@ -205,7 +208,7 @@ public class SetupEvalBean {
       }
 
       // assign to the evaluation
-      evaluationSetupService.assignEmailTemplate(emailTemplate.getId(), evaluationId, null, externalLogic.getCurrentUserId());
+      evaluationSetupService.assignEmailTemplate(emailTemplate.getId(), evaluationId, null, commonLogic.getCurrentUserId());
 
       // user message
       EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
@@ -225,7 +228,7 @@ public class SetupEvalBean {
       }
 
       // reset to default email template
-      evaluationSetupService.assignEmailTemplate(null, evaluationId, emailTemplateType, externalLogic.getCurrentUserId());
+      evaluationSetupService.assignEmailTemplate(null, evaluationId, emailTemplateType, commonLogic.getCurrentUserId());
 
       return "successReset";
    }
@@ -296,7 +299,7 @@ public class SetupEvalBean {
       } else {
          if (reOpening) {
             // we are reopening the evaluation
-            externalLogic.registerEntityEvent(EVENT_EVAL_REOPENED, eval);
+            commonLogic.registerEntityEvent(EVENT_EVAL_REOPENED, eval);
             messages.addMessage( new TargettedMessage("controlevaluations.reopen.user.message",
                   new Object[] { eval.getTitle() }, TargettedMessage.SEVERITY_INFO));
          } else {
@@ -341,26 +344,22 @@ public class SetupEvalBean {
          return "fail";
       }
 
-      // expand the hierarchy to include all nodes below this one
-      Set<String> allNodeIds = hierarchyLogic.getAllChildrenNodes(nodes, true);
-
       EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
       if (EvalConstants.EVALUATION_STATE_PARTIAL.equals(eval.getState())) {
          // save eval and assign groups
 
          // save the new evaluation state (moving from partial), set to true should fix up the state automatically
-         evaluationSetupService.saveEvaluation(eval, externalLogic.getCurrentUserId(), true);
+         evaluationSetupService.saveEvaluation(eval, commonLogic.getCurrentUserId(), true);
 
          // NOTE - this allows the evaluation to be saved with zero assign groups if this fails
 
          // save all the assignments (hierarchy and group)
          List<EvalAssignHierarchy> assignedHierList = 
-            evaluationSetupService.setEvalAssignments(evaluationId, 
-                  allNodeIds.toArray(new String[allNodeIds.size()]), selectedGroupIDs, false);
+            evaluationSetupService.setEvalAssignments(evaluationId, selectedHierarchyNodeIDs, selectedGroupIDs, false);
 
          // failsafe check (to make sure we are not creating an eval with no assigned groups)
          if (assignedHierList.isEmpty()) {
-            evaluationSetupService.deleteEvaluation(evaluationId, externalLogic.getCurrentUserId());
+            evaluationSetupService.deleteEvaluation(evaluationId, commonLogic.getCurrentUserId());
             throw new IllegalStateException("Invalid evaluation created with no assignments! Destroying evaluation: " + evaluationId);
          }
 
@@ -376,8 +375,7 @@ public class SetupEvalBean {
          }
 
          // save all the assignments (hierarchy and group)
-         evaluationSetupService.setEvalAssignments(evaluationId, 
-               allNodeIds.toArray(new String[allNodeIds.size()]), selectedGroupIDs, false);
+         evaluationSetupService.setEvalAssignments(evaluationId, selectedHierarchyNodeIDs, selectedGroupIDs, false);
       }
       return "controlEvals";
    }

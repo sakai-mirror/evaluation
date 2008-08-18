@@ -18,9 +18,9 @@ import java.util.List;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
+import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.model.EvalScale;
@@ -80,9 +80,9 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
       this.settings = settings;
    }
 
-   private EvalExternalLogic externalLogic;
-   public void setExternalLogic(EvalExternalLogic externalLogic) {
-      this.externalLogic = externalLogic;
+   private EvalCommonLogic commonLogic;
+   public void setCommonLogic(EvalCommonLogic commonLogic) {
+      this.commonLogic = commonLogic;
    }
 
    private EvalEvaluationService evaluationService;
@@ -118,8 +118,8 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
    public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
       // local variables used in the render logic
-      String currentUserId = externalLogic.getCurrentUserId();
-      boolean userAdmin = externalLogic.isUserAdmin(currentUserId);
+      String currentUserId = commonLogic.getCurrentUserId();
+      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
       boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
       boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
@@ -200,7 +200,7 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
          }
          itemOTP = "itemWBL." + ItemBeanWBL.NEW_1 + ".";
          commonDisplayOTP = itemOTP;
-         EvalUser owner = externalLogic.getEvalUserById( currentUserId );
+         EvalUser owner = commonLogic.getEvalUserById( currentUserId );
          itemOwnerName = owner.displayName;
          // check if we are operating in a template
          if (templateId != null) {
@@ -233,7 +233,7 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
             scaleId = currentScale.getId();
          }
 
-         EvalUser owner = externalLogic.getEvalUserById( item.getOwner() );
+         EvalUser owner = commonLogic.getEvalUserById( item.getOwner() );
          itemOwnerName = owner.displayName;
          itemClassification = item.getClassification();
          itemOTP = "itemWBL." + itemId + ".";
@@ -255,7 +255,7 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
             scaleId = currentScale.getId();
          }
 
-         EvalUser owner = externalLogic.getEvalUserById( templateItem.getItem().getOwner() );
+         EvalUser owner = commonLogic.getEvalUserById( templateItem.getItem().getOwner() );
          itemOwnerName = owner.displayName;
          itemClassification = templateItem.getItem().getClassification();
          templateItemOTP = "templateItemWBL." + templateItemId + ".";
@@ -266,25 +266,18 @@ public class ModifyItemProducer implements ViewComponentProducer, ViewParamsRepo
       // now we begin with the rendering logic
 
       // display the breadcrumb bar
-      if (templateId == null) {
-         // creating item only
-         UIInternalLink.make(tofill, "summary-link", 
-               UIMessage.make("summary.page.title"), 
-               new SimpleViewParameters(SummaryProducer.VIEW_ID));
-         UIInternalLink.make(tofill, "control-items-link",
-               UIMessage.make("controlitems.page.title"), 
-               new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
-      } else {
-         // creating template item
-         UIInternalLink.make(tofill, "summary-link", 
-               UIMessage.make("summary.page.title"), 
-               new SimpleViewParameters(SummaryProducer.VIEW_ID));
-         UIInternalLink.make(tofill, "control-items-link",
-               UIMessage.make("controltemplates.page.title"), 
-               new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
-         UIInternalLink.make(tofill, "modify-template-items",
+      if (templateId != null) {
+          // creating template item
+          UIInternalLink.make(tofill, "control-items-breadcrumb",
+                  UIMessage.make("controltemplates.page.title"), 
+                  new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
+          UIInternalLink.make(tofill, "modify-template-items",
                UIMessage.make("modifytemplate.page.title"), 
                new TemplateViewParameters(ModifyTemplateItemsProducer.VIEW_ID, templateId));
+      } else {
+          UIInternalLink.make(tofill, "control-items-breadcrumb",
+                  UIMessage.make("controlitems.page.title"), 
+                  new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
       }
       UIMessage.make(tofill, "item-header", "modifyitem.item.header");
 
