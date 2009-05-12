@@ -14,53 +14,92 @@
 
 package org.sakaiproject.evaluation.tool;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
+import org.sakaiproject.content.api.ContentHostingService;
+import org.sakaiproject.content.api.FilePickerHelper;
+import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.evaluation.logic.imports.EvalImportLogic;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.exception.TypeException;
+import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.tool.api.ToolSession;
 
 /**
  * This is the backing bean of the XML data import process.
  * 
  * @author Dick Ellis (rwellis@umich.edu)
+ * FIXME - DO NOT use sakai services directly
  */
 public class ImportBean {
-	
-	private static Log log = LogFactory.getLog(ImportBean.class);
-	
-	private EvalImportLogic evalImportLogic;
-	public void setEvalImportLogic(EvalImportLogic evalImportLogic) {
-		this.evalImportLogic = evalImportLogic;
-	}
-	
-	private EvalExternalLogic externalLogic;
-	public void setExternalLogic(EvalExternalLogic externalLogic) {
-		this.externalLogic = externalLogic;
-	}
-	
-	/**
-	 * Parse and load selected XML content resource
-	 * 
-	 * @return String that is used to determine the place where control is to be sent
-	 * 			in ControlImportProducer (reportNavigationCases method)
-	 * @throws SecurityException 
-	 */
-	public String process() throws SecurityException {
 
-		// get content resource id
-		String id = externalLogic.getImportedResourceId();
-		
-		// process the content in a separate thread
-		String navigationCase = evalImportLogic.load(id);
+    private static Log log = LogFactory.getLog(ImportBean.class);
 
-		return navigationCase; //"importing" or "exception"
-	}
-	
-	/*
-	 * INITIALIZATION
-	 */
-	public void init() {
-		log.debug("INIT");
-	}
+    // injection
+    private SessionManager sessionManager;
+    public void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+    }
+
+    private EvalImportLogic evalImportLogic;
+    public void setEvalImportLogic(EvalImportLogic evalImportLogic) {
+        this.evalImportLogic = evalImportLogic;
+    }
+
+    private ContentHostingService contentHostingService;
+    public void setContentHostingService(ContentHostingService contentHostingService) {
+        this.contentHostingService = contentHostingService;
+    }
+
+    /**
+     * Parse and load selected XML data file
+     * 
+     * @return String that is used to determine the place where control is to be sent in
+     *         ControlImportProducer (reportNavigationCases method)
+     * @throws SecurityException
+     */
+    @SuppressWarnings("unchecked")
+    public String process() throws SecurityException {
+        ToolSession toolSession = sessionManager.getCurrentToolSession();
+        List<Reference> refs = null;
+        String id = null;
+        if (toolSession.getAttribute(FilePickerHelper.FILE_PICKER_CANCEL) == null
+                && toolSession.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS) != null) {
+            refs = (List<Reference>) toolSession.getAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+            if (refs == null || refs.size() != 1) {
+                return "no-reference";
+            }
+            Reference ref = (Reference) refs.get(0);
+            id = ref.getId();
+        }
+        try {
+            contentHostingService.checkResource(id);
+        } catch (PermissionException e) {
+            return "permission-exception";
+        } catch (IdUnusedException e) {
+            return "idunused-exception";
+        } catch (TypeException e) {
+            return "type-exception";
+        }
+        try {
+            evalImportLogic.load(id);
+        } catch (Exception e) {
+            return "exception";
+        }
+
+        toolSession.removeAttribute(FilePickerHelper.FILE_PICKER_ATTACHMENTS);
+        toolSession.removeAttribute(FilePickerHelper.FILE_PICKER_CANCEL);
+        return "importing";
+    }
+
+    /*
+     * INITIALIZATION
+     */
+    public void init() {
+        log.debug("INIT");
+    }
+
 }
-

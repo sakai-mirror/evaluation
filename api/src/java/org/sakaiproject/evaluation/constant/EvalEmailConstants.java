@@ -219,31 +219,9 @@ public class EvalEmailConstants {
       "4) Click on '${EvalGroupTitle}' link under '${EvalTitle}'.. \n";
    
    /**
-    * EmailTemplate subject: Default subject for submission confirmation
-    */
-   public static final String EMAIL_SUBMITTED_DEFAULT_SUBJECT = "${EvalTitle} ${EvalToolTitle} Submission Confirmation";
- 
-   /**
-    * Sent as submission confirmation when response had been saved to the database
-    * 
-    * Replaceable strings:<br/>
-    * ${UserName} - the name used in salutation
-    * ${EvalToolTitle} - the title of the evaluation tool seen by users of the tool (e.g., "Teaching Questionnaires")
-    * ${EvalTitle} - the title of this evaluation
-    * ${TimeStamp} - the time of evaluation submission
-    */
-   public static final String EMAIL_SUBMITTED_DEFAULT_TEXT = 
-	   "Dear ${UserName},\n\n" +
-	   "This message is a confirmation of your ${EvalToolTitle} submission for ${EvalTitle}.  " +
-	   "It was submitted on ${TimeStamp}.  Thank you for helping the University maintain and improve the quality of its teaching.\n\n" +
-	   "Please save this message for your records.\n\n" +
-	   "Note that all student responses are kept confidential and you may edit your evaluation responses " +
-	   "up until the close date for this evaluation.\n";
-   
-   /**
     * EmailTemplate subject: Default subject for available single-email-notification 
     */
-   public static final String SINGLE_EMAIL_AVAILABLE_DEFAULT_SUBJECT = "Course feedback due by ${EarliestEvalDueDate}\n";
+   public static final String EMAIL_CONSOLIDATED_AVAILABLE_DEFAULT_SUBJECT = "Course feedback due by ${EarliestEvalDueDate}\n";
 
    
    /**
@@ -258,7 +236,7 @@ public class EvalEmailConstants {
     * ${MyWorkspaceDashboard} - the direct URL the Evaluation Dashboard on the user's My Workspace site
     * ${URLtoSystem} - the main URL to the system this is running in
     */
-	public static final String SINGLE_EMAIL_AVAILABLE_DEFAULT_TEXT = 
+	public static final String EMAIL_CONSOLIDATED_AVAILABLE_DEFAULT_TEXT = 
 		"Course feedback on one or more of your classes is due by ${EarliestEvalDueDate}. You " +
 		"are asked to fill out ${EvalToolTitle} in the ${EvalSite} area of ${EvalCLE}, which is " +
 		"available from this link:\n\n" +
@@ -284,7 +262,7 @@ public class EvalEmailConstants {
 	 /**
 	  * EmailTemplate subject: Default subject for reminder single-email-notification 
 	  */
-	public static final String SINGLE_EMAIL_REMINDER_DEFAULT_SUBJECT = "Course feedback due by ${EarliestEvalDueDate}\n";
+	public static final String EMAIL_CONSOLIDATED_REMINDER_DEFAULT_SUBJECT = "Course feedback due by ${EarliestEvalDueDate}\n";
 
 
 	/**
@@ -299,14 +277,14 @@ public class EvalEmailConstants {
 	 * ${MyWorkspaceDashboard} - the direct URL the Evaluation Dashboard on the user's My Workspace site
 	 * ${URLtoSystem} - the main URL to the system this is running in
 	 */
-	public static final String SINGLE_EMAIL_REMINDER_DEFAULT_TEXT = 
+	public static final String EMAIL_CONSOLIDATED_REMINDER_DEFAULT_TEXT = 
 		"Course feedback on one or more of your classes is due by ${EarliestEvalDueDate}. You " +
 		"are asked to fill out ${EvalToolTitle} in the ${EvalSite} area of ${EvalCLE}, which is " +
 		"available from this link:\n\n" +
 		"	${MyWorkspaceDashboard}\n\n" + 
-		"You will need to provide a login name and password to access the ${EvalToolTitle} " + 
+		"You will need to provide a logion name and password to access the ${EvalToolTitle} " + 
 		"site.  This identification is required to ensure that only authorized students " +
-		"submit questionnaires and that each student submits only one questionnaire per class.  Note, however, " +
+		"submit questionnaires  and that each student submits only one questionnaire per class.  Note, however, " +
 		"that teachers and administrators will not have access to any identifying information you " +
 		"submit, and they will not be able to associate specific ratings or comments with " +
 		"specific students.\n\n" +
@@ -321,4 +299,17 @@ public class EvalEmailConstants {
 		"2) Enter your username and password and click on 'Login' button. \n" +
 		"3) Click on '${EvalToolTitle}' in the left navigation menu under ${EvalSite}. \n" +
 		"4) Click on a link under 'Current evaluations to take'. \n";
+		
+	/**
+	 * Email text describing where a user should look for the evaluation tool.
+	 *
+	public static final String EMAIL_EVALUATION_SITE = "My Workspace";
+	*/
+	
+	/**
+	 * Email text describing to a user what the evaluation tool is called.
+	 *
+	public static final String EMAIL_EVALUATION_TOOL = "Course Evaluations";
+	*/
+
 }

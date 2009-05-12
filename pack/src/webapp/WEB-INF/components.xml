@@ -51,6 +51,8 @@
         <property name="settings" ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalBeanUtils"
+            ref="org.sakaiproject.evaluation.beans.EvalBeanUtils" />
     </bean>
 
     <bean id="org.sakaiproject.evaluation.logic.EvalDeliveryService"
@@ -86,6 +88,11 @@
         class="org.sakaiproject.evaluation.logic.scheduling.EvalScheduledInvocationImpl">
         <property name="evalJobLogic"
             ref="org.sakaiproject.evaluation.logic.EvalJobLogic" />
+    </bean>
+
+    <!-- IMPORTING -->
+    <bean id="org.sakaiproject.evaluation.logic.imports.EvalImportJob"
+        class="org.sakaiproject.evaluation.logic.imports.EvalImportJobImpl">
     </bean>
 
 </beans>

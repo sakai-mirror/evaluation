@@ -14,7 +14,6 @@
 
 package org.sakaiproject.evaluation.test.mocks;
 
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -32,8 +31,6 @@ import org.sakaiproject.evaluation.logic.model.EvalScheduledJob;
 import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.test.EvalTestDataLoad;
 import org.sakaiproject.evaluation.utils.EvalUtils;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 /**
@@ -322,6 +319,10 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
 		return currentUserId;
 	}
 
+	public String getAdminUserId() {
+	    return EvalTestDataLoad.ADMIN_USER_ID;
+	}
+
 	/* (non-Javadoc)
 	 * @see org.sakaiproject.evaluation.logic.externals.ExternalUsers#isUserAnonymous(java.lang.String)
 	 */
@@ -376,10 +377,7 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
 		}
 		return "------";
 	}
-	
-	public String getEvalToolTitle() {
-		return "Evaluation System";
-	}
+
 
     public String getUserId(String username) {
         if ( EvalTestDataLoad.ADMIN_USER_NAME.equals(username) ) {
@@ -502,17 +500,17 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
    
    public String createScheduledJob(Date executionDate, Long evaluationId, String jobType) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
    public void deleteScheduledJob(String jobID) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
    public EvalScheduledJob[] findScheduledJobs(Long evaluationId, String jobType) {
       // TODO - make these return some fake data for testing - Dick should do this when he writes tests for this code
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
    }
 
 
@@ -523,7 +521,6 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
     * TESTING method:
     * Provides a way to determine the number of emails sent via this mock service since the service started up
     * or the counter was reset, reset the counter using {@link #resetEmailsSentCounter()}
-    * @return
     */
    public int getNumEmailsSent() {
       return emailsSentCounter;
@@ -558,57 +555,10 @@ public class MockEvalExternalLogic implements EvalExternalLogic {
       }
       return users;
    }
-	
-	public String getMyWorkspaceUrl(String userId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public void clearBindings() {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	public void setSessionActive() {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	public boolean setSessionUserIdAdmin(String uid) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	public boolean checkResource(String resourceId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	public String getImportedResourceId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public InputStream getStreamContent(String resourceId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public boolean removeResource(String resourceId) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	public void setImportedResourceAttributes() {
-		// TODO Auto-generated method stub
-	}
-	
-	public String getSectionTitle(String providerId) {
-		return null;
-	}
-	
-	public EvalUser getEvalUserByEid(String eid) {
-		return null;
-	}
+
+public String getContentCollectionId(String siteId) {
+	// TODO Auto-generated method stub
+	return null;
+}
 
 }

@@ -51,9 +51,10 @@ import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 public interface EvalHierarchyProvider {
 
    /**
-    * Get the hierarchy root node
+    * Get the hierarchy root node of the eval hierarchy
     * 
     * @return the {@link EvalHierarchyNode} representing the root of the hierarchy
+    * @throws IllegalStateException if no node can be obtained
     */
    public EvalHierarchyNode getRootLevelNode();
 
@@ -103,7 +104,7 @@ public interface EvalHierarchyProvider {
    /**
     * Get the hierarchy nodes which a user has a specific permission in,
     * this is used to find a set of nodes which a user should be able to see and to build
-    * the list of hierarchy nodes for selecting eval groups to assign evaluationSetupService to,
+    * the list of hierarchy nodes for selecting eval groups to assign evaluations to,
     * <br/>The actual permissions this should handle are shown at the top of this class
     * 
     * @param userId the internal user id (not username)

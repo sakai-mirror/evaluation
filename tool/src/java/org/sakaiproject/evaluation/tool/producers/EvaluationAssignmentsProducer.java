@@ -15,9 +15,9 @@
 package org.sakaiproject.evaluation.tool.producers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
@@ -29,6 +29,7 @@ import org.sakaiproject.evaluation.logic.model.EvalGroup;
 import org.sakaiproject.evaluation.logic.model.EvalHierarchyNode;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalAssignHierarchy;
+import org.sakaiproject.evaluation.model.EvalAssignUser;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.viewparams.EvalViewParameters;
 import org.sakaiproject.evaluation.utils.EvalUtils;
@@ -44,7 +45,6 @@ import uk.org.ponder.rsf.view.ViewComponentProducer;
 import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
-import uk.org.ponder.rsf.viewstate.ViewStateHandler;
 
 /**
  * Show the currently assigned courses or confirm the assignment and create the evaluation
@@ -117,14 +117,27 @@ public class EvaluationAssignmentsProducer implements ViewComponentProducer, Vie
 
       // normal page content
 
+      // show modify assignments link as long as the eval is active or earlier
       String evalState = evaluationService.updateEvaluationState(evaluationId);
-      if (EvalUtils.checkStateBefore(evalState, EvalConstants.EVALUATION_STATE_ACTIVE, false)) {
+      if (EvalUtils.checkStateBefore(evalState, EvalConstants.EVALUATION_STATE_ACTIVE, true)) {
          UIInternalLink.make(tofill, "modifyAssignmentsLink", UIMessage.make("evaluationassignments.add.assigns.link"), 
                new EvalViewParameters(EvaluationAssignProducer.VIEW_ID, evaluationId) );
       }
 
       Map<Long, List<EvalAssignGroup>> groupsMap = evaluationService.getAssignGroupsForEvals(new Long[] {evaluationId}, true, null);
       List<EvalAssignGroup> assignGroups = groupsMap.get(evalViewParams.evaluationId);
+
+      // get all evaluator user assignments to count the total enrollments
+      HashMap<String, List<EvalAssignUser>> groupIdToEAUList = new HashMap<String, List<EvalAssignUser>>();
+      List<EvalAssignUser> userAssignments = evaluationService.getParticipantsForEval(evaluationId, null, null, 
+              EvalAssignUser.TYPE_EVALUATOR, null, null, null);
+      for (EvalAssignUser evalAssignUser : userAssignments) {
+          String groupId = evalAssignUser.getEvalGroupId();
+          if (! groupIdToEAUList.containsKey(groupId)) {
+              groupIdToEAUList.put(groupId, new ArrayList<EvalAssignUser>());
+          }
+          groupIdToEAUList.get(groupId).add(evalAssignUser);
+      }
 
       // show the assigned groups
       if (assignGroups.size() > 0) {
@@ -141,8 +154,8 @@ public class EvaluationAssignmentsProducer implements ViewComponentProducer, Vie
                UILink.make(groupRow, "directGroupLink", UIMessage.make("evaluationassignconfirm.direct.link"), 
                      commonLogic.getEntityURL(AssignGroupEntityProvider.ENTITY_PREFIX, assignGroup.getId().toString()));
                // calculate the enrollments count
-               Set<String> s = commonLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
-               UIOutput.make(groupRow, "enrollment", s.size() + "");               
+               int enrollmentCount = groupIdToEAUList.get(evalGroupId) == null ? 0 : groupIdToEAUList.get(evalGroupId).size();
+               UIOutput.make(groupRow, "enrollment", enrollmentCount + "");
             }
          }
       } else {
@@ -188,8 +201,8 @@ public class EvaluationAssignmentsProducer implements ViewComponentProducer, Vie
                      UILink.make(groupRow, "directGroupLink", UIMessage.make("evaluationassignconfirm.direct.link"), 
                            commonLogic.getEntityURL(AssignGroupEntityProvider.ENTITY_PREFIX, assignGroup.getId().toString()));
                      // calculate the enrollments count
-                     Set<String> s = commonLogic.getUserIdsForEvalGroup(evalGroupId, EvalConstants.PERM_TAKE_EVALUATION);
-                     UIOutput.make(groupRow, "enrollment", s.size() + "");               
+                     int enrollmentCount = groupIdToEAUList.get(evalGroupId) == null ? 0 : groupIdToEAUList.get(evalGroupId).size();
+                     UIOutput.make(groupRow, "enrollment", enrollmentCount + "");
                   }
                }
                

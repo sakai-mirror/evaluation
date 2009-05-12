@@ -15,11 +15,8 @@
 package org.sakaiproject.evaluation.tool;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
@@ -27,18 +24,15 @@ import org.sakaiproject.evaluation.model.EvalItem;
 import org.sakaiproject.evaluation.model.EvalScale;
 import org.sakaiproject.evaluation.model.EvalTemplate;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
-import org.sakaiproject.evaluation.utils.TemplateItemUtils;
 
 /**
  * Local template local abstraction to allow for default values and central point of access for all things
  * related to creating items and templates
  * 
- * @author Antranig Basman (antranig@caret.cam.ac.uk)
  * @author Aaron Zeckoski (aaronz@vt.edu)
+ * @author Antranig Basman (antranig@caret.cam.ac.uk)
  */
 public class LocalTemplateLogic {
-
-   private static Log log = LogFactory.getLog(LocalTemplateLogic.class);
 
    private EvalCommonLogic commonLogic;
    public void setCommonLogic(EvalCommonLogic commonLogic) {
@@ -65,9 +59,9 @@ public class LocalTemplateLogic {
    }
 
    public EvalTemplate newTemplate() {
-      EvalTemplate currTemplate = new EvalTemplate(new Date(), 
-            commonLogic.getCurrentUserId(), EvalConstants.TEMPLATE_TYPE_STANDARD, 
-            null, "private", Boolean.FALSE);
+      EvalTemplate currTemplate = new EvalTemplate(commonLogic.getCurrentUserId(), 
+            EvalConstants.TEMPLATE_TYPE_STANDARD, null, 
+            "private", Boolean.FALSE);
       currTemplate.setDescription(""); // Note- somehow gives DataIntegrityViolation if null
       return currTemplate;
    }
@@ -84,7 +78,7 @@ public class LocalTemplateLogic {
     * This probably needs to handle instructor at some point (i.e. it should display the instructor added items possibly)
     * 
     * @param templateId
-    * @return
+    * @return the ETI objects
     */
    public List<EvalTemplateItem> fetchTemplateItems(Long templateId) {
       if (templateId == null) {
@@ -101,9 +95,9 @@ public class LocalTemplateLogic {
       // TODO - this should respect the current level the user is at
 
       // TODO currently creating a fake template (newTemplate()) so the bind does not fail, this should supposedly use a defunneler
-      EvalTemplateItem newTemplateItem = new EvalTemplateItem( new Date(), 
-            commonLogic.getCurrentUserId(), newTemplate(), newItem(), null, 
-            EvalToolConstants.ITEM_CATEGORY_VALUES[0], level, nodeId);
+      EvalTemplateItem newTemplateItem = new EvalTemplateItem( commonLogic.getCurrentUserId(), 
+            newTemplate(), newItem(), null, EvalToolConstants.ITEM_CATEGORY_VALUES[0], 
+            level, nodeId);
       newTemplateItem.setUsesNA(new Boolean(false));
       return newTemplateItem;
    }
@@ -144,59 +138,7 @@ public class LocalTemplateLogic {
     */
    public void deleteTemplateItem(Long templateItemId) {
       String currentUserId = commonLogic.getCurrentUserId();
-      if (! authoringService.canControlTemplateItem(currentUserId, templateItemId)) {
-         throw new SecurityException("User ("+currentUserId+") cannot control this template item ("+templateItemId+")");
-      }
-
-      EvalTemplateItem templateItem = authoringService.getTemplateItemById(templateItemId);
-      // get a list of all template items in this template
-      List<EvalTemplateItem> allTemplateItems = 
-         authoringService.getTemplateItemsForTemplate(templateItem.getTemplate().getId(), new String[] {}, new String[] {}, new String[] {});
-      // get the list of items without child items included
-      List<EvalTemplateItem> noChildList = TemplateItemUtils.getNonChildItems(allTemplateItems);
-
-      // now remove the item and correct the display order
-      int orderAdjust = 0;
-      int removedItemDisplayOrder = 0;
-      if (TemplateItemUtils.isBlockParent(templateItem)) {
-         // remove the parent item and free up the child items into individual items if the block parent is removed
-         removedItemDisplayOrder = templateItem.getDisplayOrder().intValue();
-         List<EvalTemplateItem> childList = TemplateItemUtils.getChildItems(allTemplateItems, templateItem.getId());
-         orderAdjust = childList.size();
-
-         // delete parent template item and item
-         Long itemId = templateItem.getItem().getId();
-         authoringService.deleteTemplateItem(templateItem.getId(), currentUserId);
-         // if this parent is used elsewhere then this will cause exception - EVALSYS-559
-         if (authoringService.isUsedItem(itemId)) {
-            log.info("Cannot remove block parent item ("+itemId+") - item is in use elsewhere");
-         } else {
-            authoringService.deleteItem(itemId, currentUserId);
-         }
-
-         // modify block children template items
-         for (int i = 0; i < childList.size(); i++) {
-            EvalTemplateItem child = (EvalTemplateItem) childList.get(i);
-            child.setBlockParent(null);
-            child.setBlockId(null);
-            child.setDisplayOrder(new Integer(removedItemDisplayOrder + i));
-            authoringService.saveTemplateItem(child, currentUserId);
-         }
-
-      } else { // non-block cases
-         removedItemDisplayOrder = templateItem.getDisplayOrder().intValue();
-         authoringService.deleteTemplateItem(templateItem.getId(), currentUserId);
-      }
-
-      // shift display-order of items below removed item
-      for (int i = removedItemDisplayOrder; i < noChildList.size(); i++) {
-         EvalTemplateItem ti = (EvalTemplateItem) noChildList.get(i);
-         int order = ti.getDisplayOrder().intValue();
-         if (order > removedItemDisplayOrder) {
-            ti.setDisplayOrder(new Integer(order + orderAdjust - 1));
-            authoringService.saveTemplateItem(ti, currentUserId);
-         }
-      }
+      authoringService.deleteTemplateItem(templateItemId, currentUserId);
    }
 
 
@@ -227,8 +169,8 @@ public class LocalTemplateLogic {
    }
 
    public EvalItem newItem() {
-      EvalItem newItem = new EvalItem(new Date(), commonLogic.getCurrentUserId(), "", 
-            EvalConstants.SHARING_PRIVATE, "", Boolean.FALSE);
+      EvalItem newItem = new EvalItem(commonLogic.getCurrentUserId(), "", EvalConstants.SHARING_PRIVATE, 
+            "", Boolean.FALSE);
       newItem.setCategory( EvalConstants.ITEM_CATEGORY_COURSE ); // default category
       newItem.setScale(newScale()); // create a holder for a new scale which will get overwritten or cleared out if not used
       return newItem;
@@ -271,9 +213,9 @@ public class LocalTemplateLogic {
    }
 
    public EvalScale newScale() {
-      EvalScale currScale = new EvalScale(new Date(), 
-            commonLogic.getCurrentUserId(), null, 
-            EvalConstants.SCALE_MODE_SCALE, EvalConstants.SHARING_PRIVATE, Boolean.FALSE);
+      EvalScale currScale = new EvalScale(commonLogic.getCurrentUserId(), 
+            null, EvalConstants.SCALE_MODE_SCALE, 
+            EvalConstants.SHARING_PRIVATE, Boolean.FALSE);
       currScale.setOptions(EvalToolConstants.defaultInitialScaleValues);
       currScale.setIdeal(EvalToolConstants.NULL); // TODO - temp until RSF 0.7.3
       return currScale;

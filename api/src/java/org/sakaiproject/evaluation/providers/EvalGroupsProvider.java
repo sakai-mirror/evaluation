@@ -34,9 +34,11 @@ import org.sakaiproject.evaluation.logic.model.EvalGroup;
  * </bean>
  * </xmp>
  * <br/>
- * The 2 permissions this provider has to deal with are {@link #PERM_BE_EVALUATED}
- * (roughly equivalent to instructor role) and {@link #PERM_TAKE_EVALUATION}
- * (roughly equivalent to student role), compare the incoming permission to the constant
+ * The 3 permissions this provider has to deal with 
+ * are {@link #PERM_BE_EVALUATED} (roughly equivalent to instructor role) 
+ * and {@link #PERM_TAKE_EVALUATION} (roughly equivalent to student role) 
+ * and {@link #PERM_TA_ROLE} (roughly equivalent to teaching assistants role), 
+ * compare the incoming permission to the constant
  * and only handle the cases indicated (do not try to handle all possible permissions)<br/>
  * <b>Note</b>: Specifically this allows us to reference eval groups and enrollments which
  * are not stored in something like Sakai
@@ -49,13 +51,25 @@ import org.sakaiproject.evaluation.logic.model.EvalGroup;
 public interface EvalGroupsProvider {
 
 	/**
-	 * Permission: User can be evaluated for any eval group they have this permission in
+	 * Permission: User will be evaluated for any eval group they have this permission in,
+	 * they will appear in the listing as an instructor and will be able to view report results
 	 */
 	public final static String PERM_BE_EVALUATED = "provider.be.evaluated";
 	/**
 	 * Permission: User can take an evaluation for any eval group they have this permission in
 	 */
 	public final static String PERM_TAKE_EVALUATION = "provider.take.evaluation";
+    /**
+     * Permission: User can assign evaluations to any groups they have this permission in,
+     * it means they can see the groups in the listing when assigning the eval to users via groups
+     */
+    public final static String PERM_ASSIGN_EVALUATION = "provider.assign.eval";
+	/**
+	 * Permission: User is marked as a TA in a section/course and will be treated as such,
+	 * this is a special case permission
+	 * http://bugs.sakaiproject.org/jira/browse/EVALSYS-345
+	 */
+	public final static String PERM_TA_ROLE = "provider.role.ta";
 
 	/**
 	 * Get a list of all user ids that can take an evaluation or be evaluated in

@@ -2,8 +2,10 @@
 
 <registration>
   <tool id="sakai.rsf.evaluation"
-        title="Teaching Questionnaires"
-        description="Questionnaires about teaching.">
+        title="Evaluation System"
+        description="For running evaluations/feedback and surveys.">
+     <category name="course" />
+     <category name="project" />
      <category name="myworkspace" />
   </tool>
 </registration>

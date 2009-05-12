@@ -39,10 +39,6 @@
         <property name="responseBeanLocator" ref="responseBeanLocator" />
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
-        <property name="emailsLogic"
-            ref="org.sakaiproject.evaluation.logic.EvalEmailsLogic" />
-        <property name="settings"
-            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="messages" ref="targettedMessageList" />
     </bean>
 
@@ -60,12 +56,15 @@
     </bean>
 
         <!-- DO NOT USE SAKAI SERVICES DIRECTLY -->
+<!-- 
     <bean id="importBean" class="org.sakaiproject.evaluation.tool.ImportBean">
         <property name="evalImportLogic"
             ref="org.sakaiproject.evaluation.logic.imports.EvalImportLogic" />
-        <property name="externalLogic"
-        	ref="org.sakaiproject.evaluation.logic.externals.EvalExternalLogic" />
+        <property name="contentHostingService"
+            ref="org.sakaiproject.content.api.ContentHostingService" />
+        <property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager" />
     </bean>
+-->
 
     <bean id="expertItemsBean" class="org.sakaiproject.evaluation.tool.ExpertItemsBean">
         <property name="commonLogic"
@@ -74,20 +73,30 @@
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
     </bean>
 
+    <bean id="sendEmailsBean" class="org.sakaiproject.evaluation.tool.SendEmailsBean">
+        <property name="emailsLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalEmailsLogic" />
+        <property name="messages" ref="targettedMessageList" />
+    </bean>
+
     <bean id="reportHandlerHook"
         class="org.sakaiproject.evaluation.tool.reporting.ReportHandlerHook">
         <property name="viewparams" ref="viewParameters" />
-        <property name="commonLogic"
-            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
-        <property name="evaluationService"
-            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
-        <property name="reportingPermissions"
-            ref="org.sakaiproject.evaluation.logic.ReportingPermissions" />
-        <property name="csvReportExporter" ref="CSVReportExporter" />
-        <property name="xlsReportExporter" ref="XLSReportExporter" />
-        <property name="pdfReportExporter" ref="PDFReportExporter" />
+        
         <property name="response" ref="httpServletResponse" />
+        <property name="reportExporterBean" ref="reportExporterBean"/>
     </bean>
+
+	<!-- Bean override for rootHandlerHook see RSF-123 and CTL-1214 -->
+	<bean id="rootHandlerBean" class="org.sakaiproject.evaluation.tool.utils.RootHandlerBeanOverride" init-method="handle">
+		<property name="rootHandlerBeanBase" ref="overridedRootHandlerBean"/>
+		<property name="reportHandlerHook" ref="reportHandlerHook"/>
+	</bean>
+
+	<bean id="overridedRootHandlerBean" parent="rootHandlerBeanBase" init-method="doNothing" class="org.sakaiproject.evaluation.tool.utils.OverridedServletRootHandlerBean">
+    	<property name="httpServletRequest" ref="httpServletRequest" />
+    	<property name="httpServletResponse" ref="httpServletResponse" />
+  	</bean>
 
     <bean id="org.sakaiproject.evaluation.tool.reporting.CurrentViewableReports"
         class="org.sakaiproject.evaluation.tool.reporting.CurrentViewableReports">
@@ -101,6 +110,7 @@
         <property name="evalSettings"
             ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="leafParser" ref="generalLeafParser" />
+        <property name="messages" ref="targettedMessageList" />
     </bean>
 
     <bean id="templateBeanLocator"
@@ -163,7 +173,7 @@
 
     <bean id="hierNodeLocator"
         class="org.sakaiproject.evaluation.tool.locators.HierarchyNodeLocator">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="hierarchyLogic"
             ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
@@ -171,7 +181,7 @@
 
     <bean id="hierNodeGroupsLocator"
         class="org.sakaiproject.evaluation.tool.locators.HierarchyNodeGroupsLocator">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="hierarchyLogic"
             ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
@@ -208,31 +218,29 @@
     <bean class="org.sakaiproject.evaluation.tool.producers.AdministrateProducer">
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="evalSettings"
             ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>
 
     <bean
         class="org.sakaiproject.evaluation.tool.producers.AdministrateReportingProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
     </bean>
 
     <bean
         class="org.sakaiproject.evaluation.tool.producers.AdminTestEGProviderProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
     </bean>
     
-    <bean class="org.sakaiproject.evaluation.tool.producers.ControlEmailProducer">
+    <bean class="org.sakaiproject.evaluation.tool.producers.AdministrateEmailProducer">
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evalSettings" 
         	ref="org.sakaiproject.evaluation.logic.EvalSettings" />
-        <property name="externalLogic"
-        	ref="org.sakaiproject.evaluation.logic.externals.EvalExternalLogic" />
-        <property name="locale" ref="requestLocale" />
-        <property name="dateEvolver" ref="fieldDateInputEvolver" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ControlImportProducer">
@@ -240,19 +248,23 @@
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <!-- DO NOT USE SAKAI SERVICES DIRECTLY -->
         <property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager" />
+        <property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
     </bean>
 
 
     <!-- HIERARCHY - Views for Controlling and Administering the Hierarchy -->
     <bean class="org.sakaiproject.evaluation.tool.producers.ControlHierarchyProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="hierarchyRenderUtil" ref="HierarchyRenderUtil" />
+        <property name="evalSettings" 
+            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>
 
     <bean
         class="org.sakaiproject.evaluation.tool.producers.ModifyHierarchyNodeProducer">
-        <property name="external"
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="hierarchyLogic"
             ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
@@ -260,7 +272,8 @@
 
     <bean
         class="org.sakaiproject.evaluation.tool.producers.ModifyHierarchyNodeGroupsProducer">
-        <property name="external"
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="hierarchyLogic"
             ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
@@ -294,6 +307,7 @@
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="locale" ref="requestLocale" />
     </bean>
 
@@ -331,15 +345,15 @@
             ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="externalHierarchyLogic"
             ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
+		<property name="messageLocator" ref="messageLocator" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ModifyBlockProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
         <property name="settings" ref="org.sakaiproject.evaluation.logic.EvalSettings" />
-        <property name="richTextEvolver" ref="richTextEvolver" />
         <property name="hierarchyNodeSelectorRenderer"
             ref="org.sakaiproject.evaluation.tool.renderers.HierarchyNodeSelectorRenderer" />
     </bean>
@@ -347,8 +361,6 @@
     <bean class="org.sakaiproject.evaluation.tool.producers.ExistingItemsProducer">
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
-        <property name="evaluationService"
-            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
     </bean>
@@ -365,14 +377,13 @@
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ModifyItemProducer">
-        <property name="settings" ref="org.sakaiproject.evaluation.logic.EvalSettings" />
-        <property name="commonLogic"
+        <property name="settings" ref="org.sakaiproject.evaluation.logic.EvalSettings" /> 
+       <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
-        <property name="evaluationService"
+       <property name="evaluationService"
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
-        <property name="richTextEvolver" ref="richTextEvolver" />
         <property name="boundedDynamicListInputEvolver"
             ref="standardDynamicListInputEvolver" />
         <property name="hierarchyNodeSelectorRenderer"
@@ -387,6 +398,7 @@
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.RemoveItemProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="authoringService"
@@ -398,6 +410,7 @@
 
     <!-- EXPERT items views -->
     <bean class="org.sakaiproject.evaluation.tool.producers.ExpertCategoryProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
@@ -407,6 +420,7 @@
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ExpertObjectiveProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
@@ -416,6 +430,7 @@
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ExpertItemsProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
@@ -426,13 +441,15 @@
 
     <!-- SCALES -->
     <bean class="org.sakaiproject.evaluation.tool.producers.ControlScalesProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ModifyScaleProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
@@ -476,6 +493,7 @@
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings" /> 
         <property name="richTextEvolver" ref="richTextEvolver" />
     </bean>
 
@@ -543,14 +561,33 @@
         <property name="locale" ref="requestLocale" />
     </bean>
 
+    <bean class="org.sakaiproject.evaluation.tool.producers.EvaluationNotificationsProducer">
+        <property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+        <property name="locale" ref="requestLocale" />
+    </bean>
+
+    <bean class="org.sakaiproject.evaluation.tool.producers.EvaluationRespondersProducer">
+        <property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+        <property name="deliveryService"
+            ref="org.sakaiproject.evaluation.logic.EvalDeliveryService" />
+        <property name="locale" ref="requestLocale" />
+    </bean>
+
 
     <!-- EMAIL TEMPLATES -->
     <bean
         class="org.sakaiproject.evaluation.tool.producers.ControlEmailTemplatesProducer">
-        <property name="external"
+        <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+        <property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.PreviewEmailProducer">
@@ -583,24 +620,8 @@
         <property name="localResponsesLogic" ref="localResponsesLogic" />
         <property name="messages" ref="targettedMessageList" />
         <property name="locale" ref="requestLocale" />
-    </bean>
-    
-       <bean class="org.sakaiproject.evaluation.tool.producers.PreviewAssignedEvalProducer">
-        <property name="commonLogic"
-            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
-        <property name="evaluationService"
-            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
-        <property name="authoringService"
-            ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
-        <property name="itemRenderer"
-            ref="org.sakaiproject.evaluation.tool.renderers.ItemRenderer" />
-        <property name="externalHierarchyLogic"
-            ref="org.sakaiproject.evaluation.logic.externals.ExternalHierarchyLogic" />
-        <property name="evalSettings"
-            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
-        <property name="localResponsesLogic" ref="localResponsesLogic" />
-        <property name="messages" ref="targettedMessageList" />
-        <property name="locale" ref="requestLocale" />
+        <property name="httpServletResponse" ref="httpServletResponse" />
+        <property name="messageLocator" ref="messageLocator" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.PreviewEvalProducer">
@@ -617,6 +638,7 @@
         <property name="evalSettings"
             ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="messageLocator" ref="messageLocator" />
+        <property name="httpServletResponse" ref="httpServletResponse" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ShowEvalCategoryProducer">
@@ -650,6 +672,7 @@
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ReportChooseGroupsProducer">
+	<property name="evalSettings" ref="org.sakaiproject.evaluation.logic.EvalSettings"/>
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"

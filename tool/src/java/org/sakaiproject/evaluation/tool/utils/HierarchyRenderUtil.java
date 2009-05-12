@@ -14,7 +14,8 @@
 
 package org.sakaiproject.evaluation.tool.utils;
 
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +30,6 @@ import org.sakaiproject.evaluation.tool.viewparams.HierarchyNodeParameters;
 import org.sakaiproject.evaluation.tool.viewparams.ModifyHierarchyNodeParameters;
 
 import uk.org.ponder.arrayutil.MapUtil;
-import uk.org.ponder.rsf.components.UIBoundBoolean;
 import uk.org.ponder.rsf.components.UIBranchContainer;
 import uk.org.ponder.rsf.components.UICommand;
 import uk.org.ponder.rsf.components.UIContainer;
@@ -52,161 +52,171 @@ import uk.org.ponder.rsf.components.decorators.UIFreeAttributeDecorator;
  */
 public class HierarchyRenderUtil {
 
-   private ExternalHierarchyLogic hierarchyLogic;
-   public void setExternalHierarchyLogic(ExternalHierarchyLogic logic) {
-      this.hierarchyLogic = logic;
-   }
+    private ExternalHierarchyLogic hierarchyLogic;
+    public void setExternalHierarchyLogic(ExternalHierarchyLogic logic) {
+        this.hierarchyLogic = logic;
+    }
 
-   private EvalCommonLogic commonLogic;
-   public void setCommonLogic(EvalCommonLogic commonLogic) {
-      this.commonLogic = commonLogic;
-   }
+    private EvalCommonLogic commonLogic;
+    public void setCommonLogic(EvalCommonLogic commonLogic) {
+        this.commonLogic = commonLogic;
+    }
 
-   private EvalGroupsProvider groupProvider;
-   public void setEvalGroupsProvider(EvalGroupsProvider provider) {
-      groupProvider = provider;
-   }
+    @SuppressWarnings("unused")
+    private EvalGroupsProvider groupProvider;
+    public void setEvalGroupsProvider(EvalGroupsProvider provider) {
+        groupProvider = provider;
+    }
 
-   /* 
-    * This is currently for the select checkboxes in the new eval wizard.
-    */
-   // private HierarchyRowRenderer hierarchyRowRenderer;
-   // public void setHierarchyRowRenderer(HierarchyRowRenderer renderer) {
-   //     hierarchyRowRenderer = renderer;
-   // }
+    /* 
+     * This is currently for the select checkboxes in the new eval wizard.
+     */
+    // private HierarchyRowRenderer hierarchyRowRenderer;
+    // public void setHierarchyRowRenderer(HierarchyRowRenderer renderer) {
+    //     hierarchyRowRenderer = renderer;
+    // }
 
-   /**
-    * This renders a view of the hierarchy that allows modification and addition of
-    * nodes.  Operations include adding, modifying, removing, and assigning groups
-    * to nodes.  Currently used in the ControlHierarchyProducer view.
-    * 
-    * @param parent
-    * @param clientID
-    */
-   public void renderModifyHierarchyTree(UIContainer parent, String clientID) {
-      UIJointContainer joint = new UIJointContainer(parent, clientID, "hierarchy_table_treeview:");
+    /**
+     * This renders a view of the hierarchy that allows modification and addition of
+     * nodes.  Operations include adding, modifying, removing, and assigning groups
+     * to nodes.  Currently used in the ControlHierarchyProducer view.
+     * 
+     * @param parent
+     * @param clientID
+     * @param showCheckboxes if true then the checkboxes are rendered in front of every node
+     * @param showGroups if true then all the groups are rendered for each node
+     * @param showUsers if true then all users are rendered for each node
+     */
+    public void renderModifyHierarchyTree(UIContainer parent, String clientID, boolean showCheckboxes, boolean showGroups, boolean showUsers) {
+        UIJointContainer joint = new UIJointContainer(parent, clientID, "hierarchy_table_treeview:");
 
-      translateTableHeaders(joint);
+        //Hidden header for column with metadata information.
+        UIOutput.make(parent, "node-metadata-header");
 
-      /*
-       * Hidden header for column with metadata information.
-       */
-      UIOutput.make(parent, "node-metadata-header");
+        // get the root node and the counts of all assigned groups for all nodes
+        EvalHierarchyNode root = hierarchyLogic.getRootLevelNode();
+        String[] allChildrenNodeIds = root.childNodeIds.toArray(new String[root.childNodeIds.size()]);
+        Map<String, Set<String>> groupsNodesMap = hierarchyLogic.getEvalGroupsForNodes(allChildrenNodeIds);
+        // get all nodes at once for use in rendering the hierarchy
+        Set<EvalHierarchyNode> allChildren = hierarchyLogic.getChildNodes(root.id, false);
+        Map<String, EvalHierarchyNode> nodeIdToNode = new HashMap<String, EvalHierarchyNode>();
+        nodeIdToNode.put(root.id, root);
+        for (EvalHierarchyNode node : allChildren) {
+            nodeIdToNode.put(node.id, node);
+        }
 
-      EvalHierarchyNode root = hierarchyLogic.getRootLevelNode();
-      renderHierarchyNode(joint, root, 0);
-   }
+        //showGroups = true;
+        renderHierarchyNode(joint, root, 0, groupsNodesMap, nodeIdToNode, showGroups, showUsers);
+    }
 
+    //   private void renderSelectHierarchyGroup(UIContainer tofill, String groupID, int level, Set<String> evalGroupIDs, String clientID) {
+    //      UIBranchContainer tableRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
+    //      UIOutput.make(tableRow, "node-select-cell");
+    //      //UISelectChoice.make(tableRow, "select-checkbox", clientID, evalGroupIDs.size());
+    //      UIBoundBoolean.make(tableRow, "select-checkbox");
+    //      evalGroupIDs.add(groupID);
+    //      UIOutput name = UIOutput.make(tableRow, "node-name", commonLogic.getDisplayTitle(groupID));
+    //      name.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*2) + "em") ));
+    //   }
 
-   private void renderSelectHierarchyGroup(UIContainer tofill, String groupID, int level, Set<String> evalGroupIDs, String clientID) {
-      UIBranchContainer tableRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
-      UIOutput.make(tableRow, "node-select-cell");
-      //UISelectChoice.make(tableRow, "select-checkbox", clientID, evalGroupIDs.size());
-      UIBoundBoolean.make(tableRow, "select-checkbox");
-      evalGroupIDs.add(groupID);
-      UIOutput name = UIOutput.make(tableRow, "node-name", commonLogic.getDisplayTitle(groupID));
-      name.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*2) + "em") ));
-   }
+    /**
+     * Render this particular HierarchyNode indented at the level.
+     * 
+     * Leaf nodes get a Remove button and the ability to have groups assigned
+     * to them.
+     * 
+     * @param tofill
+     * @param node
+     * @param level
+     * @param groupsNodesMap this is simply passed along to avoid redoing the same query over and over
+     * @param nodeIdToNode this is passed along to avoid pummeling the database when rendering the hierarchy
+     * @param showGroups if true then show the groups, otherwise only show counts
+     * @param showUsers if true then show the users, otherwise just show the link
+     */
+    private void renderHierarchyNode(UIContainer tofill, EvalHierarchyNode node, int level, 
+            Map<String, Set<String>> groupsNodesMap, Map<String, EvalHierarchyNode> nodeIdToNode, 
+            boolean showGroups, boolean showUsers) {
+        String title = node.title != null ? node.title : "Null Title?";
+        UIBranchContainer tableRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
 
-   /**
-    * Render this particular HierarchyNode indented at the level.
-    * 
-    * Leaf nodes get a Remove button and the ability to have groups assigned
-    * to them.
-    * 
-    * @param tofill
-    * @param node
-    * @param level
-    */
-   private void renderHierarchyNode(UIContainer tofill, EvalHierarchyNode node, int level) {
+        // Node Metadata
+        UIOutput.make(tableRow, "node-metadata-cell");
+        UIInput.make(tableRow, "node-id-input", null, node.id);
+/** http://jira.sakaiproject.org/jira/browse/EVALSYS-631
+        if (node.parentNodeIds.size() > 0) {
+            // TODO In the future there might be multiple parents...
+            for (Iterator<String> itr = node.parentNodeIds.iterator(); itr.hasNext();) {
+                UIInput.make(tableRow, "parent-id-input", null, itr.next());
+            }
+        } else {
+            UIInput.make(tableRow, "parant-id-input", null, "NO_PARENT");
+        }
+**/
 
-      String title = node.title != null ? node.title : "Null Title?";
-      UIBranchContainer tableRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
-      UIOutput name = UIOutput.make(tableRow, "node-name", title);
-      name.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*2) + "em") ));
+        // not rendering the node-select cell right now
+        //UIOutput.make(tableRow, "node-select-cell");
 
-      // Node Metadata
-      UIOutput.make(tableRow, "node-metadata-cell");
-      UIInput.make(tableRow, "node-id-input", null, node.id);
-      if (node.parentNodeIds.size() > 0) {
-         // TODO In the future there might be multiple parents...
-         for (Iterator<String> itr = node.parentNodeIds.iterator(); itr.hasNext();) {
-            UIInput.make(tableRow, "parent-id-input", null, itr.next());
-         }
-      }
-      else {
-         UIInput.make(tableRow, "parant-id-input", null, "NO_PARENT");
-      }
+        UIOutput name = UIOutput.make(tableRow, "node-name", title);
+        name.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*2) + "em") ));
 
-      Map<String, Integer> numGroupsMap = hierarchyLogic.countEvalGroupsForNodes(new String[] {node.id});
-      int numberOfAssignedGroups = numGroupsMap.get(node.id).intValue();
+        UIOutput.make(tableRow, "nodes-cell");
+        UIOutput.make(tableRow, "groups-cell");
+        UIOutput.make(tableRow, "users-cell");
 
-      /* If this node has groups assigned to it, we should not be able to add
-       * sub-nodes.
-       */
-      UIOutput.make(tableRow, "add-child-cell");
-      if (numberOfAssignedGroups < 1) {
-         UIInternalLink.make(tableRow, "add-child-link", UIMessage.make("controlhierarchy.add"),
-               new ModifyHierarchyNodeParameters(ModifyHierarchyNodeProducer.VIEW_ID, node.id, true));
-      }
-      UIOutput.make(tableRow, "modify-node-cell");
-      UIInternalLink.make(tableRow, "modify-node-link", UIMessage.make("controlhierarchy.modify"),
-            new ModifyHierarchyNodeParameters(ModifyHierarchyNodeProducer.VIEW_ID, node.id, false));
+        // If this node has groups assigned to it, we should not be able to add sub-nodes.
+        int numberOfAssignedGroups = groupsNodesMap.get(node.id) != null ? groupsNodesMap.get(node.id).size() : 0;
+        if (numberOfAssignedGroups <= 0) {
+            UIInternalLink.make(tableRow, "add-child-link", UIMessage.make("controlhierarchy.add"),
+                    new ModifyHierarchyNodeParameters(ModifyHierarchyNodeProducer.VIEW_ID, node.id, true));
+        }
+        UIInternalLink.make(tableRow, "modify-node-link", UIMessage.make("controlhierarchy.modify"),
+                new ModifyHierarchyNodeParameters(ModifyHierarchyNodeProducer.VIEW_ID, node.id, false));
+        // If the node has children, render the number of children, but no remove button.
+        int childrenNodesSize = node.directChildNodeIds.size();
+        UIOutput.make(tableRow, "number-children", childrenNodesSize + "");
+        if (childrenNodesSize <= 0) { 
+            // no children nodes
+            if (numberOfAssignedGroups <= 0) {
+                // remove node if no groups are assigned
+                UIForm removeForm = UIForm.make(tableRow, "remove-node-form");
+                UICommand removeButton = UICommand.make(removeForm, "remove-node-button", UIMessage.make("controlhierarchy.remove"));
+                removeButton.parameters.add(new UIDeletionBinding("hierNodeLocator."+node.id));
+            }
 
+            // assigned groups
+            UIInternalLink.make(tableRow, "assign-groups-link", UIMessage.make("controlhierarchy.assigngroups"), 
+                    new HierarchyNodeParameters(ModifyHierarchyNodeGroupsProducer.VIEW_ID, node.id));
+            UIOutput.make(tableRow, "assign-group-count", numberOfAssignedGroups+"");
+        }
 
-      /*
-       * If the node has children, render the number of children, but no remove button
-       * or assign groups link.
-       */
-      if (node.directChildNodeIds.size() > 0) {
-         UIOutput.make(tableRow, "child-info-cell");
-         UIOutput.make(tableRow, "number-children", node.directChildNodeIds.size() + "");
-      } 
-      else {
-         UIOutput.make(tableRow, "remove-node-cell");
-         UIForm removeForm = UIForm.make(tableRow, "remove-node-form");
-         UICommand removeButton = UICommand.make(removeForm, "remove-node-button", UIMessage.make("controlhierarchy.remove"));
-         removeButton.parameters.add(new UIDeletionBinding("hierNodeLocator."+node.id));
-         UIOutput.make(tableRow, "assign-groups-cell");
-         UIInternalLink.make(tableRow, "assign-groups-link", UIMessage.make("controlhierarchy.assigngroups"), 
-               new HierarchyNodeParameters(ModifyHierarchyNodeGroupsProducer.VIEW_ID, node.id));
+        // assigned users (permissions)
+        UIInternalLink.make(tableRow, "assign-users-link", UIMessage.make("controlhierarchy.assignusers"), 
+                new HierarchyNodeParameters(ModifyHierarchyNodeGroupsProducer.VIEW_ID, node.id));
 
+        // if show users is on then we show the full list of all users with perms in this node
+        if (showUsers && numberOfAssignedGroups > 0) {
+            // TODO hierarchyLogic.get
+        }
 
-         UIOutput.make(tableRow, "assigned-group-count-cell");
-         UIOutput.make(tableRow, "assign-group-count", numberOfAssignedGroups+"");
-      }
+        // If there are any assigned groups, render them as their own rows if show is on
+        if (showGroups && numberOfAssignedGroups > 0) {
+            Set<String> assignedGroupIDs = groupsNodesMap.get(node.id) != null ? groupsNodesMap.get(node.id) : new HashSet<String>();
+            for (String assignedGroupID: assignedGroupIDs) {
+                EvalGroup assignedGroup = commonLogic.makeEvalGroupObject(assignedGroupID);
+                UIBranchContainer groupRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
+                UIOutput.make(groupRow, "node-metadata-cell");
+                UIOutput groupName = UIOutput.make(groupRow, "row-data", assignedGroup.title + " ("+assignedGroup.evalGroupId+") ["+assignedGroup.type+"]");
+                groupName.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*4) + "em") ));
+            }
+        }
 
-      /*
-       * If there are any assigned groups, render them as their own rows.
-       */
-      Set<String> assignedGroupIDs = hierarchyLogic.getEvalGroupsForNode(node.id);
-      for (String assignedGroupID: assignedGroupIDs) {
-         EvalGroup assignedGroup = commonLogic.makeEvalGroupObject(assignedGroupID);
-         UIBranchContainer groupRow = UIBranchContainer.make(tofill, "hierarchy-level-row:");
-         UIOutput.make(groupRow, "node-metadata-cell");
-         UIOutput groupName = UIOutput.make(groupRow, "node-name", assignedGroup.title);
-         groupName.decorate(new UIFreeAttributeDecorator( MapUtil.make("style", "text-indent:" + (level*4) + "em") ));
-
-      }
-
-      for (String childId : node.directChildNodeIds) {
-         renderHierarchyNode(tofill, hierarchyLogic.getNodeById(childId), level+1);
-      }
-   }
-
-   /**
-    * Translate the table headers and any other decorations on or around the
-    * table.
-    * 
-    * @param tofill
-    */
-   public void translateTableHeaders(UIContainer tofill) {
-      UIMessage.make(tofill, "hierarchy-header", "controlhierarchy.table.heirarchy.header");
-      UIMessage.make(tofill, "add-item-header", "controlhierarchy.table.additem.header");
-      UIMessage.make(tofill, "modify-item-header", "controlhierarchy.table.modifyitem.header");
-      UIMessage.make(tofill, "items-level-header", "controlhierarchy.table.itemslevel.header");
-      UIMessage.make(tofill, "assign-groups-header", "controlhierarchy.table.assigngroups.header");
-      UIMessage.make(tofill, "assigned-group-count-header", "controlhierarchy.table.groupcount.header");
-   }
+        // now render all direct children
+        for (String childId : node.directChildNodeIds) {
+            EvalHierarchyNode childNode = nodeIdToNode.get(childId);
+            if (childNode != null) {
+                renderHierarchyNode(tofill, childNode, level+1, groupsNodesMap, nodeIdToNode, showGroups, showUsers);
+            }
+        }
+    }
 
 }

@@ -108,13 +108,17 @@
         </property>
     </bean>
 
+    <!-- see CTL-1214, RSF-123, RootHandlerBeanOverride and OverridedServletRoot: 
+         also reportHandlerHook no longer implements HandlerHook -->
+    <!--  
     <bean parent="handlerHookParent">
         <property name="value">
             <bean parent="RSACBridgeProxy">
                 <property name="targetBeanName" value="reportHandlerHook" />
             </bean>
         </property>
-    </bean>
+    </bean> 
+    -->
 
     <!-- special wrapper beans which work with genericdao to allow hibernate lazy inits -->
     <bean id="org.sakaiproject.evaluation.ModelAccessWrapperInvoker"
@@ -187,8 +191,7 @@
 
 
     <!-- view param inferrer beans to handle entity urls -->
-    <bean class="org.sakaiproject.evaluation.tool.inferrers.EvaluationVPInferrer"
-        init-method="init">
+    <bean class="org.sakaiproject.evaluation.tool.inferrers.EvaluationVPInferrer">
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="evaluationService"
@@ -203,7 +206,34 @@
 
     <bean class="org.sakaiproject.evaluation.tool.inferrers.ItemVPInferrer" />
 
+    <bean class="org.sakaiproject.evaluation.tool.inferrers.ReportsVPInferrer">
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+    </bean>
+
     <!-- Reporting Utilities -->
+    <bean id="reportExporterBean" class="org.sakaiproject.evaluation.tool.reporting.ReportExporterBean">
+    	<property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+        <property name="reportingPermissions"
+            ref="org.sakaiproject.evaluation.logic.ReportingPermissions" />
+        <property name="exportersMap">
+        	<map>
+        		<entry key="csvResultsReport" value-ref="CSVReportExporter"/>
+        		<entry key="xlsResultsReport" value-ref="XLSReportExporter"/>
+        		<entry key="pdfResultsReport" value-ref="PDFReportExporter"/>
+        		<entry key="csvTakersReport" value-ref="CSVTakersExporter"/>
+        	</map>
+        </property>	
+    </bean>
+    <!-- FIXME -->
+    <bean id="CSVTakersExporter" class="org.sakaiproject.evaluation.tool.reporting.CSVTakersReportExporter">
+        <property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="messageLocator" ref="messageLocator" />
+    </bean>
     <bean id="CSVReportExporter"
         class="org.sakaiproject.evaluation.tool.reporting.CSVReportExporter">
         <property name="commonLogic"
@@ -287,18 +317,23 @@
     <bean parent="viewParamsRegistrarParent">
         <property name="viewID" value="csvResultsReport" />
         <property name="viewParamsClass"
-            value="org.sakaiproject.evaluation.tool.viewparams.CSVReportViewParams" />
+            value="org.sakaiproject.evaluation.tool.viewparams.DownloadReportViewParams" />
     </bean>
 
     <bean parent="viewParamsRegistrarParent">
         <property name="viewID" value="xlsResultsReport" />
         <property name="viewParamsClass"
-            value="org.sakaiproject.evaluation.tool.viewparams.ExcelReportViewParams" />
+            value="org.sakaiproject.evaluation.tool.viewparams.DownloadReportViewParams" />
     </bean>
 
     <bean parent="viewParamsRegistrarParent">
         <property name="viewID" value="pdfResultsReport" />
         <property name="viewParamsClass"
-            value="org.sakaiproject.evaluation.tool.viewparams.PDFReportViewParams" />
+            value="org.sakaiproject.evaluation.tool.viewparams.DownloadReportViewParams" />
+    </bean>
+    <bean parent="viewParamsRegistrarParent">
+    	<property name="viewID" value="csvTakersReport"/>
+        <property name="viewParamsClass"
+            value="org.sakaiproject.evaluation.tool.viewparams.DownloadReportViewParams" />
     </bean>
 </beans>

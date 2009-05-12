@@ -29,10 +29,8 @@ import org.sakaiproject.evaluation.logic.model.EvalGroup;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.producers.PreviewEvalProducer;
-import org.sakaiproject.evaluation.tool.producers.ReportsViewingProducer;
 import org.sakaiproject.evaluation.tool.producers.TakeEvalProducer;
 import org.sakaiproject.evaluation.tool.viewparams.EvalViewParameters;
-import org.sakaiproject.evaluation.tool.viewparams.ReportParameters;
 import org.sakaiproject.evaluation.tool.wrapper.ModelAccessWrapperInvoker;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 
@@ -82,7 +80,7 @@ public class EvaluationVPInferrer implements EntityViewParamsInferrer {
      * @see uk.ac.cam.caret.sakai.rsf.entitybroker.EntityViewParamsInferrer#inferDefaultViewParameters(java.lang.String)
      */
     public ViewParameters inferDefaultViewParameters(String reference) {
-    	log.warn("Note: Routing user to view based on reference: " + reference);
+    	//log.warn("Note: Routing user to view based on reference: " + reference);
         final String ref = reference;
         final ViewParameters[] togo = new ViewParameters[1];
         // this is needed to provide transactional protection
@@ -94,10 +92,6 @@ public class EvaluationVPInferrer implements EntityViewParamsInferrer {
         return togo[0];
     }
 
-    /**
-     * @param reference
-     * @return
-     */
     private ViewParameters inferDefaultViewParametersImpl(String reference) {
         IdEntityReference ep = new IdEntityReference(reference);
         EvalEvaluation evaluation = null;
@@ -113,31 +107,23 @@ public class EvaluationVPInferrer implements EntityViewParamsInferrer {
             Long AssignGroupId = new Long(ep.id);
             EvalAssignGroup assignGroup = evaluationService.getAssignGroupById(AssignGroupId);
             evalGroupId = assignGroup.getEvalGroupId();
-            evaluation = assignGroup.getEvaluation();
-            evaluationId = evaluation.getId();
+            evaluationId = assignGroup.getEvaluation().getId();
+            evaluation = evaluationService.getEvaluationById(evaluationId);
         }
 
         if ( EvalConstants.EVALUATION_AUTHCONTROL_NONE.equals(evaluation.getAuthControl()) ) {
             // anonymous evaluation URLs ALWAYS go to the take_eval page
         	log.info("User taking anonymous evaluation: " + evaluationId + " for group: " + evalGroupId);
-            return new EvalViewParameters(TakeEvalProducer.VIEW_ID, evaluationId, evalGroupId);
+        	EvalViewParameters vp = new EvalViewParameters(TakeEvalProducer.VIEW_ID, evaluationId, evalGroupId);
+        	vp.external = true;
+        	return vp;
         } else {
-            // authenticated evaluation URLs depend on the state of the evaluation and the users permissions,
-            // failsafe goes to take eval when it cannot determine where else to go
+            // authenticated evaluation URLs depend on the state of the evaluation and the users permissions
             String currentUserId = commonLogic.getCurrentUserId();
-            log.warn("Note: User ("+currentUserId+") taking authenticated evaluation: " + evaluationId + " in state ("+EvalUtils.getEvaluationState(evaluation, false)+") for group: " + evalGroupId);
-            if (EvalConstants.EVALUATION_STATE_VIEWABLE.equals( EvalUtils.getEvaluationState(evaluation, false) )) {
-                // go to the reports view
-                if (currentUserId.equals(evaluation.getOwner()) ||
-                        commonLogic.isUserAdmin(currentUserId)) { // TODO - make this a better check -AZ
-                    return new ReportParameters(ReportsViewingProducer.VIEW_ID, evaluationId, new String[] {evalGroupId});
-                } else {
-                    // require auth
-                    throw new SecurityException("User must be authenticated to access this page");
-                }
-            }
+            log.info("Note: User ("+currentUserId+") accessing authenticated evaluation: " + evaluationId + " in state ("+EvalUtils.getEvaluationState(evaluation, false)+") for group: " + evalGroupId);
 
-            if (EvalConstants.EVALUATION_STATE_INQUEUE.equals( EvalUtils.getEvaluationState(evaluation, false) )) {
+            // eval has not started
+            if ( EvalUtils.checkStateBefore(EvalUtils.getEvaluationState(evaluation, false), EvalConstants.EVALUATION_STATE_INQUEUE, true) ) {
                 // go to the add instructor items view if permission
                 if (evalGroupId == null) {
                    Map<Long, List<EvalAssignGroup>> m = evaluationService.getAssignGroupsForEvals(new Long[] {evaluationId}, true, null);
@@ -147,13 +133,17 @@ public class EvaluationVPInferrer implements EntityViewParamsInferrer {
                     if (evalGroups.length > 0) {
                         // if we are being evaluated in at least one group in this eval then we can add items
                         // TODO - except we do not have a view yet so go to the preview eval page 
-                        return new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                        EvalViewParameters vp = new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                        vp.external = true;
+                        return vp;
                     }
                 } else {
                     if (commonLogic.isUserAllowedInEvalGroup(currentUserId, EvalConstants.PERM_BE_EVALUATED, evalGroupId)) {
                         // those being evaluated get to go to add their own questions
                         // TODO - except we do not have a view yet so go to the preview eval page 
-                        return new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                        EvalViewParameters vp = new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                        vp.external = true;
+                        return vp;
                     }
                 }
                 // else just require auth
@@ -163,14 +153,22 @@ public class EvaluationVPInferrer implements EntityViewParamsInferrer {
             // finally, try to go to the take evals view
             if (! commonLogic.isUserAnonymous(currentUserId) ) {
                 // check perms if not anonymous
-                if (currentUserId.equals(evaluation.getOwner()) ||
+                // switched to take check first
+                if ( evaluationService.canTakeEvaluation(currentUserId, evaluationId, evalGroupId) ) {
+                	log.info("User ("+currentUserId+") taking authenticated evaluation: " + evaluationId + " for group: " + evalGroupId);
+                	EvalViewParameters vp = new EvalViewParameters(TakeEvalProducer.VIEW_ID, evaluationId, evalGroupId);
+                    vp.external = true;
+                    return vp;
+                } else if (currentUserId.equals(evaluation.getOwner()) ||
                         commonLogic.isUserAllowedInEvalGroup(currentUserId, EvalConstants.PERM_BE_EVALUATED, evalGroupId)) {
-                    return new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                    // cannot take, but can preview
+                    EvalViewParameters vp = new EvalViewParameters(PreviewEvalProducer.VIEW_ID, evaluationId);
+                    vp.external = true;
+                    return vp;
                 } else {
-                    if ( evaluationService.canTakeEvaluation(currentUserId, evaluationId, evalGroupId) ) {
-                    	log.info("User ("+currentUserId+") taking authenticated evaluation: " + evaluationId + " for group: " + evalGroupId);
-                        return new EvalViewParameters(TakeEvalProducer.VIEW_ID, evaluationId, evalGroupId);
-                    }
+                    // no longer want to show security exceptions - https://bugs.caret.cam.ac.uk/browse/CTL-1548
+                    //throw new SecurityException("User ("+currentUserId+") does not have permission to take or preview this evaluation ("+evaluationId+")");
+                    return new EvalViewParameters(TakeEvalProducer.VIEW_ID, evaluationId, evalGroupId);
                 }
             }
 

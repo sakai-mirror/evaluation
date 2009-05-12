@@ -71,6 +71,11 @@
         <property name="scaleDisplaySetting" type="java.lang.String">
             <column name="SCALE_DISPLAY_SETTING" length="255" />
         </property>
+        <!-- should this item be compulsory (must be answered) -->
+        <!-- (this is a hint only and used when making the templateItem) -->
+        <property name="compulsory" type="java.lang.Boolean">
+            <column name="COMPULSORY"/>
+        </property>
         <!-- used to determine the category of the item (course, instructor, etc.) -->
         <!-- (this is a hint only and used when making the templateItem) -->
         <property name="category" type="java.lang.String">

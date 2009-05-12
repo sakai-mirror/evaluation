@@ -1,5 +1,5 @@
 /******************************************************************************
- * CSVReportViewParams.java - created by aaronz@vt.edu
+ * DownloadReportViewParams.java - created by aaronz@vt.edu
  * 
  * Copyright (c) 2007 Virginia Polytechnic Institute and State University
  * Licensed under the Educational Community License version 1.0
@@ -14,8 +14,6 @@
 
 package org.sakaiproject.evaluation.tool.viewparams;
 
-import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
-
 /**
  * This is meant to serve as a base for ViewParameters of different download
  * types that may require their own custom parameters. Ex. CSV, Excel, PDF etc.
@@ -24,7 +22,7 @@ import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
  * @author Kapil Ahuja (kahuja@vt.edu)
  * @author Steven Githens
  */
-public class DownloadReportViewParams extends SimpleViewParameters {
+public class DownloadReportViewParams extends BaseViewParameters {
 
 	public Long templateId; 
 	public Long evalId;
@@ -45,6 +43,6 @@ public class DownloadReportViewParams extends SimpleViewParameters {
 
 	public String getParseSpec() {
 		// include a comma delimited list of the public properties in this class
-		return super.getParseSpec() + ",templateId,evalId,groupIds, *:stuff, @1:filename";
+		return super.getParseSpec() + ",templateId,evalId,groupIds,@1:filename";
 	}
 }

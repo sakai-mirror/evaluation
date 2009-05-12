@@ -4,44 +4,23 @@
 	<head>
 		<title rsf:id="page-title">Take Evaluation</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+        <meta http-equiv="Expires" content="Mon, 01 Jan 1990 00:00:00 GMT" />
 		<meta http-equiv="Pragma" content="no-cache" />
-		<meta http-equiv="Expires" content="-1" />
-		<link href="/library/skin/tool_base.css" rsf:id="scr=portal-matter" type="text/css" rel="stylesheet" media="all"/>
-		<link href="/library/skin/default/tool.css" rsf:id="scr=portal-matter" type="text/css" rel="stylesheet" media="all"/>
-		<script type="text/javascript" rsf:id="scr=portal-matter" language="JavaScript" src="/library/js/headscripts.js"></script>
-		<script type="text/javascript" language="JavaScript" src="../js/jquery/jquery.js"></script>
+		<link href="/library/skin/tool_base.css" type="text/css" rel="stylesheet" media="all"/>
+		<link href="/library/skin/default/tool.css" type="text/css" rel="stylesheet" media="all"/>
+
+		<script type="text/javascript" language="JavaScript" src="/library/js/headscripts.js"></script>
+		<script type="text/javascript" language="JavaScript" src="../js/toggleCommentBox.js"></script>
+        <script type="text/javascript" language="JavaScript" src="../js/jquery/jquery.js"></script>
+        <script type="text/javascript" language="JavaScript" src="../js/evalTakeEval.js"></script>
+
 		<link href="../css/evaluation_base.css" type="text/css" rel="stylesheet" media="all" />
 	</head>
-	
-	<body rsf:id="scr=sakai-body">
-		<div class="portletBody">
-			<script type="text/javascript" src="../js/jquery.charcounter.js">
-			</script>		
-	<script type="text/javascript">
-	    $(document).ready(function(){
-	    	$(":submit").click(function(e){
-			$(this).css("display","none");
-			 });
-			var charRemFormat = $('#charRemFormat').text();
-			var charMax = $('#charMax').text();
-			if (isNaN(charMax)){
-				charMax=3800
-			}
-			$(".limited").charCounter(charMax, {
-				format: charRemFormat
-			 });
 
-//			 if using the 'limited' class on comments to other components, not just text items, uncomment the next 2 lines			
-//			 $('.charcounter').hide()
-//			 $('.textItem .charcounter').show()
-		 });				 
-	</script>
-	<style type="text/css">
-		.charcounter{color:#aaa;font-size:.85em;display:block;margin:0}
-		.highlight{color:red}
-	</style>
-	<span id="charRemFormat" rsf:id="msg=takeeval.textitem.charmax.message" class="skip">%1 chars remaining</span>
-	<span id="charMax" class="skip" rsf:id="msg=takeeval.textitem.charmax">3800</span>
+    <!-- supposedly firefox will not cache any pages with unload handlers -->
+    <body rsf:id="scr=sakai-body" onunload="parseInt('1')">
+		<div class="portletBody">
 
 			<div class="textPanel"> 			
 				<h3 style="display:inline">
@@ -78,7 +57,7 @@
 
 			<div rsf:id="show-eval-instructions:" class="instruction">
 				<h5 rsf:id="eval-instructions-header" style="display:inline;padding-right:1em">Instructions:</h5>
-				<span rsf:id="eval-instructions">Evaluation instructions would go here if any have been specified. This block may be up to 3800 chars.</span>
+				<span rsf:id="eval-instructions">Evaluation instructions would go here if any have been specified. This block may be up to 4000 chars.</span>
 			</div>
 
 		   <div rsf:id="show-eval-note:" class="instruction">
@@ -87,10 +66,64 @@
 		   </div>
 
 			<div rsf:id="eval-cannot-take-message" class="alertMessage"></div>
-
+			<div rsf:id="msg=takeeval.selection.warn" id="evalSelectWarn" style="display:none;">You are removing an already selected person. Are you sure?</div>
+			
+			
 			<div rsf:id="form-branch:">
-				<form rsf:id="evaluationForm" name="eval_form" method="post">
-					<div rsf:id="categorySection:">
+				<form rsf:id="evaluationForm" id="eval_form" name="eval_form" method="post"
+                        onsubmit="$(':submit').hide;$('submit_process').show();">
+					
+
+			<!-- Selector for ONE instructor -->
+			<div rsf:id="select-instructor-one:" class="navPanel"  rel="evalinstructorSelector">
+				<fieldset class="itemListNew">
+					<legend rsf:id="msg=takeeval.selection.instructor.header.one" for="select-instructor-one-list"> Select Instructor to evaluate:</legend>
+						<select rsf:id="select-instructor-one-list">
+							<option selected="selected">Person 1</option>
+							<option>Person 2</option>
+							<option>Person 3</option>
+						</select>
+                    </fieldset>
+			</div>
+			<!-- Selector for MULTIPLE Instructors -->
+			<div rsf:id="select-instructor-multiple:" class="navPanel" rel="evalinstructorSelector">
+				<fieldset class="itemListNew">
+					<legend rsf:id="msg=takeeval.selection.instructor.header.multiple"> Select Instructors to evaluate:</legend>
+					<span rsf:id="select-instructor-multiple-holder:" />
+						<div rsf:id="select-instructor-multiple-row:">
+						<input rsf:id="select-instructor-multiple-box" type="checkbox" />
+						<label rsf:id="select-instructor-multiple-label"> Lovemore Nalube</label>
+					</div>
+					<input rsf:id="select-instructor-multiple-input" type="checkbox" />
+				</fieldset>
+			</div>
+            <!-- Selector for ONE TA -->
+                        <div rsf:id="select-assistant-one:" class="navPanel"  rel="evalassistantSelector">
+                            <fieldset class="itemListNew">
+                                <legend rsf:id="msg=takeeval.selection.assistant.header.one" for="select-assistant-one-list"> Select TA to evaluate:</legend>
+                                    <select rsf:id="select-assistant-one-list">
+                                        <option selected="selected">Person 1</option>
+                                        <option>Person 2</option>
+                                    </select>
+                             </fieldset>
+                        </div>
+
+						<!-- Selector for MULTIPLE TAs-->
+			<div rsf:id="select-assistant-multiple:" class="navPanel" rel="evalassistantSelector">
+				<fieldset class="itemListNew">
+					<legend rsf:id="msg=takeeval.selection.assistant.header.multiple"> Select TAs to evaluate:</legend>
+					<span rsf:id="select-assistant-multiple-holder:" />
+					<div rsf:id="select-assistant-multiple-row:">
+						<input rsf:id="select-assistant-multiple-box" type="checkbox" />
+						<label rsf:id="select-assistant-multiple-label"> Lovemore Nalube</label>
+					</div>
+					<input rsf:id="select-assistant-multiple-input" type="checkbox" />
+				</fieldset>
+			</div>
+			
+			<input rsf:id="selectedPeopleInResponse" type="hidden" value=""/>
+
+			<div rsf:id="categorySection:">
                         <fieldset class="itemListNew">
                            <legend rsf:id="categoryHeader"> Group Items: </legend>
                            <ol class="itemListEval">
@@ -106,11 +139,20 @@
 					</div>
 
 					<div class="act">
-						<input rsf:id="submitEvaluation" type="submit" value="Submit Evaluation" accesskey="s" class="active"  />
+                        <input rsf:id="msg=general.processing" name="submit_process" type="button" style="display:none;" value="Processing........" disabled="disabled" />
+						<input rsf:id="submitEvaluation" id="submit_eval" type="submit" value="Submit Evaluation" accesskey="s" class="active" />
 					</div>
 				</form>
 			</div>
 
-		</div>
+<script type="text/javascript" language="javascript">processCommentBoxes();</script>
+
+</div>
 	</body>
+<!-- need this at the bottom to convince IE to not cache -->
+<head>
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Expires" content="Mon, 01 Jan 1990 00:00:00 GMT" />
+    <meta http-equiv="Pragma" content="no-cache" />
+</head>
 </html>

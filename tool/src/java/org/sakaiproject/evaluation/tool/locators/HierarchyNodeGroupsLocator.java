@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
@@ -39,35 +40,36 @@ import uk.org.ponder.beanutil.BeanLocator;
  *  Will return a boolean depending on whether that group is selected.
  */
 public class HierarchyNodeGroupsLocator implements BeanLocator {
-   public static final String NEW_PREFIX = "new";
-   public static String NEW_1 = NEW_PREFIX +"1";
+    public static final String NEW_PREFIX = "new";
+    public static String NEW_1 = NEW_PREFIX +"1";
 
-    private EvalCommonLogic external;
-    public void setExternal(EvalCommonLogic external) {
-       this.external = external;
+    private EvalCommonLogic commonLogic;
+    public void setCommonLogic(EvalCommonLogic commonLogic) {
+        this.commonLogic = commonLogic;
     }
 
     private ExternalHierarchyLogic hierarchyLogic;
     public void setHierarchyLogic(ExternalHierarchyLogic hierarchyLogic) {
-       this.hierarchyLogic = hierarchyLogic;
+        this.hierarchyLogic = hierarchyLogic;
     }
-    
+
     public Map<String, Map<String, Boolean>> delivered = new HashMap<String, Map<String, Boolean>>(); 
-    
+
     public Object locateBean(String name) {
         checkSecurity();
-        
+
         Map<String, Boolean> togo = delivered.get(name);
         if (togo == null) {
-            List<EvalGroup> evalGroups = external.getEvalGroupsForUser("admin", EvalConstants.PERM_BE_EVALUATED);
+            // FIXME Should this really use the hardcoded "admin" user id?
+            List<EvalGroup> evalGroups = commonLogic.getEvalGroupsForUser("admin", EvalConstants.PERM_BE_EVALUATED);
             Set<String> assignedGroupIds = hierarchyLogic.getEvalGroupsForNode(name);
             Map<String, Boolean> assignedGroups = new HashMap<String, Boolean>();
             for (EvalGroup group: evalGroups) {
                 if (assignedGroupIds.contains(group.evalGroupId)) {
-                    assignedGroups.put(group.evalGroupId, new Boolean(true));
+                    assignedGroups.put(group.evalGroupId, Boolean.TRUE);
                 }
                 else {
-                    assignedGroups.put(group.evalGroupId, new Boolean(false));
+                    assignedGroups.put(group.evalGroupId, Boolean.FALSE);
                 }
             }
             togo = assignedGroups;
@@ -75,33 +77,33 @@ public class HierarchyNodeGroupsLocator implements BeanLocator {
         }
         return togo;
     }
-    
+
     public void saveAll() {
-       for (Iterator<String> i = delivered.keySet().iterator(); i.hasNext();) {
-          String key = (String) i.next();
-          Map<String, Boolean> groupbools = delivered.get(key);
-          assignGroups(key, groupbools);
-       }
+        for (Iterator<String> i = delivered.keySet().iterator(); i.hasNext();) {
+            String key = (String) i.next();
+            Map<String, Boolean> groupbools = delivered.get(key);
+            assignGroups(key, groupbools);
+        }
     }
 
     private void assignGroups(String nodeid, Map<String, Boolean> groupbools) {
-       Set<String> assignedGroup = new HashSet<String>();
-       for (Iterator<String> i = groupbools.keySet().iterator(); i.hasNext();) {
-          String groupid = (String) i.next();
-          Boolean assigned = (Boolean) groupbools.get(groupid);
-          if (assigned.booleanValue() == true) {
-             assignedGroup.add(groupid);
-          }
-       }
-       hierarchyLogic.setEvalGroupsForNode(nodeid, assignedGroup);
+        Set<String> assignedGroup = new HashSet<String>();
+        for (Entry<String, Boolean> entry : groupbools.entrySet()) {
+            String groupid = entry.getKey();
+            Boolean assigned = entry.getValue();
+            if (assigned.booleanValue() == true) {
+                assignedGroup.add(groupid);
+            }
+        }
+        hierarchyLogic.setEvalGroupsForNode(nodeid, assignedGroup);
     }
-    
+
     /*
      * Currently only administrators can use this functionality.
      */
     private void checkSecurity() {
-        String currentUserId = external.getCurrentUserId();
-        boolean userAdmin = external.isUserAdmin(currentUserId);
+        String currentUserId = commonLogic.getCurrentUserId();
+        boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
 
         if (!userAdmin) {
             // Security check and denial

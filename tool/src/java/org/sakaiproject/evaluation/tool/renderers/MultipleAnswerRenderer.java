@@ -14,6 +14,8 @@
 
 package org.sakaiproject.evaluation.tool.renderers;
 
+import java.util.Map;
+
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.model.EvalScale;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
@@ -37,6 +39,7 @@ import uk.org.ponder.rsf.components.decorators.UIStyleDecorator;
  * 
  * @author Aaron Zeckoski (aaronz@vt.edu)
  */
+@SuppressWarnings("deprecation")
 public class MultipleAnswerRenderer implements ItemRenderer {
 
    /**
@@ -47,7 +50,7 @@ public class MultipleAnswerRenderer implements ItemRenderer {
    /* (non-Javadoc)
     * @see org.sakaiproject.evaluation.tool.renderers.ItemRenderer#renderItem(uk.org.ponder.rsf.components.UIContainer, java.lang.String, org.sakaiproject.evaluation.model.EvalTemplateItem, int, boolean)
     */
-   public UIJointContainer renderItem(UIContainer parent, String ID, String[] bindings, EvalTemplateItem templateItem, int displayNumber, boolean disabled) {
+   public UIJointContainer renderItem(UIContainer parent, String ID, String[] bindings, EvalTemplateItem templateItem, int displayNumber, boolean disabled, Map<String, Object> renderProperties) {
       UIJointContainer container = new UIJointContainer(parent, ID, COMPONENT_ID);
 
       if (displayNumber <= 0) displayNumber = 0;
@@ -75,9 +78,12 @@ public class MultipleAnswerRenderer implements ItemRenderer {
             EvalConstants.ITEM_SCALE_DISPLAY_VERTICAL.equals(scaleDisplaySetting)) {
 
          UIBranchContainer fullFirst = UIBranchContainer.make(container, "fullType:");
-         if (templateItem.renderOption) {
+         if ( renderProperties.containsKey(ItemRenderer.EVAL_PROP_RENDER_INVALID) ) {
             fullFirst.decorate( new UIStyleDecorator("validFail") ); // must match the existing CSS class
+         } else if ( renderProperties.containsKey(ItemRenderer.EVAL_PROP_ANSWER_REQUIRED) ) {
+        	 fullFirst.decorate( new UIStyleDecorator("compulsory") ); // must match the existing CSS class
          }
+
 
          for (int count = 0; count < optionCount; count++) {
             scaleValues[count] = new Integer(count).toString();

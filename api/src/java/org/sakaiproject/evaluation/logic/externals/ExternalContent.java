@@ -1,7 +1,5 @@
 package org.sakaiproject.evaluation.logic.externals;
 
-import java.io.InputStream;
-
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 
 /** 
@@ -12,14 +10,6 @@ import org.sakaiproject.evaluation.logic.EvalCommonLogic;
  * @author Steven Githens (swgithen at mtu dot edu)
  */
 public interface ExternalContent {
-	
-	/**
-	 * Check that a content resource can be accessed.
-	 * 
-	 * @param resourceId the identifier of the content resource
-	 * @return true if accessible, false if not accessible
-	 */
-	public boolean checkResource(String resourceId);
 
    /**
     * Get the contents of a file as a byte array. You should be fairly certain
@@ -37,30 +27,9 @@ public interface ExternalContent {
    public byte[] getFileContent(String abspath);
    
    /**
-    * Get the resource id of the content resource that was imported.
-    * 
-    * @return the id
+    * Get the ID referencing to the content collection. 
+    * @param siteId The site ID
+    * @return The content collection ID in the form: "/group/{Site ID}"
     */
-   public String getImportedResourceId();
-   
-   /**
-    * Get the contents of a content resource as a stream.
-    * 
-    * @param resourceId the identifier of the content resource
-    * @return the input stream
-    */
-   public InputStream getStreamContent(String resourceId);
-   
-   /**
-    * Remove the identified resource.
-    * 
-    * @param resourceId the resource identifier
-    * @return true if successful, false otherwise
-    */
-   public boolean removeResource(String resourceId);
-   
-   /**
-    * Set the attributes of the imported content resource.
-    */
-   public void setImportedResourceAttributes();
+   public String getContentCollectionId(String siteId);
 }

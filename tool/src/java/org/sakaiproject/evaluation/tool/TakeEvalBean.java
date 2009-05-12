@@ -14,15 +14,15 @@
 
 package org.sakaiproject.evaluation.tool;
 
-
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
-import org.sakaiproject.evaluation.logic.EvalEmailsLogic;
-import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.exceptions.ResponseSaveException;
+import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.tool.locators.ResponseBeanLocator;
 
@@ -37,60 +37,61 @@ import uk.org.ponder.messageutil.TargettedMessageList;
  */
 public class TakeEvalBean {
 
-   private static Log log = LogFactory.getLog(TakeEvalBean.class);
+    private static Log log = LogFactory.getLog(TakeEvalBean.class);
 
-   public EvalEvaluation eval;
-   public String evalGroupId;
-   public Date startDate;
+    public EvalEvaluation eval;
+    public String evalGroupId;
+    public Date startDate;
+    /**
+     * selection Id values to populate {@link TakeEvalBean.setSelectionOptions}
+     */
+    public String[] selectioninstructorIds;
+    public String[] selectionassistantIds;
 
-   private ResponseBeanLocator responseBeanLocator;
-   public void setResponseBeanLocator(ResponseBeanLocator responseBeanLocator) {
-      this.responseBeanLocator = responseBeanLocator;
-   }
+    private ResponseBeanLocator responseBeanLocator;
+    public void setResponseBeanLocator(ResponseBeanLocator responseBeanLocator) {
+        this.responseBeanLocator = responseBeanLocator;
+    }
 
-   private EvalCommonLogic commonLogic;
-   public void setCommonLogic(EvalCommonLogic commonLogic) {
-      this.commonLogic = commonLogic;
-   }
-   
-   private EvalEmailsLogic emailsLogic;
-   public void setEmailsLogic(EvalEmailsLogic emailsLogic) {
-      this.emailsLogic = emailsLogic;
-   }
-   
-   private EvalSettings settings;
-   public void setSettings(EvalSettings settings) {
-      this.settings = settings;
-   }
+    private EvalCommonLogic commonLogic;
+    public void setCommonLogic(EvalCommonLogic commonLogic) {
+        this.commonLogic = commonLogic;
+    }
 
-   private TargettedMessageList messages;
-   public void setMessages(TargettedMessageList messages) {
-      this.messages = messages;
-   }
+    private TargettedMessageList messages;
+    public void setMessages(TargettedMessageList messages) {
+        this.messages = messages;
+    }
 
-   public String submitEvaluation() {
-      log.debug("submit evaluation");
-      try {
-         responseBeanLocator.saveAll(eval, evalGroupId, startDate);
-      } catch (ResponseSaveException e) {
-         String messageKey = "unknown.caps";
-         if (ResponseSaveException.TYPE_MISSING_REQUIRED_ANSWERS.equals(e.type)) {
-            messageKey = "takeeval.user.must.answer.all.exception";
-         } else if (ResponseSaveException.TYPE_BLANK_RESPONSE.equals(e.type)) {
-            messageKey = "takeeval.user.blank.response.exception";
-         } else if (ResponseSaveException.TYPE_CANNOT_TAKE_EVAL.equals(e.type)) {
-            messageKey = "takeeval.user.cannot.take.now.exception";
-         }
-         messages.addMessage( new TargettedMessage(messageKey, e) );
-         return "failure";
-      }
-      messages.addMessage( new TargettedMessage("evaluations.take.message",
-            new Object[] { eval.getTitle(), commonLogic.getDisplayTitle(evalGroupId) }, 
-            TargettedMessage.SEVERITY_INFO));
-      if(((Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL)).booleanValue()) {
-    	  emailsLogic.sendEvalSubmissionConfirmationEmail(eval.getId());
-      }
-      return "success";
-   }
+    public String submitEvaluation() {
+        log.debug("submit evaluation");
+        try {
+        	Map<String, String[]> selectionOptions = new HashMap<String, String[]>();
+            if (selectioninstructorIds != null) {
+                selectionOptions.put(EvalAssignGroup.SELECTION_TYPE_INSTRUCTOR, selectioninstructorIds);
+                }
+            if (selectionassistantIds != null) {
+                selectionOptions.put(EvalAssignGroup.SELECTION_TYPE_ASSISTANT, selectionassistantIds); 
+            }
+            responseBeanLocator.saveAll(eval, evalGroupId, startDate, selectionOptions);
+        } catch (ResponseSaveException e) {
+            String messageKey = "unknown.caps";
+            if (ResponseSaveException.TYPE_MISSING_REQUIRED_ANSWERS.equals(e.type)) {
+                messageKey = "takeeval.user.must.answer.all.exception";
+            } else if (ResponseSaveException.TYPE_BLANK_RESPONSE.equals(e.type)) {
+                messageKey = "takeeval.user.blank.response.exception";
+            } else if (ResponseSaveException.TYPE_CANNOT_TAKE_EVAL.equals(e.type)) {
+                messageKey = "takeeval.user.cannot.take.now.exception";
+            } else {
+                messageKey = "takeeval.user.cannot.save.reponse";
+            }
+            messages.addMessage(new TargettedMessage(messageKey, e));
+            return "failure";
+        }
+        messages.addMessage(new TargettedMessage("evaluations.take.message", new Object[] {
+                eval.getTitle(), commonLogic.getDisplayTitle(evalGroupId) },
+                TargettedMessage.SEVERITY_INFO));
+        return "success";
+    }
 
 }

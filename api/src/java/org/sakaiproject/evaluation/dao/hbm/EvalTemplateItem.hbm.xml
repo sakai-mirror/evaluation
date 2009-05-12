@@ -61,6 +61,10 @@
         <property name="usesComment" type="java.lang.Boolean">
             <column name="USES_COMMENT" />
         </property>
+        <!-- should this item be compulsory (must be answered) -->
+        <property name="compulsory" type="java.lang.Boolean">
+            <column name="COMPULSORY"/>
+        </property>
         <!-- is this item the parent item for a block -->
         <property name="blockParent" type="java.lang.Boolean">
             <column name="BLOCK_PARENT" />

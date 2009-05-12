@@ -6,7 +6,7 @@
     <parent>
         <artifactId>evaluation</artifactId>
         <groupId>org.sakaiproject</groupId>
-        <version>1.2.1</version><!--eval.version-->
+        <version>1.2.2</version><!--eval.version-->
     </parent>
     <name>Sakai Evaluation Tool</name>
     <groupId>org.sakaiproject.evaluation</groupId>
@@ -19,7 +19,7 @@
 
     <properties>
         <sakairsf.sakai.version>2.2.x</sakairsf.sakai.version>
-        <rsfutil.version>0.7.3M3</rsfutil.version>
+        <rsfutil.version>0.7.4</rsfutil.version>
     </properties>
     <packaging>war</packaging>
 
@@ -157,6 +157,13 @@
             </exclusions>
             <!--properties:  war.bundle: true -->
         </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <repositories>
@@ -209,5 +216,9 @@
         <!-- java source -->
         <sourceDirectory>src/java</sourceDirectory>
         <!-- other resources for the jar - the message bundles -->
+
+        <!-- unit testing -->
+        <testSourceDirectory>src/test</testSourceDirectory>
+
     </build>
 </project>

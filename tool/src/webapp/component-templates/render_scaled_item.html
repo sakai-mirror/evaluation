@@ -12,7 +12,7 @@
 			<div rsf:id="compactDisplay:" style="clear:both;height:100%;overflow:hidden;vertical-align:middle;">
 				<!-- Compact DISPLAY -->
 				<div style="float:left;padding:.3em 0;">
-                     <span class="validFailGlyph">*</span>
+                     <span class="validFailGlyph">*</span><span class="compulsoryGlyph">*</span>
                      <span rsf:id="itemNum" class="label">#</span><span class="label">.&nbsp;</span>
                      <div rsf:id="itemText" style="display:inline" class="label">Item text for compact items goes here</div>
 				</div>	
@@ -56,7 +56,7 @@
 			
 			<div rsf:id="fullType:">
 				<!-- Full, Full Colored, Vertical DISPLAY -->
-					<span class="validFailGlyph">*</span> <span rsf:id="itemNum" class="label">#</span><span class="label">.&nbsp;</span>
+					<span class="validFailGlyph">*</span><span class="compulsoryGlyph">*</span> <span rsf:id="itemNum" class="label">#</span><span class="label">.&nbsp;</span>
 					<div rsf:id="itemText" style="display:inline" class="label">Full or vertical display text here</div>
 
 				<!-- Next row for Full Display, Full Colored, Vertical Display -->
@@ -101,10 +101,6 @@
          							<label for="full3" style="font-weight:bold;" rsf:id="radioLabel">full label</label>
          							<input type="radio" rsf:id="radioValue" id="full3" name="vertical" />
          						</td>
-         						<td rsf:id="showNA:" class="na">
-         							<label rsf:id="na-desc" for="na-input" style="font-weight:bold;">N/A</label>
-									<input type="radio" name="vertical" rsf:id="na-input" id="na-input" />
-								</td>
          					</tr>
          				</table>
          			</div>
@@ -148,6 +144,12 @@
 			
 			<!-- DIV tag for Stepped Display -->
 			<div rsf:id="steppedDisplay:">
+				<!--[if IE 7]>
+					<style type="text/css">
+						td.exclude input {padding:0px;margin:4px;}
+					</style>
+				<![endif]-->
+
 				<table border="0" cellspacing="0" cellpadding="0" width="99%">
 					<tr>
 						<td>
@@ -202,17 +204,17 @@
 					</tr>
 				
 					<tr>
-						<td>
+						<td class="exclude">
 							<table border="0" cellspacing="0" cellpadding="0" width="100%">
 								<tr>
 									<td width="90%" valign="top">
-											<span class="validFailGlyph">*</span> <span rsf:id="itemNum" class="label">#</span><span class="label">.&nbsp;</span>
+											<span class="validFailGlyph">*</span><span class="compulsoryGlyph">*</span> <span rsf:id="itemNum" class="label">#</span><span class="label">.&nbsp;</span>
 											<div rsf:id="itemText"  style="display:inline" class="label">Stepped item text here</div>
 									</td>
 									<td width="2%" valign="top">
-										<input rsf:id="na-input" type="radio" name="block1" id="choiceNA" style="width:28px;padding:0px;margin:4px 0px;" />&nbsp;
+										<input rsf:id="na-input" type="radio" name="block1" id="choiceNA"  />
 									</td>
-									<td width="5%" nowrap="nowrap" valign="top" style="height:28px">
+									<td width="5%" nowrap="nowrap" valign="top" style="height:28px" >
 										<span rsf:id="dummyRadio" />
 										<div rsf:id="coloredChoicesBranch:" style="width:100%;position:relative;">
 											<div style="width:100%;display:block;position:absolute;z-index:5;">
@@ -221,16 +223,16 @@
 				
 											<!-- For correct spacing there are 2 sets of radio buttons, this is the one for colored spacing -->
 											<div style="width:100%;display:block;position:absolute;z-index:6;background-color:transparent;">
-												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice1" style="width:28px;padding:0px;margin:4px 0px;" /></span>
-												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice2" style="width:28px;padding:0px;margin:4px 0px;" /></span>
-												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice3" style="width:28px;padding:0px;margin:4px 0px;" /></span>
+												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice1"  /></span>
+												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice2"  /></span>
+												<span rsf:id="scaleOptionColored:"><input rsf:id="radioValueColored" type="radio" name="block1" id="choice3"  /></span>
 											</div>
 										</div>
 				
 										<!-- This is the real set of radio buttons -->
-										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1"  id="choice1" style="width:28px;padding:0px;margin:4px 0px;" /></span>
-										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1" id="choice2" style="width:28px;padding:0px;margin:4px 0px;" /></span>
-										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1" id="choice3" style="width:28px;padding:0px;margin:4px 0px;" /></span>
+										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1"  id="choice1"  /></span>
+										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1" id="choice2"  /></span>
+										<span rsf:id="scaleOption:"><input rsf:id="radioValue" type="radio" name="block1" id="choice3"  /></span>
 									</td>
 								</tr>
 							</table>
@@ -242,13 +244,10 @@
 
            <!-- the optional comment block to show after the item -->
            <div rsf:id="showComment:" style="padding: 1em 0 0 0;">
-               <div rsf:id="itemCommentHeader">Comment:</div>
-               <div>
-                    <textarea rsf:id="itemComment" cols="50" rows="3"></textarea>
-               </div>               
+	       <div class="addItem"><a class="commentLinks" onclick="showComment(this);return false;" href="#">Add a comment</a> </div>
+    	       <div class="hideComment" style="display:none"><a onclick="hideComment(this);return false;" href="#">Hide comment</a> </div>
+    	       <div><textarea style="display:none" rsf:id="itemComment" cols="65" rows="3"></textarea></div>
            </div>
-
-		</div>
-	
-	</body>
+	</div>
+    </body>
 </html>

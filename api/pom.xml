@@ -6,7 +6,7 @@
     <parent>
         <artifactId>evaluation</artifactId>
         <groupId>org.sakaiproject</groupId>
-        <version>1.2.1</version><!--eval.version-->
+        <version>1.2.2</version><!--eval.version-->
     </parent>
     <name>Sakai Evaluation API</name>
     <groupId>org.sakaiproject.evaluation</groupId>
@@ -25,12 +25,6 @@
     </properties>
 
     <dependencies>
-        
-        <dependency>
-			<groupId>org.sakaiproject</groupId>
-			<artifactId>sakai-authz-api</artifactId>
-			<version>${sakai.version}</version>
-		</dependency>
 
         <!-- Apache commons dependencies -->
         <dependency>

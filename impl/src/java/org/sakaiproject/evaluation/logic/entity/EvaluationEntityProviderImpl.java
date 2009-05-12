@@ -14,44 +14,37 @@
 
 package org.sakaiproject.evaluation.logic.entity;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.entitybroker.entityprovider.CoreEntityProvider;
 import org.sakaiproject.entitybroker.entityprovider.capabilities.AutoRegisterEntityProvider;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
-import org.sakaiproject.evaluation.logic.entity.EvaluationEntityProvider;
 
 /**
- * Implementation for the entity provider for evaluationSetupService
+ * Implementation for the entity provider for evaluations
  * 
  * @author Aaron Zeckoski (aaronz@vt.edu)
  */
 public class EvaluationEntityProviderImpl implements EvaluationEntityProvider, CoreEntityProvider, AutoRegisterEntityProvider {
 
-	private static Log log = LogFactory.getLog(EvaluationEntityProviderImpl.class);
-	
-	private EvalEvaluationService evaluationService;
-   public void setEvaluationService(EvalEvaluationService evaluationService) {
-      this.evaluationService = evaluationService;
-   }
+    private EvalEvaluationService evaluationService;
+    public void setEvaluationService(EvalEvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
+    }
 
+    public String getEntityPrefix() {
+        return ENTITY_PREFIX;
+    }
 
-	public String getEntityPrefix() {
-		return ENTITY_PREFIX;
-	}
-
-	public boolean entityExists(String id) {
-		Long evaluationId;
-		try {
-		   evaluationId = new Long(id);
-			if (evaluationService.checkEvaluationExists(evaluationId)) {
-				return true;
-			}
-		} catch (NumberFormatException e) {
-			// invalid number so roll through to the false
-		}
-		log.warn("NOTE: evaluation does not exist: " + id);
-		return false;
-	}
+    public boolean entityExists(String id) {
+        Long evaluationId;
+        try {
+            evaluationId = new Long(id);
+            if (evaluationService.checkEvaluationExists(evaluationId)) {
+                return true;
+            }
+        } catch (NumberFormatException e) {
+            // invalid number so roll through to the false
+        }
+        return false;
+    }
 
 }

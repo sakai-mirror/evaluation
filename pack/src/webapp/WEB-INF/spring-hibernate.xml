@@ -13,6 +13,7 @@
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalAnswer.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalAssignGroup.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalAssignHierarchy.hbm.xml</value>
+                <value>org/sakaiproject/evaluation/dao/hbm/EvalAssignUser.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalConfig.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalEmailTemplate.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalEvaluation.hbm.xml</value>
@@ -20,7 +21,6 @@
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalItem.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalItemGroup.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalLock.hbm.xml</value>
-                <value>org/sakaiproject/evaluation/dao/hbm/EvalQueuedEmail.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalResponse.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalScale.hbm.xml</value>
                 <value>org/sakaiproject/evaluation/dao/hbm/EvalTags.hbm.xml</value>
@@ -44,6 +44,7 @@
                 <value>org.sakaiproject.evaluation.model.EvalAnswer</value>
                 <value>org.sakaiproject.evaluation.model.EvalAssignGroup</value>
                 <value>org.sakaiproject.evaluation.model.EvalAssignHierarchy</value>
+                <value>org.sakaiproject.evaluation.model.EvalAssignUser</value>
                 <value>org.sakaiproject.evaluation.model.EvalConfig</value>
                 <value>org.sakaiproject.evaluation.model.EvalEmailTemplate</value>
                 <value>org.sakaiproject.evaluation.model.EvalEvaluation</value>
@@ -51,7 +52,6 @@
                 <value>org.sakaiproject.evaluation.model.EvalItem</value>
                 <value>org.sakaiproject.evaluation.model.EvalItemGroup</value>
                 <value>org.sakaiproject.evaluation.model.EvalLock</value>
-                <value>org.sakaiproject.evaluation.model.EvalQueuedEmail</value>
                 <value>org.sakaiproject.evaluation.model.EvalResponse</value>
                 <value>org.sakaiproject.evaluation.model.EvalScale</value>
                 <value>org.sakaiproject.evaluation.model.EvalTags</value>
@@ -126,7 +126,7 @@
                 <value>org.sakaiproject.evaluation.dao.EvalAdhocSupport</value>
                 <value>org.sakaiproject.evaluation.logic.Eval*</value>
                 <value>org.sakaiproject.evaluation.beans.Eval*</value>
-                <value>org.sakaiproject.evaluation.logic.imports.Eval*</value>
+                <value>org.sakaiproject.evaluation.logic.import.Eval*</value>
             </list>
         </property>
     </bean>

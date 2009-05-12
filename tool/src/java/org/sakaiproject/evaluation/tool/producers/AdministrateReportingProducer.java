@@ -16,9 +16,9 @@ import uk.org.ponder.rsf.viewstate.ViewParameters;
 public class AdministrateReportingProducer implements ViewComponentProducer {
     public static final String VIEW_ID = "administrate_reporting";
     
-    private EvalCommonLogic external;
-    public void setExternal(EvalCommonLogic external) {
-        this.external = external;
+    private EvalCommonLogic commonLogic;
+    public void setCommonLogic(EvalCommonLogic commonLogic) {
+        this.commonLogic = commonLogic;
     }
     
     public String getViewID() {
@@ -26,8 +26,8 @@ public class AdministrateReportingProducer implements ViewComponentProducer {
     }
 
     public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
-        String currentUserId = external.getCurrentUserId();
-        boolean userAdmin = external.isUserAdmin(currentUserId);
+        String currentUserId = commonLogic.getCurrentUserId();
+        boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
 
         if (!userAdmin) {
             // Security check and denial
@@ -39,6 +39,7 @@ public class AdministrateReportingProducer implements ViewComponentProducer {
                 new SimpleViewParameters(SummaryProducer.VIEW_ID));
         UIInternalLink.make(tofill, "administrate-link", UIMessage.make("administrate.page.title"),
                 new SimpleViewParameters(AdministrateProducer.VIEW_ID));
+
         UIMessage.make(tofill, "page-title", "controlreporting.breadcrumb.title");
         
         UIForm form = UIForm.make(tofill, "settings-form");
@@ -62,6 +63,11 @@ public class AdministrateReportingProducer implements ViewComponentProducer {
         // Set the location in Resources of the PDF Banner
         AdministrateProducer.makeInput(form, "pdf-banner-image-location", EvalSettings.PDF_BANNER_IMAGE_LOCATION);
         UIMessage.make(form, "pdf-banner-image-location-note", "controlreporting.pdfbanner.location.label");
+        
+        // Allow CSV Export
+        AdministrateProducer.makeBoolean(form, "allow-list-of-takers-export", EvalSettings.ENABLE_LIST_OF_TAKERS_EXPORT);
+        UIMessage.make(form, "allow-list-of-takers-export-note", "controlreporting.enable.list.of.takers.label");
+
         
         UICommand.make(form, "saveSettings",UIMessage.make("controlreporting.save"), null);
     }
