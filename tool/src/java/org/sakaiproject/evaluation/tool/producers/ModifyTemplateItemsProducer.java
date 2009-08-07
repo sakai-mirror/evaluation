@@ -18,7 +18,6 @@ package org.sakaiproject.evaluation.tool.producers;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.sakaiproject.util.FormattedText;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
@@ -40,6 +39,7 @@ import org.sakaiproject.evaluation.tool.viewparams.ItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateViewParameters;
 import org.sakaiproject.evaluation.utils.TemplateItemUtils;
+import org.sakaiproject.util.FormattedText;
 
 import uk.org.ponder.messageutil.MessageLocator;
 import uk.org.ponder.rsf.components.UIBoundBoolean;
@@ -48,7 +48,6 @@ import uk.org.ponder.rsf.components.UICommand;
 import uk.org.ponder.rsf.components.UIContainer;
 import uk.org.ponder.rsf.components.UIELBinding;
 import uk.org.ponder.rsf.components.UIForm;
-import uk.org.ponder.rsf.components.UIInitBlock;
 import uk.org.ponder.rsf.components.UIInput;
 import uk.org.ponder.rsf.components.UIInternalLink;
 import uk.org.ponder.rsf.components.UILink;
@@ -402,14 +401,13 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
                 Boolean useResultsSharing = (Boolean) evalSettings.get(EvalSettings.ITEM_USE_RESULTS_SHARING);
                 if ( useResultsSharing ) {
                     // only show results sharing if it is being used
-                    UIMessage.make(tofill, "item-resultssharing-title", "modifytemplate.item.resultssharing.title");
                     String resultsSharingMessage = "unknown.caps";
                     if ( EvalConstants.SHARING_PUBLIC.equals(templateItem.getResultsSharing()) ) {
                         resultsSharingMessage = "general.public";
                     } else if ( EvalConstants.SHARING_PRIVATE.equals(templateItem.getResultsSharing()) ) {
                         resultsSharingMessage = "general.private";
                     }
-                    UIMessage.make(itemBranch, "item-resultssharing", resultsSharingMessage);
+                    UIMessage.make(itemBranch, "item-results-sharing", resultsSharingMessage);
                 }
 
                 if ( EvalConstants.ITEM_TYPE_SCALED.equals(templateItem.getItem().getClassification()) &&
@@ -470,9 +468,6 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
 
         }
 
-        // this fills in the javascript call
-        UIInitBlock.make(tofill, "decorateSelects", "EvalSystem.decorateReorderSelects", 
-                new Object[] { "", Integer.toString(templateItemsList.size()) } );
         //this outputs the total number of rows
         UIVerbatim.make(tofill, "total-rows", (sCurItemNum + 1));
 

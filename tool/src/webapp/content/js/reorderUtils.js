@@ -75,16 +75,9 @@ function startSort() {
         delay:         '1',
         opacity:     '0.9',
         scroll:     true,
-        update: function(data) {
-            var list = $("#itemList > div").get();
-            for (var i = 0; i < list.length - 1; i++) {
-                if (list[i].id) {
-                    setIndex(list[i].id, i);
-                }
-            }
-            enableOrderButtons();
+        update: function(data){
+            evalTemplateSort.updateLabelling(data);
         }
-
     });
     $(".itemTableBlock").each(function() {
         $(this).sortable({
@@ -128,7 +121,7 @@ function startSort() {
                         $('#facebox .body [name*=blockChildConfirm]').click(function() {
                             if ($(this).attr('msg') == 'yes') {
                                 $.facebox('\
-                                                  <div><img src="' + $.facebox.defaults.loadingImage + '"/>  Saving... \
+                                                  <div><img src="' + $.facebox.settings.loadingImage + '"/>  Saving... \
                             </div> \
                             <div class="footer"> \
                                Please do not close this window.  \
@@ -168,12 +161,26 @@ function startSort() {
                     $(saveAction).appendTo(ui.item.parents('.itemTableBlock').children('.instruction').eq(0));
                     ui.item.parents('.itemTableBlock').children('.instruction').eq(0).effect('highlight', 1500);
                     ui.item.parents('.itemTableBlock').find('.itemBlockSave').bind('click', function() {
-                        $(document).trigger('block.triggerChildrenSort', [ui]);   
-                        $(this).html('Saving... <img src="' + $.facebox.defaults.loadingImage + '"/>');
-                        ui.item.parents('.itemTableBlock').sortable('disable');
-                        $(document).trigger('block.saveReorder', [ui,"simple"]);
-                        ui.item.parents('.itemTableBlock').sortable('enable');
+                        var order = [];
+                        ui.item.parents('.itemTableBlock').find('div.itemRowBlock').not('.ui-sortable-helper').each(function(){
+                            order.push($(this).find('a[templateitemid]').attr('templateitemid'));
+                        });
+                        var params = {
+                            orderedIds : order.toString()
+                        },
+                        fnBefore = function(){
+                            $(document).trigger('block.triggerChildrenSort', [ui]);
+                            ui.item.parents('.itemTableBlock').sortable('disable');
+                        },
+                        fnAfter = function(){
+                            ui.item.parents('.itemTableBlock').sortable('enable');
+                            ui.item.parents('.itemRow').find('.itemBlockSave').fadeOut(0, function() {
+                                $(this).remove();
+                            });
+                        };
+                        evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_save_order, params, fnBefore, fnAfter);
                         return false;
+
                     });
                 }
 
@@ -252,7 +259,7 @@ $(document).bind('block.saveReorder', function(e, ui, type) {
                         params += '&templateId=' + t.attr('templateid');
                         params += '&command+link+parameters%26el-binding%3Dj%2523%257BtemplateBBean.blockId%257Dnew1%26el-binding%3Dj%2523%257BtemplateBBean.templateItemIds%257D' + ordering.toString() + '%26el-binding%3Dj%2523%257BtemplateBBean.originalDisplayOrder%257D2%26Submitting%2520control%3DsaveBlockAction%26Fast%2520track%2520action%3DtemplateBBean.saveBlockItemAction=Save+item';
                         $.ajax({
-                            url: "modify_block",
+                            url: "modify_template",
                             data: params,
                             type: "POST",
                             success: function(d) {
@@ -263,19 +270,11 @@ $(document).bind('block.saveReorder', function(e, ui, type) {
 
                                 $('form[name=modify_form_rows]').ajaxSubmit({
                                     success: function(d) {
-                                        if ((type != null) && (type == "simple")) {
-                                            $(document).trigger('activateControls.templateItems');
-                                            item.parents('.itemRow').effect('highlight', 1500);
-                                            item.parents('.itemRow').find('.itemBlockSave').fadeOut('fast', function() {
-                                                $(this).remove();
-                                            });
-                                        } else {
-                                            $('#itemList').html($(d).find('#itemList').html());
-                                            $(document).trigger('list.triggerSort', [ui]);
-                                            $(document).trigger('activateControls.templateItems');
-                                            $(document).trigger('close.facebox');
-                                            item.parents('.itemTableBlock').effect('highlight', 3500);
-                                        }
+                                        $('#itemList').html($(d).find('#itemList').html());
+                                        $(document).trigger('list.triggerSort', [ui]);
+                                        $(document).trigger('activateControls.templateItems');
+                                        $(document).trigger('close.facebox');
+                                        item.parents('.itemTableBlock').effect('highlight', 3500);
                                         $(document).trigger('list.busy', false);
                                     }
                                 });
