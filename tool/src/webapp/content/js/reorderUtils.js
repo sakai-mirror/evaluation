@@ -129,17 +129,11 @@ function startSort() {
                                         additems: itemId
                                     },
                                     fnAfter = function(){
-                                        //remove item from list of items that can be grouped
-                                        for (var i in evalTemplateUtils.vars.groupableItems){
-                                            if(evalTemplateUtils.vars.groupableItems[i].itemId === itemId){
-                                                evalTemplateUtils.vars.groupableItems.splice(i, 1);
-                                            }
-                                        }
+                                        evalTemplateSort.updateDropDownMax();
                                         //Save new group order
                                         evalTemplateOrder.saveGroupLevelTemplateOrdering(ui.item);
                                         //Save overall template ordering so the template knows that we've removed a few items and grouped them.
                                         evalTemplateOrder.saveTopLevelTemplateOrdering();
-                                        refreshSort();
                                         $(document).trigger('block.triggerChildrenSort', [parentObj]);
                                     };
                                     evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_block_edit, params, null, fnAfter);
@@ -148,7 +142,7 @@ function startSort() {
                                     $(document).trigger('block.rejectItem', [ui, "noAlert"]);
                                 }
                         }
-                        }
+                      }
                     }
                     }
                 }
@@ -177,31 +171,27 @@ $(document).bind('block.triggerChildrenSort', function(e, parentItem) {
     refreshSort();
 });
 $(document).bind('block.rejectItem', function(e, ui, option) {
+    evalTemplateUtils.debug.group("rejecting to block this item: %o", ui.item);
     $(document).trigger('list.warning', [ui, option, 'block', 'Sorry this item cannot be grouped here. It is not the same type as the grouped items.']);//todo: i8n this
     var shadow = ui.item.clone(true);
     var shadowPlace = $('.itemList > div.itemRow').eq(ui.item.find('input').eq(0).val()).attr('id');
     ui.item.remove();
     shadow.insertBefore($('[id="' + shadowPlace + '"]'));
-    shadow.removeAttr('style').effect('highlight', 3500);
+    shadow.removeAttr('style').effect('highlight', 1000);
     $('.itemList div[id="' + shadow.attr('id') + '"]').not(':lt(1)').remove();
     refreshSort();
     evalTemplateSort.updateLabelling();
     //init dropdown controls
     evalTemplateOrder.initDropDowns();
-});
-$(document).bind('list.triggerSort', function() {
-var c = 0;
-$(".itemList > div.itemRow").filter(':visible').each(function() {
-    $(this).find('select').eq(0).val(c + 1);
-    $(this).find('input[name=*hidden-item-num]').eq(0).val(c);
-    c++;
-});
+    //deactivate save order butons
+    disableOrderButtons();
+    evalTemplateUtils.debug.groupEnd();
 });
 
 $(document).bind('list.warning', function(e, ui, option, extra, err){
     var item = ui.item? ui.item : ui;
         if (option != "noAlert") {
-        $('.itemOperationsEnabled').remove();
+       $("div.itemList").find('.itemOperationsEnabled').remove();
         var error = '<div class="itemOperationsEnabled">\
                         <img src="/library/image/sakai/cancelled.gif"/>\
                         <span class="instruction">'+ err +'</span> <a href="#" id="closeItemOperationsEnabled">close</a></div>\

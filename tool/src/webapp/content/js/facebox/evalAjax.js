@@ -101,8 +101,7 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
                     }
                 }
 
-                $(document).trigger('list.triggerSort');
-                
+                evalTemplateSort.updateLabelling();
                 parentObj.effect('highlight', 1000);
 
                 log.info("selected %o", addItems.toString());
@@ -501,7 +500,7 @@ function updateControlItemsTotal() {
             <img src="/library/image/sakai/cancelled.gif"/>\
             <span class="instruction">Sorry, groups have to have at least TWO items in them.</span> <a href="#" id="closeItemOperationsEnabled">close</a></div>\
             ';    //todo: i8n this
-                    $(that).parents('.itemLine3').prepend(error).effect('highlight', 1500);
+                    $(that).parents('.itemLine3').prepend(error).effect('highlight', 1000);
                     $('#closeItemOperationsEnabled').click(function() {
                         $(this).parent().slideUp('normal', function() {
                             $(this).remove()
@@ -572,7 +571,7 @@ function updateControlItemsTotal() {
             evalTemplateOrder.initGroupableItems();
         }else
         if (options.itemType == 'blockChild') {
-            $(that).parent().parent().effect('highlight', {}, 1000).fadeOut(500, function() {
+            $(that).parent().parent().effect('highlight', {}, 500).fadeOut(100, function() {
                 var parentItem = $(this).parents("div.itemRow");
                 $(this).remove();
                 $(document).trigger('block.triggerChildrenSort', [parentItem]);
@@ -581,11 +580,14 @@ function updateControlItemsTotal() {
             });
         }else
         if (options.ref == 'eval-templateitem') {
-            $(that).parents("div.itemRow").effect('highlight', {}, 1000).fadeOut(500, function() {
+            $(that).parents("div.itemRow").effect('highlight', {}, 500).fadeOut(100, function() {
                 $(this).remove();
                 updateControlItemsTotal();
                 evalTemplateSort.updateLabelling();
-                evalTemplateOrder.initGroupableItems();                
+                evalTemplateSort.updateDropDownMax();
+                //Updating labelling leaves Save Order active. Deactivate it now.
+                disableOrderButtons();
+                evalTemplateOrder.initGroupableItems();
             });
         }
         log.groupEnd();
