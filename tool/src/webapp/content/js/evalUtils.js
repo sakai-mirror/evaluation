@@ -253,10 +253,10 @@ var EvalSystem = function() {
 			var selectid = EvalSystem.getRelativeID(linkid, localselectid);
 			var selection = $it(selectid);
 			var url = selection.options[selection.selectedIndex].value;
-			jQuery.facebox({ ajax: url });
-		},
+            evalTemplateFacebox.addItem( url );
+		}
 	
-		decorateReorderSelects: function(namebase, count) {
+		/*decorateReorderSelects: function(namebase, count) {
 			var makeButtonClick = function(b) {
 				return function() {
 					b.click();
@@ -267,9 +267,28 @@ var EvalSystem = function() {
 			for (var i = 0; i < count; ++ i) {
 				var selectid = namebase + "item-row:"+i+":item-select-selection";
 				var selection = $it(selectid);
-				selection.onchange = makeButtonClick(button);
+
+				//selection.onchange = makeButtonClick(button);
+
+               // selection.onchange = function(){
+                 //   alert(44);
+                //};
+                $(selection).bind('onChange', function(){
+                    alert(4434);
+                });
+
+                var order = [];
+                $("#itemList > div").not('.ui-sortable-helper').each(function(){
+                    order.push($(this).find('a[templateitemid]').attr('templateitemid'));
+                });
+                var params = {
+                    orderedIds : order.toString()
+                };
+
+                evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_save_order, params);
+                
 			}
 		}
-
+*/
 	};
 }();
