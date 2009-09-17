@@ -105,6 +105,18 @@ public interface EvalSettings {
      */
     public static final String ENABLE_NOT_AVAILABLE = "ENABLE_NOT_AVAILABLE:java.lang.Boolean";
     /**
+     * CONSTANT: Is the box showing the Evaluations I am creating or administrating visible? - {@link Boolean}, default True
+     */
+    public static final String ENABLE_ADMINISTRATING_BOX = "ENABLE_ADMINISTRATING_BOX:java.lang.Boolean";
+    /**
+     * CONSTANT: Is the box showing the Courses in Which I May Be Evaluated visible? - {@link Boolean}, default False
+     */
+    public static final String ENABLE_EVALUATEE_BOX = "ENABLE_EVALUATEE_BOX:java.lang.Boolean";
+    /**
+    * CONSTANT: Are the toplinks  My Evaluations, My Templates, My Items, My Scales visible? - {@link Boolean}, default True
+    */
+   public static final String ENABLE_MY_TOPLINKS = "ENABLE_MY_TOPLINKS:java.lang.Boolean";
+   /**
      * Enable evaluation taker comments on all non-text answerable items, this is configured
      * on a per item basis, and will disable all comments if turned off
      */
@@ -348,6 +360,9 @@ public interface EvalSettings {
         ENABLE_SINGLE_EMAIL_PER_STUDENT,
         ENABLE_SUMMARY_SITES_BOX,
         ENABLE_ASSISTANT_CATEGORY,
+        ENABLE_ADMINISTRATING_BOX,
+        ENABLE_EVALUATEE_BOX,
+        ENABLE_MY_TOPLINKS,
         ENABLE_XLS_REPORT_EXPORT,
         EVAL_USE_DATE_TIME,
         EVAL_USE_SAME_VIEW_DATES,

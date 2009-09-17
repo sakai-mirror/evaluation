@@ -55,6 +55,10 @@
         <property name="messages" ref="targettedMessageList" />
     </bean>
 
+    <bean id="administrateSearchBean" 
+    		class="org.sakaiproject.evaluation.tool.AdministrateSearchBean">
+    </bean>
+
         <!-- DO NOT USE SAKAI SERVICES DIRECTLY -->
 <!-- 
     <bean id="importBean" class="org.sakaiproject.evaluation.tool.ImportBean">
@@ -122,6 +126,8 @@
         class="org.sakaiproject.evaluation.tool.locators.TemplateItemWBL">
         <property name="localTemplateLogic" ref="localTemplateLogic" />
         <property name="messages" ref="targettedMessageList" />
+        <property name="authoringService" 
+			ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
     </bean>
 
     <bean id="itemWBL" class="org.sakaiproject.evaluation.tool.locators.ItemBeanWBL">
@@ -230,6 +236,19 @@
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
     </bean>
 
+    <bean class="org.sakaiproject.evaluation.tool.producers.AdministrateSearchProducer">
+        <property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="evaluationService"
+            ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
+        <property name="evalSettings"
+            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
+        <property name="deliveryService"
+            ref="org.sakaiproject.evaluation.logic.EvalDeliveryService" />
+        <property name="evalBeanUtils"
+            ref="org.sakaiproject.evaluation.beans.EvalBeanUtils" />
+    </bean>
+
     <bean
         class="org.sakaiproject.evaluation.tool.producers.AdminTestEGProviderProducer">
         <property name="commonLogic"
@@ -295,6 +314,7 @@
         <property name="settings" ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="evalBeanUtils"
             ref="org.sakaiproject.evaluation.beans.EvalBeanUtils" />
+       	<property name="messageLocator" ref="messageLocator" />
         <property name="locale" ref="requestLocale" />
     </bean>
 
@@ -326,6 +346,8 @@
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalSettings"
+            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>
 
 
@@ -374,6 +396,8 @@
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="authoringService"
             ref="org.sakaiproject.evaluation.logic.EvalAuthoringService" />
+        <property name="evalSettings"
+            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.producers.ModifyItemProducer">
@@ -576,6 +600,8 @@
             ref="org.sakaiproject.evaluation.logic.EvalEvaluationService" />
         <property name="deliveryService"
             ref="org.sakaiproject.evaluation.logic.EvalDeliveryService" />
+        <property name="evalSettings"
+            ref="org.sakaiproject.evaluation.logic.EvalSettings" />
         <property name="locale" ref="requestLocale" />
     </bean>
 

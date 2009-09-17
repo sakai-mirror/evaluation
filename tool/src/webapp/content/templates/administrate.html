@@ -24,27 +24,31 @@
 
 <!--//gsilver: all in the same line, avoid wspace -->
 <div>
-    <ul class="breadCrumb"  style="clear:both;height:1.5em">
-        <li  style="float:left">
-            <a rsf:id="summary-link" href="summary.html">Summary</a>
-        </li>
-        <li style="float:left" class="lastCrumb" rsf:id="administrate-title">Administrate</li>
-        <li style="float:right" class=" lastCrumb addItem">
-            <a rsf:id="test-evalgroupprovider-toplink" href="admin_test_evalgroup_provider.html"  class="goToList">Test EvalGroupProvider</a>
-        </li>
-        <li style="float:right" class=" lastCrumb">
-            <a rsf:id="control-email-toplink" href="control_email.html" class="goToList">Control Email</a>
-        </li>
-        <li style="float:right" class=" lastCrumb">
-            <a rsf:id="control-import-toplink" href="control_import.html" class="goToList">Control Importing</a>
-        </li>
-        <li style="float:right" class=" lastCrumb">
-            <a rsf:id="control-hierarchy-toplink" href="control_hierarchy.html" class="goToList">Control Hierarchy</a>
-        </li>
-        <li style="float:right" class=" lastCrumb">
-            <a rsf:id="control-reporting-toplink" href="control_reporting.html" class="goToList">Control Reporting</a>
-        </li>
-    </ul>
+	<ul class="breadCrumb"  style="clear:both;height:1.5em">
+		<li  style="float:left">
+			<a rsf:id="summary-link" href="summary.html">Summary</a>
+		</li>
+		<li style="float:left" class="lastCrumb" rsf:id="administrate-title">Administrate</li>
+		<li style="float:right" class=" lastCrumb addItem">
+			<a rsf:id="test-evalgroupprovider-toplink" href="admin_test_evalgroup_provider.html"  class="goToList">Test EvalGroupProvider</a>
+		</li>
+		<li style="float:right" class=" lastCrumb">
+			<a rsf:id="control-email-toplink" href="control_email.html" class="goToList">Control Email</a>
+		</li>
+		<li style="float:right" class=" lastCrumb">
+			<a rsf:id="control-import-toplink" href="control_import.html" class="goToList">Control Importing</a>
+		</li>
+		<li style="float:right" class=" lastCrumb">
+			<a rsf:id="control-hierarchy-toplink" href="control_hierarchy.html" class="goToList">Control Hierarchy</a>
+		</li>
+		<li style="float:right" class=" lastCrumb">
+			<a rsf:id="control-reporting-toplink" href="control_reporting.html" class="goToList">Control Reporting</a>
+		</li>
+		<li style="float:right" class=" lastCrumb">
+			<!-- string added to bundle as administrate.top.control.search -->
+			<a rsf:id="control-administrate-search"  href="administrate_search.html" class="goToList">Search</a>
+		</li>
+	</ul>
 </div>
 
 <div rsf:id="message-for:*" class="alertMessage">
@@ -177,8 +181,20 @@
             <label rsf:id="msg=administrate.general.enable.eval.reopen.note" for="general-enable-eval-reopen">Allow evaluations to be reopened after they close</label>
         </p>
         <p class=   "checkbox indnt1">
+            <input type="checkbox" rsf:id="general-enable-administrating-box" />
+            <label rsf:id="msg=administrate.general.enable.administrating.box" for="general-enable-administrating-box">Show the 'Evaluations I am creating or administrating' box on the main screen.</label>
+        </p>
+        <p class=   "checkbox indnt1">
             <input type="checkbox" rsf:id="general-enable-sites-summary" />
             <label rsf:id="msg=administrate.general.enable.sites.summary" for="general-enable-sites-summary">Show the sites summary box on the main screen</label>
+        </p>
+        <p class=   "checkbox indnt1">
+            <input type="checkbox" rsf:id="general-enable-evaluatee-box" />
+            <label rsf:id="msg=administrate.general.enable.evaluatee.box" for="general-enable-evaluatee-box">Show the instructor summary box on the main screen</label>
+        </p>
+        <p class=   "checkbox indnt1">
+            <input type="checkbox" rsf:id="general-show-my-toplinks" />
+            <label rsf:id="msg=administrate.general.show.my.toplinks" for="general-show-my-toplinks">Show links to My Evaluations, My Templates, My Items, My Scales</label>
         </p>
         <p class=   "checkbox indnt1">
             <input type="checkbox" rsf:id="general-enable-response-removal" />

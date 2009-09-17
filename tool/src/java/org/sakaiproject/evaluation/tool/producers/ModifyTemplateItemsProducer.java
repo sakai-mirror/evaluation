@@ -18,7 +18,6 @@ package org.sakaiproject.evaluation.tool.producers;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.sakaiproject.util.FormattedText;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
@@ -40,6 +39,7 @@ import org.sakaiproject.evaluation.tool.viewparams.ItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateViewParameters;
 import org.sakaiproject.evaluation.utils.TemplateItemUtils;
+import org.sakaiproject.util.FormattedText;
 
 import uk.org.ponder.messageutil.MessageLocator;
 import uk.org.ponder.rsf.components.UIBoundBoolean;
@@ -48,7 +48,6 @@ import uk.org.ponder.rsf.components.UICommand;
 import uk.org.ponder.rsf.components.UIContainer;
 import uk.org.ponder.rsf.components.UIELBinding;
 import uk.org.ponder.rsf.components.UIForm;
-import uk.org.ponder.rsf.components.UIInitBlock;
 import uk.org.ponder.rsf.components.UIInput;
 import uk.org.ponder.rsf.components.UIInternalLink;
 import uk.org.ponder.rsf.components.UILink;
@@ -146,31 +145,37 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
                 new SimpleViewParameters(SummaryProducer.VIEW_ID));
 
         if (userAdmin) {
-            UIInternalLink.make(tofill, "administrate-link", 
-                    UIMessage.make("administrate.page.title"),
-                    new SimpleViewParameters(AdministrateProducer.VIEW_ID));
-            UIInternalLink.make(tofill, "control-scales-link",
-                    UIMessage.make("controlscales.page.title"),
-                    new SimpleViewParameters(ControlScalesProducer.VIEW_ID));
+        	UIInternalLink.make(tofill, "administrate-link", 
+        			UIMessage.make("administrate.page.title"),
+        			new SimpleViewParameters(AdministrateProducer.VIEW_ID));
         }
 
-        if (createTemplate
-                || authoringService.canModifyTemplate(currentUserId, templateId)) {
-            UIInternalLink.make(tofill, "control-templates-link",
-                    UIMessage.make("controltemplates.page.title"), 
-                    new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
-            UIInternalLink.make(tofill, "control-items-link",
-                    UIMessage.make("controlitems.page.title"), 
-                    new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
-        } else {
-            throw new SecurityException("User attempted to access " + 
-                    VIEW_ID + " when they are not allowed");
-        }
+        // only show "My Evaluations", "My Templates", "My Items", "My Scales" and "My Email Templates" links if enabled
+        boolean showMyToplinks = ((Boolean)evalSettings.get(EvalSettings.ENABLE_MY_TOPLINKS)).booleanValue();
+        if(showMyToplinks) {
+        	if (createTemplate
+        			|| authoringService.canModifyTemplate(currentUserId, templateId)) {
+        		UIInternalLink.make(tofill, "control-templates-link",
+        				UIMessage.make("controltemplates.page.title"), 
+        				new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
+        		UIInternalLink.make(tofill, "control-items-link",
+        				UIMessage.make("controlitems.page.title"), 
+        				new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
+        	} else {
+        		throw new SecurityException("User attempted to access " + 
+        				VIEW_ID + " when they are not allowed");
+        	}
 
-        if (beginEvaluation) {
-            UIInternalLink.make(tofill, "control-evaluations-link",
-                    UIMessage.make("controlevaluations.page.title"),
-                    new SimpleViewParameters(ControlEvaluationsProducer.VIEW_ID));
+        	if (beginEvaluation) {
+        		UIInternalLink.make(tofill, "control-evaluations-link",
+        				UIMessage.make("controlevaluations.page.title"),
+        				new SimpleViewParameters(ControlEvaluationsProducer.VIEW_ID));
+        	}
+        	if (userAdmin) {
+        		UIInternalLink.make(tofill, "control-scales-link",
+        				UIMessage.make("controlscales.page.title"),
+        				new SimpleViewParameters(ControlScalesProducer.VIEW_ID));
+        	}
         }
 
         // begin page rendering
@@ -287,6 +292,7 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
 
                 // hidden item num
                 UIInput.make(itemBranch, "hidden-item-num", templateItemOTP + "displayOrder", sCurItemNum);
+                UIOutput.make(itemBranch, "template-item-id", templateItem.getId() + "");
 
                 // only show Block Check box for scaled and block parents
                 if ( templateItem.getItem().getClassification().equals(EvalConstants.ITEM_TYPE_SCALED) ||
@@ -389,27 +395,24 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
                  */
                 Boolean showHierarchy = (Boolean) evalSettings.get(EvalSettings.DISPLAY_HIERARCHY_OPTIONS);
                 if ( showHierarchy ) {
-                    UIMessage.make(itemBranch, "item-hierarchy-level-title", "modifytemplate.item.hierarchy.level.title");
-                    UIOutput.make(itemBranch, "item-hierarchy-level", templateItem.getHierarchyLevel());
-                    /* Don't show the Node Id if it's a top level item */
+                    /* Don't show the Node Id icon if it's a top level item */
                     if (!templateItem.getHierarchyLevel().equals(EvalConstants.HIERARCHY_LEVEL_TOP)) {
-                        UIMessage.make(itemBranch, "item-hierarchy-nodeid-title", "modifytemplate.item.hierarchy.nodeid.title");
                         EvalHierarchyNode curnode = hierarchyLogic.getNodeById(templateItem.getHierarchyNodeId());
-                        UIOutput.make(itemBranch, "item-hierarchy-nodeid", curnode.title);
+                        UILink.make(itemBranch, "item-hierarchy")
+                        	.decorate( new UITooltipDecorator( messageLocator.getMessage("modifytemplate.item.hierarchy.nodeid.title") + curnode.title ));
                     }
                 }
 
                 Boolean useResultsSharing = (Boolean) evalSettings.get(EvalSettings.ITEM_USE_RESULTS_SHARING);
                 if ( useResultsSharing ) {
                     // only show results sharing if it is being used
-                    UIMessage.make(tofill, "item-resultssharing-title", "modifytemplate.item.resultssharing.title");
                     String resultsSharingMessage = "unknown.caps";
                     if ( EvalConstants.SHARING_PUBLIC.equals(templateItem.getResultsSharing()) ) {
                         resultsSharingMessage = "general.public";
                     } else if ( EvalConstants.SHARING_PRIVATE.equals(templateItem.getResultsSharing()) ) {
                         resultsSharingMessage = "general.private";
                     }
-                    UIMessage.make(itemBranch, "item-resultssharing", resultsSharingMessage);
+                    UIMessage.make(itemBranch, "item-results-sharing", resultsSharingMessage);
                 }
 
                 if ( EvalConstants.ITEM_TYPE_SCALED.equals(templateItem.getItem().getClassification()) &&
@@ -470,9 +473,6 @@ public class ModifyTemplateItemsProducer implements ViewComponentProducer, ViewP
 
         }
 
-        // this fills in the javascript call
-        UIInitBlock.make(tofill, "decorateSelects", "EvalSystem.decorateReorderSelects", 
-                new Object[] { "", Integer.toString(templateItemsList.size()) } );
         //this outputs the total number of rows
         UIVerbatim.make(tofill, "total-rows", (sCurItemNum + 1));
 

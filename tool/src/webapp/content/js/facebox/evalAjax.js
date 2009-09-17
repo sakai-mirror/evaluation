@@ -3,40 +3,27 @@
  **/
 
 $(document).bind('activateControls.templateItems', function(e, opt) {
-    var groupableItems = new Array();
-    $('a[rel=remove]').itemRemove({
-        ref:    'eval-templateitem',
-        id:     '$(this).attr("templateitemid")',
-        text:   '$(this).parents("div.itemLine2").eq(0).find("h4.itemText:visible").text()'
-    });
-    $('a[rel=childRemove]').itemRemove({
-        ref:    'eval-templateitem',
-        id:        '$(this).attr("templateitemid")',
-        itemType: 'blockChild',
-        text:   '$(this).parents("div.itemRowBlock").eq(0).find("span.text:visible").text()'
-    });
-    $('a[rel=unblock]').itemRemove({
-        ref:    'eval-templateitem',
-        id:        '$(this).attr("templateitemid")',
-        itemType: 'block',
-        text:   '$(this).parents("div.itemLine2").eq(0).find("h4.itemText:visible").text()'
-    });
-    $('a[rel=facebox]').facebox();
-    $('a[rel=faceboxGrid]').facebox();
+    var log = evalTemplateUtils.debug;
+    evalTemplateLoaderEvents.bindDeleteIcons();
+    evalTemplateLoaderEvents.bindRowEditPreviewIcons();
+
     $('a.addItem[rel=faceboxAddGroupItems]').click(function() {
-        var that = $(this);
+        //Unbind current reveal event to avoid fckEditor error
+        $(document).unbind('reveal.facebox');
+        var that = $(this),
+        parentObj = that.parents("div.itemRow"),
+        blockId = parentObj.find("input[name=template-item-id]").val();
         var noGroupableItems = true;
         //console.log(that.attr('class'));
         var myType = $(this).parents('.itemRow').find('.itemCheckbox > input').attr('id');
 
-        if (groupableItems.length > 0) {
-            for (i in groupableItems) {
-                var type = groupableItems[i].type;
+        if (evalTemplateUtils.vars.groupableItems.length > 0) {
+            for (var i in evalTemplateUtils.vars.groupableItems) {
+                var type = evalTemplateUtils.vars.groupableItems[i].type;
                 if (
                         (myType.substring(myType.indexOf('-') + 1, myType.lastIndexOf('-')))
                                 ==
                         (type.substring(type.indexOf('-') + 1, type.lastIndexOf('-')))
-
                         ) {
                     noGroupableItems = false;
                 }
@@ -44,24 +31,21 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
 
         }
         if (noGroupableItems) {
-            $.facebox('There are no items you can add to this group.');
-            if ($('#facebox .titleHeader').length > 0)
-                $('#facebox .titleHeader').remove();
-            $('<h2 style="font-weight: bold;" class="titleHeader">Select existing items to add to a group</h2>').insertBefore('#facebox .close');
-
-        } else {
+            alert('There are no items you can add to this group.');      //TODO:i8N
+           } else {
 
             $.facebox('<div id="addGroupItemDiv"></div>');
-            if ($('#facebox .titleHeader').length > 0)
+            if ($('#facebox .titleHeader').length > 0){
                 $('#facebox .titleHeader').remove();
-            $('<h2 style="font-weight: bold;" class="titleHeader">Select existing items to add to a group</h2>').insertBefore('#facebox .close');
-            $('<div class="itemAction"> <a id="addGroupItemSelectAll" title="Select all" href="#">Select all</a> | <a id="addGroupItemDeselectAll" title="Deselect all" href="#">Deselect all</a></div>').insertBefore('#addGroupItemDiv');
+            }
+            $('<h2 style="font-weight: bold;" class="titleHeader">Select existing items to add to a group</h2>').insertBefore('#facebox .close'); //TODO:i8N
+            $('<div class="itemAction"> <a id="addGroupItemSelectAll" title="Select all" href="#">Select all</a> | <a id="addGroupItemDeselectAll" title="Deselect all" href="#">Deselect all</a></div>').insertBefore('#addGroupItemDiv'); //TODO:i8N
             $('\
 			<div class="act">\
 				<input type="button" id="addGroupItemSave" class="active submit" accesskey="s" value="Add" disabled="disabled"/>\
 				<input type="button" onclick="$(document).trigger(\'close.facebox\')" accesskey="x" value="Cancel"/> \
 			</div>\
-			').insertAfter('#addGroupItemDiv');
+			').insertAfter('#addGroupItemDiv');    //TODO:i8N
             //bind new control actions
             $('#addGroupItemSelectAll').bind('click', function() {
                 $('#addGroupItemDiv input[type=checkbox]').each(function() {
@@ -76,57 +60,86 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
                 $('#addGroupItemSave').attr('disabled', 'disabled');
             });
             $('#addGroupItemSave').bind('click', function() {
-                var img = '<img src="' + $.facebox.defaults.loadingImage + '"/>';
+                var img = '<img src="' + $.facebox.settings.loadingImage + '"/>';
                 $(this).attr('disabled', 'disabled');
                 $(this).next('input').attr('disabled', 'disabled');
                 $(img).insertAfter($(this).next('input'));
-                var selectedItems = new Array();
+                var selectedItems = [],
+                addItems = [];
                 $('#addGroupItemDiv > div').each(function() {
-                    if ($(this).find('input[type=checkbox]').attr('checked') == true) {
-                        $(this).find('.itemRight').show();
+                    if ($(this).find('input[type=checkbox]').attr('checked') === true) {
+                        var itemId = $(this).find("input[name=hidden-item-id]:hidden").val();
+                        $(this).find('.itemRight').show();           
+                        $(this).find('input[type=checkbox]:eq(0)').remove();
+                        $(this).css('cursor', '');
+                        $(this).parent().find('.itemLabel').css('font-weight', '');
+
+                        //Re-binding event for delete icon
+                        $(this).find('a[rel=childRemove]').itemRemove({
+                            ref:    'eval-templateitem',
+                            id:        '$(this).attr("templateitemid")',
+                            itemType: 'blockChild',
+                            text:   '$(this).parents("div.itemRowBlock").eq(0).find("span.text:visible").text()'
+                        });
+
                         $(this).appendTo(that.parent());
                         selectedItems.push($(this).attr('oldRowId'));
+                        addItems.push(itemId);
+                        $("div.itemRow input[name=template-item-id]:hidden").each(function(){
+                             if( this.value === itemId ){
+                                 $(this).parents("div.itemRow").remove();
+                             }
+                        });
                     }
                 });
-                for (i in groupableItems) {
+                for (i in evalTemplateUtils.vars.groupableItems) {
                     for (l in selectedItems) {
-                        if (groupableItems[i].rowId == selectedItems[l]) {
-                            $('div[id=' + groupableItems[i].rowId + ']').remove();
+                        if (evalTemplateUtils.vars.groupableItems[i].rowId == selectedItems[l]) {
+                            $('div[id=' + evalTemplateUtils.vars.groupableItems[i].rowId + ']').remove();
                         }
                     }
                 }
-                $(document).trigger('block.triggerChildrenSort', [that]);
-                $(document).trigger('list.triggerSort');
-                //$(document).trigger('activateControls.templateItems');
-                $.facebox('\
-                                                  <div><img src="' + $.facebox.defaults.loadingImage + '"/>  Saving... \
-			                </div> \
-			                <div class="footer"> \
-			                   Please do not close this window.  \
-			                </div> ');
-                $(document).trigger('block.saveReorder', [that]);
-                $(document).trigger('close.facebox');
 
-            });
-            var clone = $(this).parent().find('.itemRowBlock').eq(0).clone();
+                evalTemplateSort.updateLabelling();
+                parentObj.effect('highlight', 1000);
+
+                log.info("selected %o", addItems.toString());
+                //Save new item to the group using already set EB post method
+                var params = {
+                    blockid : blockId,
+                    additems: addItems.toString()
+                },
+                fnAfter = function(){
+                    evalTemplateOrder.initGroupableItems();
+                    //Save overall template ordering so the template knows that we've removed a few items and grouped them.
+                    evalTemplateOrder.saveTopLevelTemplateOrdering();
+                    $(document).trigger('block.triggerChildrenSort', [parentObj]);
+                    $(document).trigger('close.facebox');
+                };
+                evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_block_edit, params, null, fnAfter);
+    });
+            var clone = $(this).parent().find('.itemRowBlock').eq(0).clone(),
+            selectBox = $('<input name="addGroupItemCheckbox" type="checkbox" title="Mark item to use in a group" value="true"/>');//TODO:i8N
             //edit extra controls
             clone.find('.itemRight').hide();
-            clone.find('.itemLabel').html('<input name="addGroupItemCheckbox" type="checkbox" title="Mark item to use in a group" value="true"/>');
+            selectBox.insertBefore(clone.find('.itemLabel'));
 
-            if (groupableItems.length > 0) {
-                for (i in groupableItems) {
-                    var type = groupableItems[i].type;
+            if (evalTemplateUtils.vars.groupableItems.length > 0) {
+                for (i in evalTemplateUtils.vars.groupableItems) {
+                    var type = evalTemplateUtils.vars.groupableItems[i].type;
                     if (
                             (myType.substring(myType.indexOf('-') + 1, myType.lastIndexOf('-')))
                                     ==
                             (type.substring(type.indexOf('-') + 1, type.lastIndexOf('-')))
 
                             ) {
-                        var itemId = groupableItems[i].itemId;
-                        var otp = groupableItems[i].otp;
-                        var text = groupableItems[i].text;
-                        var rowId = groupableItems[i].rowId;
-                        var shadow = $(clone).clone();
+                        var itemId = evalTemplateUtils.vars.groupableItems[i].itemId,
+                        otp = evalTemplateUtils.vars.groupableItems[i].otp,
+                        text = evalTemplateUtils.vars.groupableItems[i].text,
+                        rowId = evalTemplateUtils.vars.groupableItems[i].rowId,
+                        rowNumber = evalTemplateUtils.vars.groupableItems[i].rowNumber,
+                        shadow = $(clone).clone();
+                        shadow.find('.itemLabel').text(rowNumber).css("font-weight","bold");
                         shadow.css('cursor', 'auto');
                         shadow.attr('oldRowId', rowId);
                         shadow.find('span').eq(1).html(text);
@@ -134,7 +147,6 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
                         shadow.find('a[templateitemid]').attr('templateitemid', itemId);
                         shadow.find('a[otp]').attr('otp', otp);
                         $('#addGroupItemDiv').append(shadow);
-
                     }
                 }
                 $('input[name=addGroupItemCheckbox]').bind('click', function() {
@@ -152,23 +164,39 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
                 });
             }
         }
+        return false;
+    });
 
+    $('a.addItem[rel=faceboxAddNewGroupItem]').click(function() {
+        var url = "modify_item?external=false&itemClassification=Scaled&",
+        postVars = {
+            groupItemId : $(this).parents(".itemRow").find("input[name=template-item-id]:hidden").val(),
+            templateId  : $("input[name=templateId]:hidden").val()
+        };
+        
+        evalTemplateFacebox.addItem( url + $.param(postVars));
+        return false;
     });
 
     var saveButton = document.getElementById("saveReorderButton");
     saveButton.onclick = function() {
         disableOrderButtons();
         buildSortableIds();
-        $(saveButton.form).ajaxSubmit();
+
+        var order = [];
+        $("#itemList > div").not('.ui-sortable-helper').each(function(){
+            order.push($(this).find('a[templateitemid]').attr('templateitemid'));
+        });
+        var params = {
+            orderedIds : order.toString()
+        };
+
+        evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_save_order, params);
         return false;
     };
 
-    $('a[rel=childEdit]').click(function() {
-        var url = 'modify_item?templateItemId=' + $(this).parent().parent().find('input[name*=hidden-item-id]').val() + '&templateId=' + $('input[name*=templateId]').val() + '&itemClassification=Block';
-        $.facebox({ ajax: url });
-        $.facebox.defaults.objToUpdate = "block";
-        return false;
-    });
+    $('a[rel=childEdit]').childEdit();
+
     $('.blockExpandText').toggle(
 
             function() {
@@ -176,17 +204,17 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
                     $(this).click();
                     return false;
                 }
-                text = '[Show child items]';
+                text = '[Show child items]'; //Todo: i8n this
                 $(this).parent().parent().parent().find('.itemLine3').slideToggle();
                 $(this).text(text);
-                frameGrow();
+                evalTemplateUtils.frameGrow(0);
                 return false;
             },
             function() {
-                text = '[Hide child items]';
+                text = '[Hide child items]';  //todo: i8n this
                 $(this).parent().parent().parent().find('.itemLine3').slideToggle();
                 $(this).text(text);
-                frameGrow();
+                evalTemplateUtils.frameGrow(0);
                 return false;
             }
             );
@@ -197,40 +225,22 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
         }
         $(this).parent().toggle();
         $(this).parent().parent().find('.itemText').eq(1).toggle();
-        frameGrow();
-        //if($(this).parent().parent().parent().find('.itemLine3').is(':hidden'))
-        //   $(this).parent().find('.blockExpandText').text('[Show child items]');
+        evalTemplateUtils.frameGrow(0);
         return false;
     });
     $('.less').bind('click', function() {
         $(this).parent().toggle();
         $(this).parent().parent().find('.itemText').eq(0).toggle();
-        //if($(this).parent().parent().parent().find('.itemLine3').is(':hidden'))
-        //    $(this).parent().find('.blockExpandText').text('[Show child items]');
         return false;
     });
 
     refreshSort();
     //initialise the reorder dropdowns
-    EvalSystem.decorateReorderSelects("", $("#itemList > div").get().length);
+    evalTemplateOrder.initDropDowns();
+
     // populate or re-populate groupable item array
-    $('div.itemList > div:visible').each(function() {
-        if ($(this).children('.itemLine3').length == 0) {
-            var t = "";
-            if ($(this).find('.itemText > span').eq(1).text() == "")
-                t = $(this).find('.itemText > span').eq(0).html();
-            else
-                t = $(this).find('.itemText > span').eq(1).html();
-            var object = {
-                text:   t,
-                type:   ($(this).find('.itemCheckbox > input').attr('id') ? $(this).find('.itemCheckbox > input').attr('id') : "000"),
-                itemId: $(this).find('a[templateitemid]').eq(0).attr('templateitemid'),
-                otp:    $(this).find('a[otp]').eq(0).attr('otp'),
-                rowId:  $(this).attr('id')
-            };
-            groupableItems.push(object);
-        }
-    });
+    evalTemplateOrder.initGroupableItems();
+
     updateControlItemsTotal();
 });
 
@@ -253,111 +263,6 @@ $(document).bind('activateControls.templateItems', function(e, opt) {
     }
 
 })(jQuery);
-
-
-function submitForm(form, textarea, target, btn) {
-    var rowId = $(jQuery.facebox.defaults.objToUpdate).attr("id");
-    var thisRow = $(document).find("[id=" + rowId + "]");
-    var img = '<img src="/library/image/sakai/spinner.gif"/>';
-    var templateItemId = $(form).find('input[@name*=templateItemId]').attr('value');
-    var entityUrl = '/direct/eval-templateitem/' + templateItemId + '.xml';
-    var d = $(form).formToArray();
-    var fckVal = null;
-    try {
-        if (FCKeditorAPI) {
-            fckVal = FCKeditorAPI.GetInstance(textarea).GetHTML(); //Actual editor textarea value
-        }
-    }
-    catch(e) {
-        console.log('Check if you have imported FCKeditor.js \n Error: FCKeditorAPI not found. ');
-        return false;
-    }
-    //Validate text
-    $('#facebox').append('<div id="fckEditorVal" style="display:none">' + fckVal + '</div>');
-    var str = $('#fckEditorVal');
-    if (str.text() == "" || str.text() == null || str.text() == 'null') {
-        alert('You must fill in the title.');
-        str.remove();
-        return false;
-    }
-    if(str.length>0)str.remove();
-
-    //iterate through returned formToArray elements and replace input value with editor value
-    for (var i = 0; i < d.length; i++) {
-        if ($(d[i]).attr('name') == textarea) {
-            $(d[i]).attr('value', fckVal);
-        }
-    }
-    $.ajax({
-        type: 'POST',
-        url: target,
-        data: d,
-        dataType: "html",
-        beforeSend: function() {
-
-            btn.parent().parent().find('input').each(function() {
-                $(this).attr('disabled', 'disabled');
-            });
-            FCKeditorAPI.GetInstance(textarea).disabled;
-            btn.parent().append(img);
-
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            return false;
-        },
-        success: function(d) {
-            $(document).trigger('close.facebox');
-            if (form == '#blockForm' || form == '#item-form') {
-                $('#itemList').html($(d).find('#itemList').html());
-                $(document).trigger('activateControls.templateItems');
-                return false;
-            }
-            $.ajax({
-                url: entityUrl,
-                dataType: 'xml',
-                cache: false,
-                beforeSend: function() {
-                    $(jQuery.facebox.defaults.objToUpdate).find('.itemText span').html(img);
-                },
-                success: function(msg) {
-                    var realText = $(msg).find('itemText').text();
-                    var shortText = null;
-                    var that = $(jQuery.facebox.defaults.objToUpdate).find('.itemText').eq(0);
-
-                    if (realText.length > 150) {
-                        that.realText = '<h4 class="itemText"><span>' + realText + '</span><a class="less" href="#">less<\/a></h4>';
-                        $('body').append('<div id="shortText" style="display:none;">' + truncateTextDo(realText) + '</div>');
-                        $('body').append('<div id="realText" style="display:none;">' + realText + '</div>');
-                        that.html('<span>' + $('#shortText').text() + '</span><a class="more" href="#">...more</a>');
-                        that.parent().find('.itemText').eq(1).remove();
-                        try {
-                            that.hide();
-                            $('<h4 class="itemText"><span>' + $('#realText').text() + '</span><a class="less" href="#">less<\/a></h4>').insertAfter(that);
-                        } catch(e) {
-                        }
-                        $('.more').bind('click', function() {
-                            $(this).parent().toggle();
-                            $(this).parent().parent().find('.itemText').eq(1).toggle();
-                            frameGrow();
-                            return false;
-                        });
-                        $('.less').bind('click', function() {
-                            $(this).parent().toggle();
-                            $(this).parent().parent().find('.itemText').eq(0).toggle();
-                            return false;
-                        });
-                    } else {
-                        that.find('span').html(realText);
-                    }
-                    $(document).trigger('activateControls.templateItems');
-                }
-            });
-
-        }
-    });
-
-
-}
 
 function truncateTextDo(string, number) {
     trunc = string.substring(0, (number == null) ? 150 : number);
@@ -383,16 +288,6 @@ $('.itemBlockRow').each(function() {
     block.expandText = ' [<a class="blockExpandText" href="#"> Show child items </a>]';
     block.html(block.html() + block.expandText);
 });
-
-
-function frameGrow() {
-    try {
-        var frame = parent.document.getElementById(window.name);
-        $(frame).height(parent.document.body.scrollHeight + 120);
-    } catch(e) {
-    }
-
-}
 
 var options_choose_existing_items_html_search = {
     beforeSend: function() {
@@ -439,9 +334,10 @@ function updateControlItemsTotal() {
     //
     // plugin definition
     //
-    var that;
+    var that,
+    log = evalTemplateUtils.debug;
     $.fn.itemRemove = function(options) {
-        var defaults = {
+        var settings = {
             ref:    '', //the RESTful unique identifier for this component
             id:        '' //the id passed
         };
@@ -449,7 +345,7 @@ function updateControlItemsTotal() {
         // iterate and bind each matched element
         return this.each(function() {
             $(this).click(function() {
-                var opts = $.extend(defaults, options);
+                var opts = $.extend(settings, options);
                 opts.id = eval(opts.id);
                 var t = eval(opts.text);
                 opts.text = (t != null && t.length > 20) ? truncateTextDo(t, 20) + "..." : t;
@@ -605,7 +501,8 @@ function updateControlItemsTotal() {
             show_hide_box(an, options);
         });
         $('.removeItemConfirmYes').click(function() {
-            if (options.itemType == "blockChild") {
+            log.group("Start removing template item");
+            if (options.itemType === "blockChild") {
                 if ($('#closeItemOperationsEnabled').length > 0) {
                     $('#closeItemOperationsEnabled').parent().remove();
                 }
@@ -613,8 +510,8 @@ function updateControlItemsTotal() {
                     var error = '<div class="itemOperationsEnabled">\
             <img src="/library/image/sakai/cancelled.gif"/>\
             <span class="instruction">Sorry, groups have to have at least TWO items in them.</span> <a href="#" id="closeItemOperationsEnabled">close</a></div>\
-            ';
-                    $(that).parents('.itemLine3').prepend(error).effect('highlight', 1500);
+            ';    //todo: i8n this
+                    $(that).parents('.itemLine3').prepend(error).effect('highlight', 1000);
                     $('#closeItemOperationsEnabled').click(function() {
                         $(this).parent().slideUp('normal', function() {
                             $(this).remove()
@@ -627,20 +524,19 @@ function updateControlItemsTotal() {
                     url: "/direct/" + options.ref + "/" + options.id + "/delete",
                     type: "DELETE",
                     success: function(data) {
-                        //alert(data);
                         finish(options, data);
                     }
                 });
             }
-            else if (options.ref == 'eval-templateitem') {
+            else if (options.ref === 'eval-templateitem') {
                 var s = 'a[templateitemid=' + options.id + ']';
                 var t = $(s);
+                //AJAX request is to bean because of what it returns
                 $.ajax({
                     url: "remove_item",
                     data: 'templateItemId=' + options.id + '&templateId=' + t.attr('templateid') + '&command+link+parameters%26deletion-binding%3Dl%2523%257B' + t.attr('otp') + '%257D%26Submitting%2520control%3Dremove-item-command-link=Remove+Item',
                     type: "POST",
                     beforeSend: function() {
-                        //t.parent().parent().parent().parent().css('background', '#eee');
                         t.hide();
                         t.parent().find('a').slice(0, 2).hide();
                         t.parent().append('<img src="/library/image/sakai/spinner.gif"/>');
@@ -654,6 +550,7 @@ function updateControlItemsTotal() {
                 });
             }
             else {
+                log.debug("EB action for deleting id: %i", options.id );
                 $.ajax({
                     url: "/direct/" + options.ref + "/" + options.id + "/delete",
                     type: "DELETE",
@@ -662,8 +559,12 @@ function updateControlItemsTotal() {
                         finish(options, data);
                     }
                 });
+
+                
+
             }
             show_hide_box(an, options);
+            log.groupEnd();
         });
 
         move_box(an, boxdiv, options);
@@ -674,34 +575,33 @@ function updateControlItemsTotal() {
     }
 
     function finish(options, d) {
+        log.group("Removed item of type %s with ref of %s", options.itemType, options.ref);
         if (options.itemType == 'block') {
             $('#itemList').html($(d).find('#itemList').html());
             $(document).trigger('activateControls.templateItems');
-            return false;
-        }
+            evalTemplateOrder.initGroupableItems();
+        }else
         if (options.itemType == 'blockChild') {
-            $(that).parent().parent().effect('highlight', {}, 1000).fadeOut(500, function() {
-                $(document).trigger('block.triggerChildrenSort', [$(this)]);
+            $(that).parent().parent().effect('highlight', {}, 500).fadeOut(100, function() {
+                var parentItem = $(this).parents("div.itemRow");
                 $(this).remove();
+                $(document).trigger('block.triggerChildrenSort', [parentItem]);
                 updateControlItemsTotal();
+                evalTemplateOrder.initGroupableItems();
             });
-            return false;
-        }
+        }else
         if (options.ref == 'eval-templateitem') {
-            $(that).parent().parent().parent().parent().effect('highlight', {}, 1000).fadeOut(500, function() {
+            $(that).parents("div.itemRow").effect('highlight', {}, 500).fadeOut(100, function() {
                 $(this).remove();
                 updateControlItemsTotal();
-                var list = $("#itemList > div").get();
-                for (var i = 0; i < list.length; i++) {
-                    if (list[i].id) {
-                        setIndex(list[i].id, i);
-                    }
-                }
+                evalTemplateSort.updateLabelling();
+                evalTemplateSort.updateDropDownMax();
+                //Updating labelling leaves Save Order active. Deactivate it now.
+                disableOrderButtons();
+                evalTemplateOrder.initGroupableItems();
             });
-
-            //do more stuff here
         }
-
+        log.groupEnd();
         return false;
     }
 
