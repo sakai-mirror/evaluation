@@ -16,7 +16,6 @@ package org.sakaiproject.evaluation.tool.producers;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -165,7 +164,7 @@ public class SummaryProducer implements ViewComponentProducer, DefaultView, Navi
         }
         if (beginEvaluation) {
         	// show instructor instructions
-        	UIMessage.make(tofill, "instructor-instructions", "summary.instructor.instruction");
+        	UIBranchContainer.make(tofill, "instructor-instructions:");
         }
 
         /*
