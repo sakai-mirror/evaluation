@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>evaluation</name>
+	<name>evaluation-vula</name>
 	<comment></comment>
 	<projects>
 		<project>authz-api</project>
@@ -45,5 +45,6 @@
 		<nature>org.mevenide.ui.mavennature</nature>
 		<nature>org.hibernate.eclipse.console.hibernateNature</nature>
 		<nature>edu.umd.cs.findbugs.plugin.eclipse.findbugsNature</nature>
+		<nature>org.eclipse.wst.common.project.facet.core.nature</nature>
 	</natures>
 </projectDescription>

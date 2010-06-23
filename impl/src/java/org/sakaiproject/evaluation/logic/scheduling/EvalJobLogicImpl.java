@@ -27,6 +27,7 @@ import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.externals.EvalJobLogic;
 import org.sakaiproject.evaluation.logic.model.EvalScheduledJob;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
+import org.sakaiproject.evaluation.utils.ArrayUtils;
 
 /**
  * Handle job scheduling related to EvalEvaluation state transitions.</br> Dates that have not
@@ -144,7 +145,11 @@ public class EvalJobLogicImpl implements EvalJobLogic {
             sendCreatedEmail(evaluationId);
 
         } else if (EvalConstants.JOB_TYPE_ACTIVE.equals(jobType)) {
-            sendAvailableEmail(evaluationId);
+            // Consider flag wrt sending a mass email notifying users of opening. Send mail if flag is not set.
+            boolean sendMail = ( eval.getSendAvailableNotifications() == null ? true : eval.getSendAvailableNotifications() );
+            if (sendMail){
+                sendAvailableEmail(evaluationId);
+            }
             if (eval.getDueDate() != null) {
                 // might not have a due date set
                 scheduleJob(eval.getId(), eval.getDueDate(), EvalConstants.JOB_TYPE_DUE);
@@ -270,11 +275,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
             long runAt = new Date().getTime() + (1000 * timeToWaitSecs);
             scheduleJob(eval.getId(), new Date(runAt), EvalConstants.JOB_TYPE_CREATED);
         }
-        //Consider flag wrt sending a mass email notifying users of opening. Send mail if flag is not set.
-        boolean sendMail = ( eval.getEmailOpenNotification() == null) ? true : eval.getEmailOpenNotification();
-        if (sendMail){
-        	scheduleJob(eval.getId(), eval.getStartDate(), EvalConstants.JOB_TYPE_ACTIVE);
-        }
+        scheduleJob(eval.getId(), eval.getStartDate(), EvalConstants.JOB_TYPE_ACTIVE);
     }
 
 
@@ -388,7 +389,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
 
     /**
      * Compare the date when a job will be invoked with the EvalEvaluation date to see if the job
-     * needs to be rescheduled. This takes into consideration the toggle on sending an opening email notfication
+     * needs to be rescheduled.
      * 
      * @param eval
      *           the EvalEvaluation
@@ -423,12 +424,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
 
         // if there are no invocations, return
         if (jobs.length == 0) {
-            // No job was found so lets create one but consider flag wrt sending a mass email notifying users of opening. 
-        	// Send mail if flag is not set.
-            boolean sendMail = ( eval.getEmailOpenNotification() == null) ? true : eval.getEmailOpenNotification();
-            if (sendMail){
-            	scheduleJob(eval.getId(), eval.getStartDate(), EvalConstants.JOB_TYPE_ACTIVE);
-            }
+            // FIXME why return here? if no job was found should we not create one? -AZ
             return;
         } else {
             // we expect one delayed invocation matching componentId and opaqueContext so remove any extras
@@ -444,14 +440,12 @@ public class EvalJobLogicImpl implements EvalJobLogic {
                     log.debug("EvalJobLogicImpl.checkInvocationDate remove the old invocation "
                             + job.uuid + "," + job.contextId + "," + job.date);
 
-                // and schedule a new invocation and consider the email flag on eval.
-                boolean sendMail = ( eval.getEmailOpenNotification() == null) ? true : eval.getEmailOpenNotification();
-                if (sendMail){
-                	String newJobId = commonLogic.createScheduledJob(correctDate, eval.getId(), jobType);
-	                if (log.isDebugEnabled())
-	                    log.debug("EvalJobLogicImpl.checkInvocationDate and schedule a new invocation: "
-	                            + newJobId + ", date=" + correctDate + "," + eval.getId() + "," + jobType + ")");
-                }
+                // and schedule a new invocation
+                String newJobId = commonLogic.createScheduledJob(correctDate, eval.getId(), jobType);
+                if (log.isDebugEnabled())
+                    log.debug("EvalJobLogicImpl.checkInvocationDate and schedule a new invocation: "
+                            + newJobId + ", date=" + correctDate + "," + eval.getId() + "," + jobType + ")");
+
                 // the due date was changed, so reminder might need to be removed
                 if (EvalConstants.JOB_TYPE_DUE.equals(jobType)) {
                     fixReminder(eval.getId());
@@ -524,7 +518,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
      */
     protected void removeScheduledReminder(Long evaluationId) {
         if (evaluationId == null) {
-            log.warn("removeScheduledReminder(evaluationId=" + evaluationId + " :: null evaluationId, cannot proceed");
+            log.warn("removeScheduledReminder(evaluationId is null, cannot proceed");
             return; // FIXME throw exceptions or AT LEAST log warnings here
         }
 
@@ -627,12 +621,12 @@ public class EvalJobLogicImpl implements EvalJobLogic {
 
         int reminderDays = eval.getReminderDaysInt();
         if (reminderDays > 0) {
-            long interval = (1000 * 60 * 60 * 24) * reminderDays;
-            // we'll say the future starts in 15 minutes
+            long interval = (1000l * 60l * 60l * 24l) * (long)reminderDays;
+            // we'll say the future starts in 3 minutes, this is a user buffer
             if (interval != 0 
                     && available > interval) {
                 reminderTime = startTime + interval;
-                while (reminderTime < now + (1000 * 60 * 15)) {
+                while (reminderTime < now + (1000l * 60l * 3l)) {
                     reminderTime = reminderTime + interval;
                 }
             }
@@ -642,7 +636,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
             // only send 24h reminder if the eval is due to end and not continuous
             if (dueDateSet) {
                 // set the reminder time to the dueTime - 24 hours
-                reminderTime = dueTime - (1000 * 60 * 60 * 24);
+                reminderTime = dueTime - (1000l * 60l * 60l * 24l);
                 if (reminderTime < now) {
                     // the reminder is in the past, just warn and be done
                     log.info("Trying to schedule 24h reminder in the past ("+new Date(reminderTime)+"), no reminder will be sent for eval ("+eval.getTitle()+") ["+eval.getId()+"]");
@@ -670,8 +664,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
         boolean includeEvaluatees = true;
         String[] sentMessages = emails.sendEvalAvailableNotifications(evalId, includeEvaluatees);
         if (log.isDebugEnabled())
-            log.debug("EvalJobLogicImpl.sendAvailableEmail(" + evalId + ")" + " sentMessages: "
-                    + sentMessages.toString());
+            log.debug("EvalJobLogicImpl.sendAvailableEmail(" + evalId + ")" + " sentMessages: " + ArrayUtils.arrayToString(sentMessages));
     }
 
     /**
@@ -684,8 +677,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
         boolean includeOwner = true;
         String[] sentMessages = emails.sendEvalCreatedNotifications(evalId, includeOwner);
         if (log.isDebugEnabled())
-            log.debug("EvalJobLogicImpl.sendCreatedEmail(" + evalId + ")" + " sentMessages: "
-                    + sentMessages.toString());
+            log.debug("EvalJobLogicImpl.sendCreatedEmail(" + evalId + ")" + " sentMessages: " + ArrayUtils.arrayToString(sentMessages));
     }
 
     /**
@@ -701,8 +693,7 @@ public class EvalJobLogicImpl implements EvalJobLogic {
             String includeConstant = EvalConstants.EVAL_INCLUDE_NONTAKERS;
             String[] sentMessages = emails.sendEvalReminderNotifications(evaluationId, includeConstant);
             if (log.isDebugEnabled())
-                log.debug("EvalJobLogicImpl.sendReminderEmail(" + evaluationId + ")" + " sentMessages: "
-                        + sentMessages.toString());
+                log.debug("EvalJobLogicImpl.sendReminderEmail(" + evaluationId + ")" + " sentMessages: " + ArrayUtils.arrayToString(sentMessages));
         }
     }
 
