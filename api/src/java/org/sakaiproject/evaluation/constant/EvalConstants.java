@@ -623,6 +623,12 @@ public class EvalConstants {
      * This value is pre-loaded as the default option for email delivery.
      */
     public static final String EMAIL_DELIVERY_DEFAULT = EMAIL_DELIVERY_SEND;
+    /**
+     * EmailTemplate type setting:
+     * This identifies a template as the "evaluation submitted template",
+     * used as a confirmation message when the evaluation is submitted
+     */
+    public static final String EMAIL_TEMPLATE_SUBMITTED = "Submitted";
 
     /**
      * ItemGroup Type: Category (root group type)<br/>
@@ -689,5 +695,11 @@ public class EvalConstants {
      * ScheduledInvocationManager: ScheduledInvocationCommand jobType
      */
     public static final String JOB_TYPE_REMINDER = "scheduledReminder";
+    
+    /**
+     * The name of the evaluation tool, displayed in email
+     * TODO make this a configuration option
+     */
+    public static final String EVAL_TOOL_TITLE = "Course Evaluations";
 
 }

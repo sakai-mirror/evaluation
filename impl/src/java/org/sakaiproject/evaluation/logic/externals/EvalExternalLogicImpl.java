@@ -1095,5 +1095,16 @@ public class EvalExternalLogicImpl implements EvalExternalLogic {
 		return isEvalGroupPublished;
 	}
 
+	   /*
+	    * (non-Javadoc)
+	    * @see org.sakaiproject.evaluation.logic.externals.EvalExternalLogic#getEvalToolTitle()
+	    */
+	   public String getEvalToolTitle() {
+		   String toolTitle = EvalConstants.EVAL_TOOL_TITLE;
+		   //Tool tool = toolManager.getCurrentTool();
+		   //String toolTitle = tool.getTitle();
+		   return toolTitle;
+	   }
+
 
 }

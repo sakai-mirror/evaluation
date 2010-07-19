@@ -222,6 +222,10 @@ public class PreloadDataImpl {
             dao.save(new EvalEmailTemplate(ADMIN_OWNER,EvalConstants.EMAIL_TEMPLATE_CONSOLIDATED_REMINDER, 
                     EvalEmailConstants.EMAIL_CONSOLIDATED_REMINDER_DEFAULT_SUBJECT,EvalEmailConstants.EMAIL_CONSOLIDATED_REMINDER_DEFAULT_TEXT, 
                     EvalConstants.EMAIL_TEMPLATE_CONSOLIDATED_REMINDER));
+          //submission confirmation template
+            dao.save(new EvalEmailTemplate(ADMIN_OWNER,EvalConstants.EMAIL_TEMPLATE_SUBMITTED, 
+           		 EvalEmailConstants.EMAIL_SUBMITTED_DEFAULT_SUBJECT,EvalEmailConstants.EMAIL_SUBMITTED_DEFAULT_TEXT, 
+           		 EvalConstants.EMAIL_TEMPLATE_SUBMITTED));
 
             log.info("Preloaded " + dao.countAll(EvalEmailTemplate.class) + " evaluation EmailTemplates");
         }

@@ -125,6 +125,10 @@ public class AdministrateEmailProducer implements ViewComponentProducer {
         //allow eval begin email notification - eval specific toggle 
         AdministrateProducer.makeBoolean(form, "allow-eval-begin-email",
         		EvalSettings.ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION);
+        
+      //send evaluation submitter an email receipt of submission
+		AdministrateProducer.makeBoolean(form, "send-submitted",
+				EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL);
 
         // Save Settings button
         UICommand.make(form, "saveSettings",UIMessage.make("administrate.save.settings.button"), null);
