@@ -577,8 +577,4 @@ public boolean isEvalGroupPublished(String evalGroupId) {
 	return true;
 }
 
-public String getEvalToolTitle() {
-	return "Evaluation System";
-}
-
 }

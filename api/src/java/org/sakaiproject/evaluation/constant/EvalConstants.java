@@ -695,11 +695,5 @@ public class EvalConstants {
      * ScheduledInvocationManager: ScheduledInvocationCommand jobType
      */
     public static final String JOB_TYPE_REMINDER = "scheduledReminder";
-    
-    /**
-     * The name of the evaluation tool, displayed in email
-     * TODO make this a configuration option
-     */
-    public static final String EVAL_TOOL_TITLE = "Course Evaluations";
 
 }

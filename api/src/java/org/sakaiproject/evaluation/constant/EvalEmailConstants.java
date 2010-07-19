@@ -303,7 +303,7 @@ public class EvalEmailConstants {
    /**
     * EmailTemplate subject: Default subject for submission confirmation
     */
-   public static final String EMAIL_SUBMITTED_DEFAULT_SUBJECT = "${EvalTitle} ${EvalToolTitle} Submission Confirmation";
+   public static final String EMAIL_SUBMITTED_DEFAULT_SUBJECT = "${EvalTitle} submission confirmation";
 		
    /**
     * Sent as submission confirmation when response had been saved to the database
@@ -316,7 +316,7 @@ public class EvalEmailConstants {
     */
    public static final String EMAIL_SUBMITTED_DEFAULT_TEXT = 
 	   "Dear ${UserName},\n\n" +
-	   "This message is a confirmation of your ${EvalToolTitle} submission for ${EvalTitle}.  " +
+	   "This message is a confirmation of your submission for ${EvalTitle}.  " +
 	   "It was submitted on ${TimeStamp}.  Thank you for helping the University maintain and improve the quality of its teaching.\n\n" +
 	   "Please save this message for your records.\n\n" +
 	   "Note that all student responses are kept confidential and you may edit your evaluation responses " +

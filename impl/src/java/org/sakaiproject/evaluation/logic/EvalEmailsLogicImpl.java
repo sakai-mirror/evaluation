@@ -806,18 +806,15 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
  					Map<String, String> replacementValues = new HashMap<String, String>();
  					String[] sendTo = new String[]{user.email};
  					String name = user.displayName;
- 					String toolName = externalLogic.getEvalToolTitle();
  					EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
  					String evalTitle = eval.getTitle();
  					Date date = new Date();
  					String timeStamp = SettingsLogicUtils.getStringFromDate(date);
  					replacementValues.put("UserName", name);
- 					replacementValues.put("EvalToolTitle", externalLogic.getEvalToolTitle());
  					replacementValues.put("EvalTitle", evalTitle);
  					replacementValues.put("TimeStamp", timeStamp);
  					//get the template
  					template = getConfirmationEmailTemplate();
- 					System.out.println("---getConfirmationEmailTemplate---"+ template);
  					if(template != null) {
  						//make the substitutions
  						message = makeEmailMessage(template.getMessage(),
@@ -826,23 +823,22 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
  								replacementValues);
  						to = user.email;
  						if(EvalConstants.EMAIL_DELIVERY_LOG.equals(deliveryOption)) {
- 							//if(log.isInfoEnabled()) {
- 								System.out.println("Submission Confirmation\nTo: " + to + 
+ 							if(log.isInfoEnabled()) {
+ 								log.info("Submission Confirmation\nTo: " + to + 
  										"\nFrom: " + from + "\nSubject: " + subject + "\nMessage:\n" + message + "\n\n");
- 							//}
+ 							}
  						}
  						else if (EvalConstants.EMAIL_DELIVERY_SEND.equals(deliveryOption)) {
  							sentTo = externalLogic.sendEmailsToAddresses(from, sendTo, subject, message, true);
- 							System.out.println("externalLogic.sendEmailsToAddresses------"+ sendTo.toString());
  						}
  						else {
- 							System.out.println(this + ".sendEvalSubmissionConfirmationEmail(): invalid delivery option: " + deliveryOption);
+ 							log.warn(this + ".sendEvalSubmissionConfirmationEmail(): invalid delivery option: " + deliveryOption);
  						}
  					}
  				}
  			}
  			catch(Exception e) {
- 				System.out.println(this + ".sendEvalSubmissionConfirmationEmail(): " + e);
+ 				log.warn(this + ".sendEvalSubmissionConfirmationEmail(): " + e);
  			}
  		}
  		return to;
