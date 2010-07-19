@@ -618,14 +618,4 @@ public interface EvalEvaluationService {
 	 */
 	public List<EvalEvaluation> getEvaluations(String searchString,
 			String order, int startResult, int maxResults);
-
-	   /**
-	    * Get an email template for submission confirmation email
-	    * 
-	    * @return the email template of this type
-	    * 
-	    * TODO refactor: getEvalEmailTemplate(String type) 
-	    */
-	   public EvalEmailTemplate getConfirmationEmailTemplate();
-
 }

@@ -37,7 +37,6 @@ public class EvalEmailConstants {
     * ${EvalDueDate} - the due date of this evaluation
     * ${EvalResultsDate} - the view results date of this evaluation
     * ${EvalGroupTitle} - the title to the site/course/group/evalGroup which this evaluation is assigned to for this user
-    * ${EvalToolTitle} - the title of the evaluation tool seen by users of the tool (e.g., "Teaching Questionnaires")
     * ${EvalSite} - a description of the site where the evaluation tool is located
     * ${EvalCLE} - the local name of the Collaboration and Learning Environment where the evaluation tool is used
     * ${HelpdeskEmail} - the email address for the helpdesk (or the support contact)

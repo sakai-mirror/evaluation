@@ -467,11 +467,15 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
         if ( EvalUtils.checkStateAfter(currentEvalState, EvalConstants.EVALUATION_STATE_GRACEPERIOD, true) ) {
             RSFUtils.disableComponent(reminderDaysSelect);
         }
-
+        
         // email reminder template link
         UIInternalLink.make(form, "emailReminder_link", UIMessage.make("evalsettings.reminder.mail.link"), 
                 new EmailViewParameters(PreviewEmailProducer.VIEW_ID, null, EvalConstants.EMAIL_TEMPLATE_REMINDER, evaluation.getId()) );
-
+        
+        // email confirmation
+        UIInternalLink.make(form, "emailSubmission_link", UIMessage.make("evalsettings.submission.mail.link"), 
+                new EmailViewParameters(PreviewEmailProducer.VIEW_ID, null, EvalConstants.EMAIL_TEMPLATE_SUBMITTED, evaluation.getId()) ); 
+        
         // email from address control
         //      String defaultEmail = (String) settings.get(EvalSettings.FROM_EMAIL_ADDRESS);
         //      // https://bugs.caret.cam.ac.uk/browse/CTL-1525 - default to admin address if option set

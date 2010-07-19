@@ -814,7 +814,7 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
  					replacementValues.put("EvalTitle", evalTitle);
  					replacementValues.put("TimeStamp", timeStamp);
  					//get the template
- 					template = getConfirmationEmailTemplate();
+ 					template = evaluationService.getEmailTemplate(evaluationId, EvalConstants.EMAIL_TEMPLATE_SUBMITTED);
  					if(template != null) {
  						//make the substitutions
  						message = makeEmailMessage(template.getMessage(),
@@ -858,12 +858,6 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
     private String makeEmailMessage(String messageTemplate, Map<String, String> replacementValues) {
  	   replacementValues.put("URLtoSystem", externalLogic.getServerUrl());
  	   return TextTemplateLogicUtils.processTextTemplate(messageTemplate, replacementValues);
-    }
-    
-    public EvalEmailTemplate getConfirmationEmailTemplate() {
- 	   EvalEmailTemplate template = null;
- 	   template = evaluationService.getConfirmationEmailTemplate();
- 	   return template;
     }
 
 }

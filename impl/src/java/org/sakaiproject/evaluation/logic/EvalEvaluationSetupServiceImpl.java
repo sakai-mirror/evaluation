@@ -1733,6 +1733,8 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                     eval.setAvailableEmailTemplate(emailTemplate);
                 } else if (EvalConstants.EMAIL_TEMPLATE_REMINDER.equals(emailTemplate.getType())) {
                     eval.setReminderEmailTemplate(emailTemplate);
+                } else if (EvalConstants.EMAIL_TEMPLATE_SUBMITTED.equals(emailTemplate.getType())) {
+                    eval.setSubmissionConfirmationEmailTemplate(emailTemplate);
                 }
                 dao.save(eval);
             } else {
@@ -1757,6 +1759,12 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                     evalTemplateType = "reminderEmailTemplate";
                 }
                 eval.setReminderEmailTemplate(null);
+            } else if (EvalConstants.EMAIL_TEMPLATE_SUBMITTED.equals(emailTemplateTypeConstant)) {
+                if (eval.getSubmissionConfirmationEmailTemplate() != null) {
+                    checkEmailTemplateId = eval.getSubmissionConfirmationEmailTemplate().getId();
+                    evalTemplateType = "submissionConfirmationEmailTemplate";
+                }
+                eval.setSubmissionConfirmationEmailTemplate(null);
             }
             dao.save(eval);
 

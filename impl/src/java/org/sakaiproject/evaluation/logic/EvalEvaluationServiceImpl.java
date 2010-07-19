@@ -951,6 +951,10 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
             if (eval.getReminderEmailTemplate() != null) {
                 emailTemplateId = eval.getReminderEmailTemplate().getId();
             }
+        } else if (EvalConstants.EMAIL_TEMPLATE_SUBMITTED.equals(emailTemplateTypeConstant)) {
+            if (eval.getSubmissionConfirmationEmailTemplate() != null) {
+                emailTemplateId = eval.getSubmissionConfirmationEmailTemplate().getId();
+            }
         } else {
             throw new IllegalArgumentException("Invalid emailTemplateTypeConstant: " + emailTemplateTypeConstant);
         }
@@ -1112,20 +1116,5 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
 		}
 		return template;
 	}
-
-	   /*
-	    * (non-Javadoc)
-	    * @see org.sakaiproject.evaluation.logic.EvalEvaluationService#getConfirmationEmailTemplate()
-	    */
-	   public EvalEmailTemplate getConfirmationEmailTemplate() {
-		   EvalEmailTemplate template = null;
-		   try {
-			   template = dao.findBySearch(EvalEmailTemplate.class, new Search("type", EvalConstants.EMAIL_TEMPLATE_SUBMITTED)).get(0);
-		   }
-		   catch(IndexOutOfBoundsException e) {
-			   //no template found
-		   }
-		   return template;
-	   }
 
 }
