@@ -15,6 +15,7 @@
 package org.sakaiproject.evaluation.logic;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,9 @@ import org.sakaiproject.evaluation.utils.EvalUtils;
 import org.sakaiproject.genericdao.api.search.Order;
 import org.sakaiproject.genericdao.api.search.Restriction;
 import org.sakaiproject.genericdao.api.search.Search;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SiteService;
+import org.sakaiproject.site.api.SiteService.SortType;
 
 
 /**
@@ -76,6 +80,11 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
     private EvalSettings settings;
     public void setSettings(EvalSettings settings) {
         this.settings = settings;
+    }
+
+    private SiteService siteService;
+    public void setSiteService(SiteService siteService) {
+        this.siteService = siteService;
     }
 
 
@@ -1115,6 +1124,14 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService {
 			template = dao.findOneBySearch(EvalEmailTemplate.class, new Search("eid", eid));
 		}
 		return template;
+	}
+
+	public List<EvalEvaluation> getEvaluationsForEvalGroups(String[] evalGroupIds, int startResult, int maxResults){
+		if( evalGroupIds.length > 0){
+			return  dao.getEvaluationsForOwnerAndGroups("", evalGroupIds, null, startResult, maxResults, Boolean.TRUE);
+		}else{
+			return new ArrayList<EvalEvaluation>();
+		}
 	}
 
 }
