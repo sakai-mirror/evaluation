@@ -348,6 +348,12 @@ public interface EvalSettings {
      * CONSTANT: Send an email confirmation that a response to an evaluation was submitted (Instructors might require proof). - {@link Boolean}, default False
      */
     public static final String ENABLE_SUBMISSION_CONFIRMATION_EMAIL = "ENABLE_SUBMISSION_CONFIRMATION_EMAIL:java.lang.Boolean";
+    
+    /**
+     * CONSTANT: Can a text item be flagged as required? - {@link Boolean}, default False
+     * <b>Note:</b> If this is NULL then the evaluation settings override, otherwise this overrides the evaluation setting
+     */
+    public static final String ENABLE_TEXT_ITEM_REQUIRED = "ENABLE_TEXT_ITEM_REQUIRED:java.lang.Boolean";
    
 
     /**
