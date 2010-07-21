@@ -210,6 +210,9 @@ public class PreloadDataImpl {
      * Preload the default email template
      */
     public void preloadEmailTemplate() {
+    	if ( defaultEmailTempates.size() == 0){
+    		populateEmailTemplates();
+    	}
         // check if there are any emailTemplates present
     	List<EvalEmailTemplate> currentDefaultsList = dao.findBySearch(EvalEmailTemplate.class,
                 new Search( new Restriction("defaultType", "", Restriction.NOT_NULL) ) );
