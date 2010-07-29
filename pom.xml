@@ -35,15 +35,15 @@
     <version>1.2.2</version><!--eval.version-->
 
     <properties>
-        <hierarchy.version>1.2.4</hierarchy.version>
-        <genericdao.version>0.9.17</genericdao.version>
-        <sakai.version>2.5.3</sakai.version>
+        <hierarchy.version>1.2.5</hierarchy.version>
+        <genericdao.version>0.9.18</genericdao.version>
+        <sakai.version>2.6.3</sakai.version>
     </properties>
 
     <parent>
         <artifactId>master</artifactId>
         <groupId>org.sakaiproject</groupId>
-        <version>2.6.1</version>
+        <version>2.6.2</version>
         <relativePath>../master/pom.xml</relativePath>
     </parent>
 
