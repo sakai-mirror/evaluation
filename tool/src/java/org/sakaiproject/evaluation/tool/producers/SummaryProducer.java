@@ -316,7 +316,7 @@ public class SummaryProducer implements ViewComponentProducer, DefaultView, Navi
          * for the evaluations admin box
          */
 	  Boolean showAdministratingBox = (Boolean) settings.get(EvalSettings.ENABLE_ADMINISTRATING_BOX);
-	  if(showAdministratingBox != null && showAdministratingBox == true) {
+	  if(showAdministratingBox != null && showAdministratingBox == true  && !userAdmin) {
 	  
         Boolean instViewResults = (Boolean) settings.get(EvalSettings.INSTRUCTOR_ALLOWED_VIEW_RESULTS);
         if (instViewResults == null) {
