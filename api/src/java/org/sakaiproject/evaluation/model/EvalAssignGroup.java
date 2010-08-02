@@ -23,9 +23,6 @@ public class EvalAssignGroup extends EvalAssignHierarchy implements java.io.Seri
     public static final String SELECTION_OPTION_ONE = "one";
     public static final String SELECTION_OPTION_MULTIPLE = "multiple";
     
-    //Set default TA/Instructor selections to multiple EVALSYS-903
-    public static String SELECTION_OPTION_DEFAULT = SELECTION_OPTION_MULTIPLE;
-
     public static final String SELECTION_TYPE_INSTRUCTOR = EvalConstants.ITEM_CATEGORY_INSTRUCTOR;
     public static final String SELECTION_TYPE_ASSISTANT = EvalConstants.ITEM_CATEGORY_ASSISTANT;
     public static final String SELECTION_TYPE_ENVIRONMENT = EvalConstants.ITEM_CATEGORY_ENVIRONMENT;

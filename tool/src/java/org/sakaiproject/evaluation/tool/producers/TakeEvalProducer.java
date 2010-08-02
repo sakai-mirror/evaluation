@@ -413,8 +413,8 @@ public class TakeEvalProducer implements ViewComponentProducer, ViewParamsReport
                 // SELECTION Code - EVALSYS-618
                 Boolean selectionsEnabled = (Boolean) evalSettings
                         .get(EvalSettings.ENABLE_INSTRUCTOR_ASSISTANT_SELECTION);
-                String instructorSelectionOption = EvalAssignGroup.SELECTION_OPTION_DEFAULT;
-                String assistantSelectionOption = EvalAssignGroup.SELECTION_OPTION_DEFAULT;
+                String instructorSelectionOption = EvalAssignGroup.SELECTION_OPTION_ALL;
+                String assistantSelectionOption = EvalAssignGroup.SELECTION_OPTION_ALL;
                 Map<String, String[]> savedSelections = new HashMap<String, String[]>();
                 if(response!=null){
 					savedSelections = response.getSelections();

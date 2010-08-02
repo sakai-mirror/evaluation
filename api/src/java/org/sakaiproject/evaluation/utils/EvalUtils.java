@@ -710,7 +710,7 @@ public class EvalUtils {
      * @param assignGroup (OPTIONAL) the assign group for this eval, this should be set but it does not have to be
      * @param eval (OPTIONAL) the eval, you can use this if there is no assign group available
      * but the correct way to check is to use the assigngroup
-     * @return the selection option constant (e.g. default is {@link EvalAssignGroup#SELECTION_OPTION_DEFAULT})
+     * @return the selection option constant (e.g. default is {@link EvalAssignGroup#SELECTION_OPTION_ALL})
      * @throws IllegalArgumentException if the selectionTypeConstant is null
      */
     public static String getSelectionSetting(String selectionTypeConstant, EvalAssignGroup assignGroup, EvalEvaluation eval) {
@@ -721,7 +721,7 @@ public class EvalUtils {
             throw new IllegalArgumentException("assignGroup and eval cannot both be null");
         }
 
-        String selectionSetting = EvalAssignGroup.SELECTION_OPTION_DEFAULT; 
+        String selectionSetting = EvalAssignGroup.SELECTION_OPTION_ALL; 
         if (assignGroup != null) {
             Map<String, String> m = assignGroup.getSelectionOptions();
             String s = m.get(selectionTypeConstant);
