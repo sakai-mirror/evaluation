@@ -19,9 +19,12 @@ import org.sakaiproject.evaluation.utils.EvalUtils;
  */
 public class EvalAssignGroup extends EvalAssignHierarchy implements java.io.Serializable {
 
-    public static final String SELECTION_OPTION_ALL = "all";
+    public static final String SELECTION_OPTION_ALL = "all"; 
     public static final String SELECTION_OPTION_ONE = "one";
     public static final String SELECTION_OPTION_MULTIPLE = "multiple";
+    
+    //Set default TA/Instructor selections to multiple EVALSYS-903
+    public static String SELECTION_OPTION_DEFAULT = SELECTION_OPTION_MULTIPLE;
 
     public static final String SELECTION_TYPE_INSTRUCTOR = EvalConstants.ITEM_CATEGORY_INSTRUCTOR;
     public static final String SELECTION_TYPE_ASSISTANT = EvalConstants.ITEM_CATEGORY_ASSISTANT;
