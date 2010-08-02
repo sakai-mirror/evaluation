@@ -135,6 +135,7 @@ public class EvalBeanUtils {
         Date now =  new Date();
         calendar.setTime( now );
         if (eval.getStartDate() == null) {
+            calendar.add(Calendar.HOUR, 1);
             eval.setStartDate(now);
             log.debug("Setting start date to default of: " + eval.getStartDate());
         } else {
