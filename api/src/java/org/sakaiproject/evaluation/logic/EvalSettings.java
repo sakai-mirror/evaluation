@@ -16,7 +16,6 @@ package org.sakaiproject.evaluation.logic;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 
-
 /**
  * This allows access to and control of all system settings for the evaluation
  * system<br/>
@@ -417,7 +416,8 @@ public interface EvalSettings {
         INSTRUCTOR_ALLOWED_VIEW_RESULTS,
         STUDENT_ALLOWED_LEAVE_UNANSWERED,
         STUDENT_MODIFY_RESPONSES,
-        STUDENT_ALLOWED_VIEW_RESULTS
+        STUDENT_ALLOWED_VIEW_RESULTS,
+        ENABLE_TEXT_ITEM_REQUIRED
     };
 
     /**

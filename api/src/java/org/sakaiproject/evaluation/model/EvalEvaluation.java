@@ -211,6 +211,11 @@ public class EvalEvaluation implements java.io.Serializable {
      * {@link EvalConstants#EVALUATION_AUTOUSE_INSERTION_BEFORE}
      */
     private String autoUseInsertion;
+    
+	/**
+     * A flag to see if compulsory text items in the evaluation must be answered by takers
+     */
+    private Boolean compulsoryTextItemsAllowed;
 
     // NON_PERSISTENT
 
@@ -246,11 +251,6 @@ public class EvalEvaluation implements java.io.Serializable {
      * This is ignored if it is null<br/>
      */
     public Boolean useViewDate;
-    
-    /**
-     * A flag to see if compulsory text items in the evaluation must be answered by takers
-     */
-     private Boolean compulsoryTextItemsAllowed;
 
     /**
      * This is an optional listing of eval groups for this evaluation,
@@ -332,7 +332,7 @@ public class EvalEvaluation implements java.io.Serializable {
             EvalEmailTemplate reminderEmailTemplate, EvalEmailTemplate submissionConfirmationEmailTemplate, EvalTemplate template,
             Set<EvalResponse> responses, Boolean blankResponsesAllowed,
             Boolean modifyResponsesAllowed, Boolean unregisteredAllowed, Boolean locked,
-            String authControl, String evalCategory, String selectionSettings, Boolean sendAvailableNotifications, Boolean compulsoryTextItemsAllowed) {
+            String authControl, String evalCategory, String selectionSettings, Boolean emailOpenNotification, Boolean compulsoryTextItemsAllowed) {
     	
         this.lastModified = new Date();
         this.type = type;
@@ -365,7 +365,7 @@ public class EvalEvaluation implements java.io.Serializable {
         this.authControl = authControl;
         this.evalCategory = evalCategory;
         this.selectionSettings = selectionSettings;
-    	this.sendAvailableNotifications = sendAvailableNotifications;
+    	this.sendAvailableNotifications = emailOpenNotification;
     	this.compulsoryTextItemsAllowed = compulsoryTextItemsAllowed;
     }
 
@@ -646,6 +646,14 @@ public class EvalEvaluation implements java.io.Serializable {
     public Integer getReminderDays() {
         return reminderDays;
     }
+    
+    public Boolean getCompulsoryTextItemsAllowed() {
+		return compulsoryTextItemsAllowed;
+	}
+
+	public void setCompulsoryTextItemsAllowed(Boolean compulsoryTextItemsAllowed) {
+		this.compulsoryTextItemsAllowed = compulsoryTextItemsAllowed;
+	}
 
     /**
      * @see #reminderDays
@@ -814,14 +822,6 @@ public class EvalEvaluation implements java.io.Serializable {
 	public void setSubmissionConfirmationEmailTemplate(
 			EvalEmailTemplate submissionConfirmationEmailTemplate) {
 		this.submissionConfirmationEmailTemplate = submissionConfirmationEmailTemplate;
-	}
-
-    public Boolean getCompulsoryTextItemsAllowed() {
-		return compulsoryTextItemsAllowed;
-	}
-
-	public void setCompulsoryTextItemsAllowed(Boolean compulsoryTextItemsAllowed) {
-		this.compulsoryTextItemsAllowed = compulsoryTextItemsAllowed;
 	}
 
     /**
