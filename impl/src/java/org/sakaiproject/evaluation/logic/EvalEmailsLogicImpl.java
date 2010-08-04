@@ -657,8 +657,8 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
         if (! replacementValues.containsKey("ShowOptOutText")) {
             replacementValues.put("ShowOptOutText", "false");
         }
-        if (! replacementValues.containsKey("showAllowEditResponsesText")) {
-            replacementValues.put("showAllowEditResponsesText", "false");
+        if (! replacementValues.containsKey("ShowAllowEditResponsesText")) {
+            replacementValues.put("ShowAllowEditResponsesText", "false");
         }
 
         // generate URLs to the evaluation
@@ -746,7 +746,8 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
         EvalEmailTemplate emailTemplate = null;
         if (evaluationId != null &&
                 ( EvalConstants.EMAIL_TEMPLATE_AVAILABLE.equals(typeConstant) ||
-                        EvalConstants.EMAIL_TEMPLATE_REMINDER.equals(typeConstant) ) ) {
+                        EvalConstants.EMAIL_TEMPLATE_REMINDER.equals(typeConstant)  ||
+                        EvalConstants.EMAIL_TEMPLATE_SUBMITTED.equals(typeConstant) ) ) {
             // get the template from the evaluation itself
             EvalEmailTemplate evalEmailTemplate = evaluationService.getEmailTemplate(evaluationId, typeConstant);
             if (evalEmailTemplate != null) {
@@ -829,6 +830,13 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
 			replacementValues.put("EvalTitle", evalTitle);
 			replacementValues.put("TimeStamp", timeStamp);
 			replacementValues.put("URLtoSystem", externalLogic.getServerUrl());
+			
+			boolean canEditResponses = (Boolean) settings.get(EvalSettings.STUDENT_MODIFY_RESPONSES);
+			if (canEditResponses){
+				replacementValues.put("ShowAllowEditResponsesText", "true");
+			}else{
+				replacementValues.put("ShowAllowEditResponsesText", "false");
+			}
 			//get the template
 			template = getEmailTemplateOrFail(EvalConstants.EMAIL_TEMPLATE_SUBMITTED, evaluationId);
 			if(template != null) {
