@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.entity.EvalReportsEntityProvider;
+import org.sakaiproject.evaluation.logic.entity.EvaluationEntityProvider;
 import org.sakaiproject.evaluation.logic.externals.EvalExternalLogic;
 import org.sakaiproject.evaluation.logic.model.EvalEmailMessage;
 import org.sakaiproject.evaluation.logic.model.EvalGroup;
@@ -40,6 +41,8 @@ import org.sakaiproject.evaluation.utils.ArrayUtils;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 import org.sakaiproject.evaluation.utils.SettingsLogicUtils;
 import org.sakaiproject.evaluation.utils.TextTemplateLogicUtils;
+import org.sakaiproject.entitybroker.EntityReference;
+
 
 /**
  * EvalEmailsLogic implementation,
@@ -58,6 +61,7 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
     protected final String EVENT_EMAIL_GROUP_AVAILABLE =              "eval.email.evalgroup.available";
     protected final String EVENT_EMAIL_REMINDER =                     "eval.email.eval.reminders";
     protected final String EVENT_EMAIL_RESULTS =                      "eval.email.eval.results";
+    protected final String EVENT_EMAIL_SUBMISSION =                   "eval.email.eval.submission";
 
 
     private EvalCommonLogic commonLogic;
@@ -600,7 +604,7 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
      * @return the processed message template with replacements and logic handled
      */
     public EvalEmailMessage makeEmailMessage(String messageTemplate, String subjectTemplate, EvalEvaluation eval,
-            EvalGroup group, Map<String, String> replacementValues) {
+            EvalGroup group, Map<String, String> replacementValues, String evalEntityURL) {
         // replace the text of the template with real values
         if (replacementValues == null) {
             replacementValues = new HashMap<String, String>();
@@ -653,20 +657,25 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
         if (! replacementValues.containsKey("ShowOptOutText")) {
             replacementValues.put("ShowOptOutText", "false");
         }
-
-        // generate URLs to the evaluation
-        String evalEntityURL = null;
-        if (group != null && group.evalGroupId != null) {
-            // get the URL directly to the evaluation with group context included
-            EvalAssignGroup assignGroup = evaluationService.getAssignGroupByEvalAndGroupId(eval.getId(), group.evalGroupId);
-            if (assignGroup != null) {
-                evalEntityURL = commonLogic.getEntityURL(assignGroup);
-            }
+        if (! replacementValues.containsKey("showAllowEditResponsesText")) {
+            replacementValues.put("showAllowEditResponsesText", "false");
         }
 
-        if (evalEntityURL == null) {
-            // just get the URL to the evaluation without group context
-            evalEntityURL = commonLogic.getEntityURL(eval);
+        // generate URLs to the evaluation
+        if(evalEntityURL == null){
+	        if (group != null && group.evalGroupId != null) {
+	            // get the URL directly to the evaluation with group context included
+	            EvalAssignGroup assignGroup = evaluationService.getAssignGroupByEvalAndGroupId(eval.getId(), group.evalGroupId);
+	            if (assignGroup != null) {
+	                evalEntityURL = commonLogic.getEntityURL(assignGroup);
+	            }
+	        }
+	        
+	
+	        if (evalEntityURL == null) {
+	            // just get the URL to the evaluation without group context
+	            evalEntityURL = commonLogic.getEntityURL(eval);
+	        }
         }
 
         // all URLs are identical because the user permissions determine access uniquely
@@ -693,7 +702,15 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
         return new EvalEmailMessage(subjectTemplate, messageTemplate, subject, message);
     }
 
-    
+    /**
+     * Builds the email message from a template and a bunch of variables
+     * (passed in and otherwise)<br />
+     * <b>This method assumes you do not have an entityURL and will generate it internally.</b>
+     */
+    public EvalEmailMessage makeEmailMessage(String messageTemplate, String subjectTemplate,
+			EvalEvaluation eval, EvalGroup group, Map<String, String> replacementValues) {
+		return makeEmailMessage(messageTemplate, subjectTemplate, eval, group, replacementValues, null);
+	}
     
     // INTERNAL METHODS
 
@@ -766,11 +783,12 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
         if (from == null) {
             throw new IllegalStateException("Could not get a from email address from system settings or the evaluation");
         }
+        
         return from;
-    }
 
-    /**
-     * INTERNAL METHOD<br/>
+    }
+    
+     /*** INTERNAL METHOD<br/>
      * Gets the evaluation or throws exception,
      * reduce code duplication
      * @param evaluationId
@@ -792,72 +810,42 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
      */
  	public String sendEvalSubmissionConfirmationEmail(Long evaluationId) {
  		String to = null;
- 		String message = null;
- 		String subject = null;
- 		String from = (String) settings.get(EvalSettings.FROM_EMAIL_ADDRESS);
- 		String deliveryOption = (String) settings.get(EvalSettings.EMAIL_DELIVERY_OPTION);
- 		String[] sentTo = new String[]{};
- 		if(!EvalConstants.EMAIL_DELIVERY_NONE.equals(deliveryOption)) {
- 			Boolean  sendConfirmation = (Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL);
- 			try {
- 				EvalUser user = externalLogic.getEvalUserById(externalLogic.getCurrentUserId());
- 				if(user != null && sendConfirmation.booleanValue()) {
- 					EvalEmailTemplate template = null;
- 					Map<String, String> replacementValues = new HashMap<String, String>();
- 					String[] sendTo = new String[]{user.email};
- 					String name = user.displayName;
- 					EvalEvaluation eval = evaluationService.getEvaluationById(evaluationId);
- 					String evalTitle = eval.getTitle();
- 					Date date = new Date();
- 					String timeStamp = SettingsLogicUtils.getStringFromDate(date);
- 					replacementValues.put("UserName", name);
- 					replacementValues.put("EvalTitle", evalTitle);
- 					replacementValues.put("TimeStamp", timeStamp);
- 					//get the template
- 					template = evaluationService.getEmailTemplate(evaluationId, EvalConstants.EMAIL_TEMPLATE_SUBMITTED);
- 					if(template != null) {
- 						//make the substitutions
- 						message = makeEmailMessage(template.getMessage(),
- 								replacementValues);
- 						subject = makeEmailMessage(template.getSubject(),
- 								replacementValues);
- 						to = user.email;
- 						if(EvalConstants.EMAIL_DELIVERY_LOG.equals(deliveryOption)) {
- 							if(log.isInfoEnabled()) {
- 								log.info("Submission Confirmation\nTo: " + to + 
- 										"\nFrom: " + from + "\nSubject: " + subject + "\nMessage:\n" + message + "\n\n");
- 							}
- 						}
- 						else if (EvalConstants.EMAIL_DELIVERY_SEND.equals(deliveryOption)) {
- 							sentTo = externalLogic.sendEmailsToAddresses(from, sendTo, subject, message, true);
- 						}
- 						else {
- 							log.warn(this + ".sendEvalSubmissionConfirmationEmail(): invalid delivery option: " + deliveryOption);
- 						}
- 					}
- 				}
- 			}
- 			catch(Exception e) {
- 				log.warn(this + ".sendEvalSubmissionConfirmationEmail(): " + e);
- 			}
- 		}
+ 		
+		Boolean  sendConfirmation = (Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL);
+
+		String currentUserId = externalLogic.getCurrentUserId();
+		EvalUser user = externalLogic.getEvalUserById(currentUserId);
+		if(user != null && sendConfirmation.booleanValue()) {
+			EvalEmailTemplate template = null;
+			Map<String, String> replacementValues = new HashMap<String, String>();
+			String name = user.displayName;
+			to = user.email;
+			EvalEvaluation eval = getEvaluationOrFail(evaluationId);
+			String evalTitle = eval.getTitle();
+			String from = getFromEmailOrFail(eval);
+			Date date = new Date();
+			String timeStamp = SettingsLogicUtils.getStringFromDate(date);
+			replacementValues.put("UserName", name);
+			replacementValues.put("EvalTitle", evalTitle);
+			replacementValues.put("TimeStamp", timeStamp);
+			replacementValues.put("URLtoSystem", externalLogic.getServerUrl());
+			//get the template
+			template = getEmailTemplateOrFail(EvalConstants.EMAIL_TEMPLATE_SUBMITTED, evaluationId);
+			if(template != null) {
+				
+				String evalEntityURL = new EntityReference(EvaluationEntityProvider.ENTITY_PREFIX, eval.getId().toString()).toString();
+				//make email and do the variable substitutions
+				EvalEmailMessage em = makeEmailMessage(template.getMessage(), template.getSubject(), eval, null, replacementValues, evalEntityURL);
+
+                // send the actual email for this user
+                String[] emailAddresses = sendUsersEmails(from, new String[]{currentUserId}, em.subject, em.message);
+                if(emailAddresses.length > 0){
+	                log.info("Sent Submission Confirmation email to " + currentUserId + ". (attempted to send to "+emailAddresses.length+")");	                
+	                commonLogic.registerEntityEvent(EVENT_EMAIL_SUBMISSION, EvalEvaluation.class, eval.getId().toString());
+                }
+			}
+		}
  		return to;
  	}
- 	
- 	
-    // INTERNAL METHODS
-
-    /**
-     * INTERNAL METHOD<br/>
-     * Builds the single email message from a template and a bunch of variables
-     * (passed in and otherwise)
-     * @param messageTemplate
-     * @param replacementValues a map of String -> String representing $keys in the template to replace with text values
-     * @return the processed message template with replacements and logic handled
-     */
-    private String makeEmailMessage(String messageTemplate, Map<String, String> replacementValues) {
- 	   replacementValues.put("URLtoSystem", externalLogic.getServerUrl());
- 	   return TextTemplateLogicUtils.processTextTemplate(messageTemplate, replacementValues);
-    }
 
 }
