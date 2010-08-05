@@ -51,6 +51,7 @@ public class EvalEmailConstants {
     * ShowAddItemsText - will be "true" if the add items text should be shown
     * ShowOptInText - will be "true" if this eval is opt-in (exclusive with opt-in)
     * ShowOptOutText - will be "true" if this eval is opt-out (exclusive with opt-out)
+    * ShowAllowEditResponsesText - will be "true" is this eval allows editing responses
     */
    public static final String EMAIL_CREATED_DEFAULT_TEXT = 
       "All information submitted to the Evaluation System is confidential. Instructors cannot identify which submissions belong to which students. Students are required to login to the system for the sole purpose of providing students access to the appropriate evaluations for their associated courses. Instructors can only view general statistics as allowed by the university. Please send privacy concerns to ${HelpdeskEmail}. \n" +
@@ -318,8 +319,10 @@ public class EvalEmailConstants {
 	   "This message is a confirmation of your submission for ${EvalTitle}.  " +
 	   "It was submitted on ${TimeStamp}.  Thank you for helping the University maintain and improve the quality of its teaching.\n\n" +
 	   "Please save this message for your records.\n\n" +
-	   "Note that all student responses are kept confidential and you may edit your evaluation responses " +
-	   "up until the close date for this evaluation.\n";
+	   "Note that all student responses are kept confidential." +
+	   "<#elseif ShowAllowEditResponsesText == \"true\">\n" +
+	   "You may edit your evaluation responses up until the close date for this evaluation.\n" +
+      "</#if>\n";
    
 	/**
 	 * Email text describing where a user should look for the evaluation tool.

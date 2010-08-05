@@ -812,7 +812,7 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
  	public String sendEvalSubmissionConfirmationEmail(Long evaluationId) {
  		String to = null;
  		
-		Boolean  sendConfirmation = (Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL);
+		Boolean sendConfirmation = (Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL);
 
 		String currentUserId = externalLogic.getCurrentUserId();
 		EvalUser user = externalLogic.getEvalUserById(currentUserId);
@@ -831,8 +831,15 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
 			replacementValues.put("TimeStamp", timeStamp);
 			replacementValues.put("URLtoSystem", externalLogic.getServerUrl());
 			
-			boolean canEditResponses = (Boolean) settings.get(EvalSettings.STUDENT_MODIFY_RESPONSES);
-			if (canEditResponses){
+			Boolean canEditResponses = (Boolean) settings.get(EvalSettings.STUDENT_MODIFY_RESPONSES);
+			
+			if (canEditResponses == null){
+				if(EvalUtils.safeBool(eval.getModifyResponsesAllowed(), false)){
+					replacementValues.put("ShowAllowEditResponsesText", "true");
+				}else{
+					replacementValues.put("ShowAllowEditResponsesText", "false");
+				}
+			}else if (canEditResponses){
 				replacementValues.put("ShowAllowEditResponsesText", "true");
 			}else{
 				replacementValues.put("ShowAllowEditResponsesText", "false");
