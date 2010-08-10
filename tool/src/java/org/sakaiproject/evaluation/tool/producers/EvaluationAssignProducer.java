@@ -560,9 +560,7 @@ public class EvaluationAssignProducer implements ViewComponentProducer, ViewPara
         	UIOutput.make(tofill, "JS-facebox");
         	UIOutput.make(tofill, "JS-facebox-assign");
         	UIOutput.make(tofill, "JS-assign");
-        	if( useSelectionOptions && (hasAssistantQuestions || hasInstructorQuestions) ){
-        		UIMessage.make(form, "select-column-title", "assignselect.page.column.title");
-        	}
+        	UIMessage.make(form, "select-column-title", "assignselect.page.column.title");
         	form.type = EarlyRequestParser.ACTION_REQUEST;
         	UICommand.make(form, "confirmAssignCourses", UIMessage.make("evaluationassignconfirm.done.button"),actionBean + "completeConfirmAction" );
         }else{
