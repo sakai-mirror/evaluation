@@ -107,9 +107,12 @@ public class AdministrateEmailProducer implements ViewComponentProducer {
         AdministrateProducer.makeBoolean(form, "log-recipients",
                 EvalSettings.LOG_EMAIL_RECIPIENTS);
         
-        //allow eval begin email notification - eval specific toggle 
-        AdministrateProducer.makeBoolean(form, "allow-eval-begin-email",
-        		EvalSettings.ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION);
+        //allow eval begin email notification - eval specific toggle         
+        AdministrateProducer.makeSelect(form, "allow-eval-begin-email", 
+        		AdministrateProducer.administrateConfigurableValues, 
+        		AdministrateProducer.administrateConfigurableLabels, 
+                EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION, true);
+        UIMessage.make(form, "allow-eval-begin-email-note", "administrate.email.allow.initial.notification.override");
         
       //send evaluation submitter an email receipt of submission
 		AdministrateProducer.makeBoolean(form, "send-submitted",

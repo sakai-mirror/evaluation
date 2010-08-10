@@ -487,7 +487,7 @@ public class PreloadDataImpl {
         evalConfigMap.put(EvalSettings.ENABLE_SINGLE_EMAIL_PER_STUDENT, false);
         evalConfigMap.put(EvalSettings.DEFAULT_EMAIL_REMINDER_FREQUENCY, 0);
         evalConfigMap.put(EvalSettings.EVALUATION_TIME_TO_WAIT_SECS, 300);
-        evalConfigMap.put(EvalSettings.ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION, false);
+        evalConfigMap.put(EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION, true);
 
         // Default batch performance metrics settings
         evalConfigMap.put(EvalSettings.LOG_PROGRESS_EVERY, 0);

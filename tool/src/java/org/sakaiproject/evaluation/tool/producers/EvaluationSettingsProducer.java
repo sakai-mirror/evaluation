@@ -420,18 +420,33 @@ public class EvaluationSettingsProducer implements ViewComponentProducer, ViewPa
         // EVALUATION REMINDERS SECTION
 
         // email available template link
-        UIInternalLink.make(form, "emailAvailable_link", UIMessage.make("evalsettings.available.mail.link"), 
-                new EmailViewParameters(PreviewEmailProducer.VIEW_ID, null, EvalConstants.EMAIL_TEMPLATE_AVAILABLE, evaluation.getId()) );
+        
+        UIBranchContainer availableNotificationBranch = UIBranchContainer.make(form, "sendNotification:");
 
         // toggle opening email
-        Boolean allowsendAvailableNotifications = (Boolean) settings.get(EvalSettings.ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION);
-        if (allowsendAvailableNotifications){
-	        boolean toggleSendMail = evaluation.getSendAvailableNotifications() == null ? Boolean.TRUE : evaluation.getSendAvailableNotifications();
-	        UIBoundBoolean sendOpeningEmail = UIBoundBoolean.make(form, "enable-mass-email", evaluationOTP + "sendAvailableNotifications", toggleSendMail);
+        Boolean allowsendAvailableNotifications = (Boolean) settings.get(EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION);
+        if(allowsendAvailableNotifications == null){
+        	//Show the Eval-Specific checkbox and text. Show the text relating to the initial email. Show the email template link. 
+        	boolean toggleSendMail = evaluation.getSendAvailableNotifications() == null ? Boolean.TRUE : evaluation.getSendAvailableNotifications();
+	        UIBoundBoolean sendOpeningEmail = UIBoundBoolean.make(availableNotificationBranch, "enable-mass-email", evaluationOTP + "sendAvailableNotifications", toggleSendMail);
 	        if ( EvalUtils.checkStateAfter(currentEvalState, EvalConstants.EVALUATION_STATE_ACTIVE, true) ) {
 	            RSFUtils.disableComponent(sendOpeningEmail);
 	        }
-	        UIMessage.make(form, "enable-mass-email-label", "evalsettings.general.enable.email.onbegin");
+	        UIMessage.make(availableNotificationBranch, "enable-mass-email-label", "evalsettings.general.enable.email.onbegin");
+        	
+        	UIMessage.make(availableNotificationBranch, "emailAvailable_desc", "evalsettings.available.mail.desc");
+        	UIInternalLink.make(availableNotificationBranch, "emailAvailable_link", UIMessage.make("evalsettings.available.mail.link"), 
+                    new EmailViewParameters(PreviewEmailProducer.VIEW_ID, null, EvalConstants.EMAIL_TEMPLATE_AVAILABLE, evaluation.getId()) );
+        	UIMessage.make(availableNotificationBranch, "emailAvailable_appropriate", "evalsettings.emails.appropriate");
+        }else if (allowsendAvailableNotifications){
+        	//Show the text relating to the initial email. Show the email template link.
+        	UIMessage.make(availableNotificationBranch, "emailAvailable_desc", "evalsettings.available.mail.desc");
+        	UIInternalLink.make(availableNotificationBranch, "emailAvailable_link", UIMessage.make("evalsettings.available.mail.link"), 
+                    new EmailViewParameters(PreviewEmailProducer.VIEW_ID, null, EvalConstants.EMAIL_TEMPLATE_AVAILABLE, evaluation.getId()) );
+        	UIMessage.make(availableNotificationBranch, "emailAvailable_appropriate", "evalsettings.emails.appropriate");
+        }else if(!allowsendAvailableNotifications){
+        	//Hide the text relating to the initial email. Hide the email template link. Show text reflecting this
+        	UIMessage.make(availableNotificationBranch, "emailAvailable_desc", "evalsettings.available.mail.disabled");
         }
         
         // email reminder control

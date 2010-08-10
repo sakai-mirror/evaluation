@@ -73,6 +73,20 @@ public class AdministrateProducer implements ViewComponentProducer {
     
     // Used to prepare the path for WritableBeanLocator
     public static final String ADMIN_WBL = "settingsBean";
+    
+    public static final String[] administrateConfigurableLabels = 
+    {
+            "administrate.true.label",
+            "administrate.false.label",
+            "general.configurable"
+    };
+    public static final String[] administrateConfigurableValues = 
+    {
+            EvalToolConstants.ADMIN_BOOLEAN_YES,
+            EvalToolConstants.ADMIN_BOOLEAN_NO,
+            EvalToolConstants.ADMIN_BOOLEAN_CONFIGURABLE
+    };		
+
 
     /* (non-Javadoc)
      * @see uk.org.ponder.rsf.view.ComponentProducer#fillComponents(uk.org.ponder.rsf.components.UIContainer, uk.org.ponder.rsf.viewstate.ViewParameters, uk.org.ponder.rsf.view.ComponentChecker)
@@ -154,18 +168,6 @@ public class AdministrateProducer implements ViewComponentProducer {
         UIMessage.make(form, "instructors-eval-create-note", "administrate.instructors.eval.create.note");
 
         //Select for whether instructors can view results or not
-        String[] administrateConfigurableLabels = 
-        {
-                "administrate.true.label",
-                "administrate.false.label",
-                "general.configurable"
-        };
-        String[] administrateConfigurableValues = 
-        {
-                EvalToolConstants.ADMIN_BOOLEAN_YES,
-                EvalToolConstants.ADMIN_BOOLEAN_NO,
-                EvalToolConstants.ADMIN_BOOLEAN_CONFIGURABLE
-        };		
 
         makeSelect(form, "instructors-view-results", 
                 administrateConfigurableValues, 

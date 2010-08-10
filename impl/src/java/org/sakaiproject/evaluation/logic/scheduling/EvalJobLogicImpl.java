@@ -145,8 +145,12 @@ public class EvalJobLogicImpl implements EvalJobLogic {
             sendCreatedEmail(evaluationId);
 
         } else if (EvalConstants.JOB_TYPE_ACTIVE.equals(jobType)) {
-            // Consider flag wrt sending a mass email notifying users of opening. Send mail if flag is not set.
-            boolean sendMail = ( eval.getSendAvailableNotifications() == null ? true : eval.getSendAvailableNotifications() );
+            // Consider flag wrt sending a mass email notifying users of opening. Check eval-specific setting if global is not set
+            Boolean sendMail = (Boolean) settings.get(EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION);
+            if(sendMail == null){
+            	sendMail = ( eval.getSendAvailableNotifications() == null ? true : eval.getSendAvailableNotifications() );
+            }
+            
             if (sendMail){
                 sendAvailableEmail(evaluationId);
             }

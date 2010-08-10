@@ -40,11 +40,13 @@
                         <label class="block" rsf:id="msg=administrate.email.time.wait.secs" for="eval-time-to-wait-secs">The time in seconds between the creation of an evaluation and the send of the available notification, default 300 (5 mins)</label>
                         <input type="text" rsf:id="eval-time-to-wait-secs" id="eval-time-to-wait-secs" maxlength="5" size="5" value="300" />
                         &nbsp;<span id="time-wait-errmsg"></span>
-                    </p>
-                    <p class=   "checkbox indnt1">
-                        <input type="checkbox" rsf:id="allow-eval-begin-email" />
-                        <label rsf:id="msg=administrate.email.allow.initial.notification.override" for="allow-eval-begin-email">Allow users to disable sending initial email notification for a new starting evaluation (UCT)</label>
-                    </p>
+                    </p>                    
+                    <p class=   "longtext indnt1">
+			            <label for="allow-eval-begin-email" class="block" rsf:id="allow-eval-begin-email-note">Send a notification email to all participants assigned to the evaluation when the evaluation opens</label>
+			            <select type="checkbox" rsf:id="allow-eval-begin-email" id="allow-eval-begin-email-id">
+			            </select>
+			        </p>
+                    
 					<p class=   "checkbox indnt1">
 						<input type="checkbox" rsf:id="send-submitted" id="send-submitted-id" />
 						<label rsf:id="msg=controlemail.send.submitted" for="send-submitted-id">Send evaluation submission email to submitter</label>

@@ -339,9 +339,10 @@ public interface EvalSettings {
     public static final String ENABLE_FILTER_ASSIGNABLE_GROUPS = "ENABLE_FILTER_ASSIGNABLE_GROUPS:java.lang.Boolean";
     
     /**
-     * if this is enabled/true, users can decide to disable the email notification sent out when the eval begins
+     * CONSTANT: Users can decide to disable the email notification sent out when the eval begins - {@link Boolean}, default False
+     * <b>Note:</b> If this is NULL then the evaluation settings override, otherwise this overrides the evaluation setting
      */
-    public static final String ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION = "ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION:java.lang.Boolean";
+    public static final String ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION = "ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION:java.lang.Boolean";
 	
     /**
      * CONSTANT: Send an email confirmation that a response to an evaluation was submitted (Instructors might require proof). - {@link Boolean}, default False
@@ -363,7 +364,6 @@ public interface EvalSettings {
     public static String[] BOOLEAN_SETTINGS = {
         ADMIN_VIEW_BELOW_RESULTS,
         ADMIN_VIEW_INSTRUCTOR_ADDED_RESULTS,
-        ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION,
         DISABLE_ITEM_BANK,
         DISABLE_QUESTION_BLOCKS,
         DISPLAY_HIERARCHY_HEADERS,
@@ -417,7 +417,8 @@ public interface EvalSettings {
         STUDENT_ALLOWED_LEAVE_UNANSWERED,
         STUDENT_MODIFY_RESPONSES,
         STUDENT_ALLOWED_VIEW_RESULTS,
-        ENABLE_TEXT_ITEM_REQUIRED
+        ENABLE_TEXT_ITEM_REQUIRED,
+        ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION
     };
 
     /**
