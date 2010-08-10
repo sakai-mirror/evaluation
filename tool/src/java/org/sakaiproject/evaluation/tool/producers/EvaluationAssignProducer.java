@@ -399,30 +399,30 @@ public class EvaluationAssignProducer implements ViewComponentProducer, ViewPara
                 Set<String> deselectedInsructorIds = new HashSet<String>();
                 Set<String> deselectedAssistantIds = new HashSet<String>();
                 
+              //Assign attribute to row to help JS set checkbox selection to true
+                if(assignGroupsIds.contains(evalGroupId)){
+                	checkboxRow.decorate(new UIStyleDecorator("selectedGroup"));
+                }
+                
                 if (useSelectionOptions){
 	                
 	                if (! newEval) {
-	                //Get saved selection settings for this eval
-	            	List<EvalAssignUser> deselectedInsructors = evaluationService.getParticipantsForEval(evalViewParams.evaluationId, null, new String[]{evalGroupId}, EvalAssignUser.TYPE_EVALUATEE, EvalAssignUser.STATUS_REMOVED, null, null);
-	                List<EvalAssignUser> deselectedAssistants = evaluationService.getParticipantsForEval(evalViewParams.evaluationId, null, new String[]{evalGroupId}, EvalAssignUser.TYPE_ASSISTANT, EvalAssignUser.STATUS_REMOVED, null, null);
-	               
-	            	//check for already deselected users that match this groupId
-	                for(EvalAssignUser deselectedUser:deselectedInsructors){
-	                	deselectedInsructorIds.add(deselectedUser.getUserId());
-	                }
-	                for(EvalAssignUser deselectedUser:deselectedAssistants){
-	                	deselectedAssistantIds.add(deselectedUser.getUserId());
-	                }
-	               
-	                //Assign attribute to row to help JS set checkbox selection to true
-	                if(assignGroupsIds.contains(evalGroupId)){
-	                	checkboxRow.decorate(new UIStyleDecorator("selectedGroup"));
-	                }
-	                 
+		                //Get saved selection settings for this eval
+		            	List<EvalAssignUser> deselectedInsructors = evaluationService.getParticipantsForEval(evalViewParams.evaluationId, null, new String[]{evalGroupId}, EvalAssignUser.TYPE_EVALUATEE, EvalAssignUser.STATUS_REMOVED, null, null);
+		                List<EvalAssignUser> deselectedAssistants = evaluationService.getParticipantsForEval(evalViewParams.evaluationId, null, new String[]{evalGroupId}, EvalAssignUser.TYPE_ASSISTANT, EvalAssignUser.STATUS_REMOVED, null, null);
+		               
+		            	//check for already deselected users that match this groupId
+		                for(EvalAssignUser deselectedUser:deselectedInsructors){
+		                	deselectedInsructorIds.add(deselectedUser.getUserId());
+		                }
+		                for(EvalAssignUser deselectedUser:deselectedAssistants){
+		                	deselectedAssistantIds.add(deselectedUser.getUserId());
+		                }
+		                 
 	                }else{
-	                	//add blank selection options for this group for use by evalAssign.js
-	                	form.parameters.add(new UIELBinding(groupSelectionOTP + evalGroupId.replaceAll("/site/", "") + ".instructor", ""));
-	                    form.parameters.add(new UIELBinding(groupSelectionOTP + evalGroupId.replaceAll("/site/", "") + ".assistant", ""));	
+		                	//add blank selection options for this group for use by evalAssign.js
+		                	form.parameters.add(new UIELBinding(groupSelectionOTP + evalGroupId.replaceAll("/site/", "") + ".instructor", ""));
+		                    form.parameters.add(new UIELBinding(groupSelectionOTP + evalGroupId.replaceAll("/site/", "") + ".assistant", ""));	
 	                }
                 }
                 
