@@ -33,6 +33,7 @@ import org.sakaiproject.evaluation.model.EvalAnswer;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
 import org.sakaiproject.evaluation.model.EvalResponse;
+import org.sakaiproject.evaluation.model.EvalTemplateItem;
 import org.sakaiproject.evaluation.utils.ArrayUtils;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 import org.sakaiproject.evaluation.utils.TemplateItemDataList;
@@ -559,6 +560,15 @@ public class EvalDeliveryServiceImpl implements EvalDeliveryService {
                 throw new IllegalArgumentException("NULL templateItem or templateItem.item for answer: " 
                         + "Answers must have the templateItem set, and that must have the item set");
             }
+            
+        	EvalTemplateItem templateItem = answer.getTemplateItem();
+        	String type =TemplateItemUtils.getTemplateItemType(templateItem);
+        	if(EvalConstants.NO_TEXT_ANSWER.equals(answer.getText()) && 
+        			authoringService.isCompulsory(templateItem, eval) && 
+        			EvalConstants.ITEM_TYPE_TEXT.equals(type)){
+        		//this answer is for a required text question but has been left blank, so do not consider this answer valid by skipping it.
+        		continue;
+        	}
 
             // decode NA value
             EvalUtils.decodeAnswerNA(answer);
