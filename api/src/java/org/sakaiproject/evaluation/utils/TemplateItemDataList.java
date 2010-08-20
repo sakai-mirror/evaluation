@@ -1165,7 +1165,11 @@ public class TemplateItemDataList {
 	    		sortedIds.add( user.getUserId() );
 	    	}
     	}
-    	return sortedIds.size() > 0 ? sortedIds : new HashSet<String>(userIds);
-    }
+    	
+    	if(sortedIds.size() == 0){
+    		//No valid users found and userIds are not sorted, return the original userIds collection
+    		sortedIds.addAll(userIds);
+    	}    	
+    	return sortedIds;    }
 
 }
