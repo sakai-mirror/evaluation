@@ -80,6 +80,21 @@ evalsys.instrumentBlockItem = function(){
     });
 };
 
+evalsys.instrumentBlockItem.resetStyle = function(){
+ $('.blockItemLabel,.blockItemLabelNA').each(function(){
+        if ($(this).children('input:checked').length == 0) {
+            $(this).parents('.choiceGroup').find('.itemDoneCheck').removeClass('itemDoneCheckShow');
+            if ($(this).hasClass('blockItemLabel')) {
+                $(this).removeClass('blockItemLabelSelected');
+            }
+            else {
+                $(this).removeClass('blockItemLabelSelectedNA');
+            }
+
+        }
+    });
+};
+
 evalsys.instrumentSteppedItem = function(){
     $('label.blockItemLabel,label.blockItemLabelNA').click(function(){
 		var answerCell = $(this).parents('.answerCell');
@@ -107,6 +122,21 @@ evalsys.instrumentSteppedItem = function(){
     });
     
     
+};
+
+evalsys.instrumentSteppedItem.resetStyle = function(){
+    $('.blockItemLabel,.blockItemLabelNA').each(function(){
+        if ($(this).children('input:checked').length == 0) {
+            $(this).parents('.answerCell').find('.itemDoneCheck').removeClass('itemDoneCheckShow');
+            if ($(this).hasClass('blockItemLabel')) {
+                $(this).removeClass('blockItemLabelSelected');
+            }
+            else {
+                $(this).removeClass('blockItemLabelSelectedNA');
+            }
+
+        }
+    });
 };
 
 evalsys.instrumentMCMAItem = function(){
@@ -184,6 +214,31 @@ evalsys.instrumentMCMAItem = function(){
     
 };
 
+evalsys.instrumentMCMAItem.resetStyle = function(){
+    /*
+     remove "checked" class to any element without a checked child
+     */
+    $('.mult-choice-ans li.check').each(function(){
+        if ($(this).find('input').attr('checked') === false) {
+            $(this).removeClass('checked');
+        }
+    });
+    /*
+     remove "checked" class to any NA element with a checked child
+     */
+    $('.mult-choice-ans li.na').each(function(){
+        if ($(this).find('input').attr('checked') === false) {
+            $(this).removeClass('checkedNA');
+        }
+        /*
+         hide the NA element if no input children
+         */
+        if ($(this).find('input').length === 1) {
+  			$(this).show();
+        }
+    });
+};
+
 evalsys.instrumentScaleItem = function(){
     $('.scaleItemLabel').click(function(){
         $(this).parents('.itemScalePanel').find('label').removeClass('scaleItemLabelSelected');
@@ -205,6 +260,15 @@ evalsys.instrumentScaleItem = function(){
     
 };
 
+evalsys.instrumentScaleItem.resetStyle = function(){
+    $('.scaleItemLabel').each(function(){
+        if ($(this).children('input:checked').length == 0) {
+            $(this).parents('li').find('.itemDoneCheck').removeClass('itemDoneCheckShow');
+            $(this).removeClass('scaleItemLabelSelected');
+        }
+    });
+};
+
 evalsys.instrumentDisplayHorizontal = function(){
     $('.fullDisplayHorizontalScale').each(function(){
         $(this).find('input:checked').parent('span').addClass('labelSelected');
@@ -214,4 +278,10 @@ evalsys.instrumentDisplayHorizontal = function(){
         $(this).parent('span').addClass('labelSelected');
     });
     
+};
+
+evalsys.instrumentDisplayHorizontal.resetStyle = function(){
+     $('.fullDisplayHorizontalScale').each(function(){
+        $(this).find('input:not(:checked)').parent('span').removeClass('labelSelected');
+    });
 };

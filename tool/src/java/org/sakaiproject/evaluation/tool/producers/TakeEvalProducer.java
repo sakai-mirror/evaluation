@@ -51,6 +51,7 @@ import org.sakaiproject.evaluation.tool.renderers.ItemRenderer;
 import org.sakaiproject.evaluation.tool.utils.RenderingUtils;
 import org.sakaiproject.evaluation.tool.viewparams.EvalCategoryViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.EvalViewParameters;
+import org.sakaiproject.evaluation.utils.ArrayUtils;
 import org.sakaiproject.evaluation.utils.EvalUtils;
 import org.sakaiproject.evaluation.utils.TemplateItemDataList;
 import org.sakaiproject.evaluation.utils.TemplateItemUtils;
@@ -443,7 +444,7 @@ public class TakeEvalProducer implements ViewComponentProducer, ViewParamsReport
 							String selectKey = (String) selector.next();
 							String[] usersFound = savedSelections
 									.get(selectKey);
-							savedIds.add(usersFound[0]);
+							savedIds.add(ArrayUtils.arrayToString(usersFound));
 						}
 						UIOutput savedSel = UIOutput
 								.make(formBranch, "selectedPeopleInResponse",
@@ -587,7 +588,7 @@ public class TakeEvalProducer implements ViewComponentProducer, ViewParamsReport
      * @param associateId userId for Assistant or Instructor
      * @param associateIds userIds for Assistants or Instructors
      * @param selectionOption Selection setting for this user
-     * @param savedSelections
+     * @param savedSelections The Instructors/TA for which this taker has evaluated. Useful when re-opening a response.  
      */
 	private void showHeaders(UIBranchContainer categorySectionBranch, String associateType, String associateId,
 			Set<String> associateIds, String selectionOption, Map<String, String[]> savedSelections) {
@@ -605,9 +606,21 @@ public class TakeEvalProducer implements ViewComponentProducer, ViewParamsReport
 						new String[] { user.userId, associateType.toLowerCase() + "Branch" }));
 		if (!EvalAssignGroup.SELECTION_OPTION_ALL.equals(selectionOption)
 				&& associateIds.size() > 1) {
-			Map<String, String> cssHide = new HashMap<String, String>();
-			cssHide.put("display", "none");
-			categorySectionBranch.decorators.add(new UICSSDecorator(cssHide));
+			String[] savedSelectionsOfUserType = savedSelections.get(associateType);
+			boolean answered = false;
+			if( savedSelectionsOfUserType != null){
+				for (int i = 0; i < savedSelectionsOfUserType.length; i++) {
+					if(associateId.equals(savedSelectionsOfUserType[i])){
+						answered = true;
+						break;
+					}
+				}	
+			}
+			if(!answered){
+				Map<String, String> cssHide = new HashMap<String, String>();
+				cssHide.put("display", "none");
+				categorySectionBranch.decorators.add(new UICSSDecorator(cssHide));
+			}
 		}
 	}
 

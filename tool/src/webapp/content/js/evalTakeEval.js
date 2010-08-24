@@ -87,6 +87,9 @@ $(document).ready(function() {
 });
 
 (function($) {
+    // Debugging
+    var log = function(args){};
+    
     $.fn.evalSelector = function(opts) {
         var options = $.extend({}, $.fn.evalSelector.settings, opts);
         init($(this), options);
@@ -115,21 +118,21 @@ $(document).ready(function() {
         questionsToHide: [],
         get:{
             typeOfBranch:function() {
-                //log("Active code type is: " + variables.options.type);
+                log("Active code type is: " + variables.options.type);
                 switch (variables.options.type) {
                     case 0: return "instructor";
                     case 1: return "assistant";
                 }
             } ,
             shownQuestions: function() {
-                //log("Getting questions for type: " + variables.get.typeOfBranch());
+                log("Getting questions for type: " + variables.get.typeOfBranch());
                 var str = 'div.' + variables.get.typeOfBranch() + 'Branch:visible';
                 var temp = [];
                 $.each($(str).get(), function(i, item) {
                     temp.push($(item).attr("name"));
-                    //log("Search found: " + $(item).attr("name"));
+                    log("Search found: " + $(item).attr("name"));
                 });
-                //log("Search found total: " + temp.length);
+                log("Search found total: " + temp.length);
                 return temp;
             },
 
@@ -140,7 +143,7 @@ $(document).ready(function() {
                         checked.push(this);
                     }
                 });
-                //log("Found " + checked.length + " checked boxes");
+                log("Found " + checked.length + " checked boxes");
                 return checked;
             } ,
             selectedBoxesBool:function(that) {
@@ -157,7 +160,7 @@ $(document).ready(function() {
                     temp = 1;
                 }
                 variables.options.type = temp;
-                //log("Active type is: " + variables.get.typeOfBranch());
+                log("Active type is: " + variables.get.typeOfBranch());
 
             }
         },
@@ -167,11 +170,11 @@ $(document).ready(function() {
         foundArray: function() {
             var temp = [];
             $.each(variables.questionsToShow, function(s, shown) {
-                //log("Checking if " + shown + " is already showing in dom. Dom has:" + variables.get.shownQuestions().length + " visible.");
+                log("Checking if " + shown + " is already showing in dom. Dom has:" + variables.get.shownQuestions().length + " visible.");
                 $.each(variables.get.shownQuestions(), function(h, hidden) {
                     if (shown == hidden) {
                         temp.push(shown);
-                        //log("Found visible field: " + shown);
+                        log("Found visible field: " + shown);
                     }
                 });
             });
@@ -179,7 +182,7 @@ $(document).ready(function() {
         },
         foundBool: function() {
             var temp = variables.foundArray();
-            //log("Found " + temp.length + " with IDs: " + temp.toString());
+            log("Found " + temp.length + " with IDs: " + temp.toString());
             return (temp.length > 0);
         },
         foundSplice:function(item) {
@@ -187,7 +190,7 @@ $(document).ready(function() {
                 $.each(variables.questionsToShow, function(s, show) {
                     if (show == item) {
                         variables.questionsToShow.splice(parseInt(s, 10), 1);
-                        //log("Spliced: " + show + " from selected list.");
+                        log("Spliced: " + show + " from selected list.");
                         return true;
                     }
                 });
@@ -231,15 +234,22 @@ $(document).ready(function() {
 
         //copy options to this class
         variables.options = options;
+        if (variables.options.debug) {
+            if (window.console && window.console.info) {
+                log = console.info;
+            }
+        }
+
         var temp = $('input#selectedPeopleInResponse').val();
-        variables.savedIds = typeof temp === "undefined" ? '' : temp.replace('[', '').replace(']', '').split(', ');
+        variables.savedIds = typeof temp === "undefined" ? '' : temp.replace('[', '').replace(']', '').replace(' ', '').split(',');
+        log(variables.savedIds);
         return that.each(function() {
             if ($(this).find('select').length > 0) {
                 variables.typeOfSelector.one = true;
-                //log("Found a selector for: " + variables.get.typeOfBranch());
+                log("Found a selector for: " + variables.get.typeOfBranch());
             } else {
                 variables.typeOfSelector.multiple = true;
-                //log("Found a checkbox list for: " + variables.get.typeOfBranch());
+                log("Found a checkbox list for: " + variables.get.typeOfBranch());
             }
             initControls($(this));
             initClassVars();
@@ -261,30 +271,30 @@ $(document).ready(function() {
                 var elem = $(this);
                 var elemId = elem.val();
                 var elemLabel = elem.parent().find('label').text();
-                //log("Attaching event listener for: " + elemLabel + " with id: " + elemId);
+                log("Attaching event listener for: " + elemLabel + " with id: " + elemId);
                 elem.bind('click', function() {
                     variables.set.typeOfBranch($(this));
                     if (this.checked) {
                         //Fn for Check
                         elem.parent().css('background', variables.options.css.activeCheckbox.background);
-                        //log("SELECTED: " + elemLabel + " with id: " + elemId);
+                        log("SELECTED: " + elemLabel + " with id: " + elemId);
                         if (!variables.isVisible(elemId)) {
                             variables.questionsToShow.push(elemId);
-                            //log("ADDED: " + elemLabel + " with id: " + elemId);
+                            log("ADDED: " + elemLabel + " with id: " + elemId);
                             showQuestions();
                             initClassVars();
                         } else {
-                            //log("Person: " + elemLabel + " with id: " + elemId + " is already visible.");
+                            log("Person: " + elemLabel + " with id: " + elemId + " is already visible.");
                         }
                     }
                     else {
                         this.checked = true;
                         if (variables.isVisible(elemId) && confirmSelection(elemLabel)) {
                             elem.parent().css('background', '');
-                            //log("DESELECTED: " + elemLabel + " with id: " + elemId);
+                            log("DESELECTED: " + elemLabel + " with id: " + elemId);
                             variables.questionsToHide.push(elemId);
                             variables.foundSplice(elemId);
-                            //log("DELETED: " + elemLabel + " with id: " + elemId);
+                            log("DELETED: " + elemLabel + " with id: " + elemId);
                             showQuestions();
                             initClassVars();
                             this.checked = false;
@@ -305,12 +315,12 @@ $(document).ready(function() {
                 //Working with dropdown
                 var elemId = elem.val();
                 var render = false;
-                //log("Selected guy with id: " + elemId);
+                log("Selected guy with id: " + elemId);
                 if (variables.get.shownQuestions().length === 0) {
                     render = true;
                 }
                 else if (variables.isVisible(elemId)) {
-                    //log("Person with id: " + elemId + " is already visible.");
+                    log("Person with id: " + elemId + " is already visible.");
                     return false;
                 } else
                 {
@@ -321,7 +331,7 @@ $(document).ready(function() {
                     variables.questionsToHide = variables.get.shownQuestions();
                     variables.questionsToShow = [];
                     variables.questionsToShow.push(elemId);
-                    //log("Added item " + elemId + " to array. Now Array has this number of elements: " + variables.questionsToShow.length);
+                    log("Added item " + elemId + " to array. Now Array has this number of elements: " + variables.questionsToShow.length);
                     showQuestions();
                     initClassVars();
                 }else{
@@ -333,7 +343,7 @@ $(document).ready(function() {
 
     function showQuestions() {
         hideQuestions(0);
-        //log("Showing " + variables.questionsToShow.length + " items in dom.");
+        log("Showing " + variables.questionsToShow.length + " items in dom.");
         $.each(variables.questionsToShow, function(i, item) {
             var tempFound = 0;
             $.each(variables.get.shownQuestions(), function(s, toSkip) {
@@ -355,7 +365,7 @@ $(document).ready(function() {
         $.each(temp, function(i, item) {
             var str = 'div[name=' + item + '].' + variables.get.typeOfBranch() + 'Branch';
             $(str).slideUp('normal', function() {
-                //log("WARN: Hiding " + item + " in dom.");
+                log("WARN: Hiding " + item + " in dom.");
                 clearFieldsFor($(this));
             });
             frameGrow($(str).height(), 'shrink');
@@ -369,7 +379,7 @@ $(document).ready(function() {
     function clearFieldsFor(item) {
         item.find('div.validFail').removeClass('validFail');
         $.each(variables.options.fields, function(f, field) {
-            //log("Clearing all " + field.toLowerCase() + " fields.");
+            log("Clearing all " + field.toLowerCase() + " fields.");
             item.find(field.toLowerCase()).each(function() {
                 var t = this.type, tag = this.tagName.toLowerCase();
                 if (t == 'text' || t == 'password' || tag == 'textarea'){
@@ -383,6 +393,13 @@ $(document).ready(function() {
                 }
             });
         });
+
+        //undo selected answer 'tick' style
+        evalsys.instrumentScaleItem.resetStyle();
+        evalsys.instrumentDisplayHorizontal.resetStyle();
+        evalsys.instrumentMCMAItem.resetStyle();
+        evalsys.instrumentSteppedItem.resetStyle();
+        evalsys.instrumentBlockItem.resetStyle();
     }
 
     function checkSavedPeople(elemId, that, num, tag) {
@@ -392,6 +409,7 @@ $(document).ready(function() {
                 if (elemId == savedIds[i]) {
                     if (tag == 'checkbox') {
                         that.checked = true;
+                        $(that).parent().css('background', variables.options.css.activeCheckbox.background)
                     }
                     if (tag == 'select') {
                         variables.that.find('select:eq(0)').each(function() {
@@ -420,15 +438,6 @@ $(document).ready(function() {
                     $(frame).height(clientH);
                 }
             } catch(e) {}
-        }
-    }
-
-    // Debugging
-    function log($obj) {
-        if (variables.options.debug) {
-            if (window.console && window.console.log) {
-                window.console.log('INFO: ' + $obj);
-            }
         }
     }
 })($);
