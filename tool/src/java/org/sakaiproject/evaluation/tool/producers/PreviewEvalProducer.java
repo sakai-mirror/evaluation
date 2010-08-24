@@ -230,6 +230,7 @@ public class PreviewEvalProducer implements ViewComponentProducer, ViewParamsRep
                             "takeeval.assistant.questions.header", new Object[] { assistantName });
                     countAssistants ++;
                 }
+                System.out.println("========tig.associateId======="+tig.associateType+" -- "+tig.associateId);
 
                 // loop through the hierarchy node groups
                 for (HierarchyNodeGroup hng : tig.hierarchyNodeGroups) {
