@@ -446,12 +446,12 @@ public class TakeEvalProducer implements ViewComponentProducer, ViewParamsReport
 									.get(selectKey);
 							savedIds.add(ArrayUtils.arrayToString(usersFound));
 						}
-						UIOutput savedSel = UIOutput
-								.make(formBranch, "selectedPeopleInResponse",
-										savedIds.toString());
-						savedSel.decorators = new DecoratorList(
-								new UIIDStrategyDecorator(
-										"selectedPeopleInResponse"));
+						UIOutput savedSelInstructors = UIOutput
+							.make(formBranch, "selectedPeopleInResponseInstructors",
+									savedSelections.get(EvalConstants.ITEM_CATEGORY_INSTRUCTOR) == null ? "" : ArrayUtils.arrayToString(savedSelections.get(EvalConstants.ITEM_CATEGORY_INSTRUCTOR)));
+						UIOutput savedSelAssistants = UIOutput
+							.make(formBranch, "selectedPeopleInResponseAssistants",
+									savedSelections.get(EvalConstants.ITEM_CATEGORY_ASSISTANT) == null ? "" : ArrayUtils.arrayToString(savedSelections.get(EvalConstants.ITEM_CATEGORY_ASSISTANT)));
 					}
                     Iterator<Map.Entry<String, String>> selector = selectorType.entrySet().iterator();
                     while (selector.hasNext()) {

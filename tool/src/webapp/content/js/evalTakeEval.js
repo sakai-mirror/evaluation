@@ -102,7 +102,7 @@ $(document).ready(function() {
             activeCheckbox: {background:'#eee'}
         },
         type: 1, //Type is for type of category we are handling. ie: 0 = instructor, 1 = assistant (TA)
-        debug: false,
+        debug: true,
         fields: ['input', 'select', 'textarea'] //Array of fields in the form
     };
     /**
@@ -166,6 +166,8 @@ $(document).ready(function() {
         },
         options:null,
         savedIds:[],
+        savedIdsInstructors:[],
+        savedIdsAssistants:[],
         that:null,
         foundArray: function() {
             var temp = [];
@@ -240,8 +242,13 @@ $(document).ready(function() {
             }
         }
 
-        var temp = $('input#selectedPeopleInResponse').val();
-        variables.savedIds = typeof temp === "undefined" ? '' : temp.replace('[', '').replace(']', '').replace(' ', '').split(',');
+        var tempInstructors = $('input[id=form-branch::selectedPeopleInResponseInstructors]').val();
+        variables.savedIdsInstructors = typeof tempInstructors === "undefined" ? '' : tempInstructors.replace('[', '').replace(']', '').replace(' ', '').split(',');
+        var tempAssistants = $('input[id=form-branch::selectedPeopleInResponseAssistants]').val();
+        variables.savedIdsAssistants = typeof tempAssistants === "undefined" ? '' : tempAssistants.replace('[', '').replace(']', '').replace(' ', '').split(',');
+
+        variables.savedIds = variables.savedIdsInstructors.concat(variables.savedIdsAssistants);
+
         log(variables.savedIds);
         return that.each(function() {
             if ($(this).find('select').length > 0) {
@@ -407,14 +414,35 @@ $(document).ready(function() {
         if (savedIds.length > 0) {
             for (var i = 0; i < savedIds.length; i++) {
                 if (elemId == savedIds[i]) {
-                    if (tag == 'checkbox') {
-                        that.checked = true;
-                        $(that).parent().css('background', variables.options.css.activeCheckbox.background)
+                    //check if person exists in the right role
+                    variables.set.typeOfBranch($(that));
+                    var isValid = false;
+                    if("instructor" == variables.get.typeOfBranch()){
+                        //search instructor id list
+                        for(var n = 0, nl = variables.savedIdsInstructors.length; n < nl; n++){
+                            if (elemId == variables.savedIdsInstructors[n]) {
+                                isValid = true;
+                                break;
+                            }
+                        }
+                    }else{
+                        for(var n = 0, nl = variables.savedIdsAssistants.length; n < nl; n++){
+                            if (elemId == variables.savedIdsAssistants[n]) {
+                                isValid = true;
+                                break;
+                            }
+                        }
                     }
-                    if (tag == 'select') {
-                        variables.that.find('select:eq(0)').each(function() {
-                            this.selectedIndex = (parseInt(num, 10));
-                        });
+                    if(isValid){
+                        if (tag == 'checkbox') {
+                            that.checked = true;
+                            $(that).parent().css('background', variables.options.css.activeCheckbox.background)
+                        }
+                        if (tag == 'select') {
+                            variables.that.find('select:eq(0)').each(function() {
+                                this.selectedIndex = (parseInt(num, 10));
+                            });
+                        }
                     }
                 }
             }
