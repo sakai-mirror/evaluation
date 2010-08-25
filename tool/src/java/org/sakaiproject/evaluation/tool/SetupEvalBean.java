@@ -585,25 +585,27 @@ public class SetupEvalBean {
 	 * @param addAll (Optional) If deselected array is empty and addAll is true, the evalUsers will be unlinked.
 	 */
 	private void updateEvalAssignUsers(String[] deselected, String[] ordering, String type, String currentGroupId, List<EvalAssignUser> evalUsers, Boolean addAll) {
-		List<String> deselectedList = Arrays.asList(deselected);
-		List<String> orderingList = Arrays.asList(ordering);
-		for (EvalAssignUser user : evalUsers) {
-			// only update users for this group with this permission type
-			String userId = user.getUserId();
-			if(currentGroupId.equals( user.getEvalGroupId().toString() ) && type.equals( user.getType()) ){
-				if(deselectedList.isEmpty() && addAll != null && Boolean.TRUE.equals(addAll)){
-					//lets unlink every evalUser passed to us
-					user.setStatus(EvalAssignUser.STATUS_REMOVED);
-				}else{
-					if (deselectedList.contains( userId )) {
+		if (deselected != null && deselected.length > 0){
+			List<String> deselectedList = Arrays.asList(deselected);
+			List<String> orderingList = Arrays.asList(ordering);
+			for (EvalAssignUser user : evalUsers) {
+				// only update users for this group with this permission type
+				String userId = user.getUserId();
+				if(currentGroupId.equals( user.getEvalGroupId().toString() ) && type.equals( user.getType()) ){
+					if(deselectedList.isEmpty() && addAll != null && Boolean.TRUE.equals(addAll)){
+						//lets unlink every evalUser passed to us
 						user.setStatus(EvalAssignUser.STATUS_REMOVED);
 					}else{
-						user.setStatus(EvalAssignUser.STATUS_LINKED);
-					}
-					// set users' selection order
-					if (orderingList.contains( userId )){
-						int listOrder = orderingList.indexOf(userId) + 1;
-						user.setListOrder( listOrder );
+						if (deselectedList.contains( userId )) {
+							user.setStatus(EvalAssignUser.STATUS_REMOVED);
+						}else{
+							user.setStatus(EvalAssignUser.STATUS_LINKED);
+						}
+						// set users' selection order
+						if (orderingList.contains( userId )){
+							int listOrder = orderingList.indexOf(userId) + 1;
+							user.setListOrder( listOrder );
+						}
 					}
 				}
 			}
