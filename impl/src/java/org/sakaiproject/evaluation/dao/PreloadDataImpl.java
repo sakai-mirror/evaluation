@@ -80,31 +80,26 @@ public class PreloadDataImpl {
         populateEvalConfig();
         long configDBCount = dao.countAll(EvalConfig.class);
         if (configDBCount <= 0) {
-        	System.out.println("-------1----------");
             preloaded = false;
         } else {
         	//there are some config settings saved, lets check if these include the ones declared here
         	configDBCount = countDefaultEvalConfigInDB();
         	if(configDBCount < evalConfigMap.size()){
-        		System.out.println("-------2----------");
         		preloaded = false;
         	}else{          
 	        	populateEmailTemplates();
 	            long emailTemplateCount = dao.countBySearch(EvalEmailTemplate.class,
 	                    new Search( new Restriction("defaultType", "", Restriction.NOT_NULL) ) );
 	            if (emailTemplateCount < defaultEmailTempates.size()) {
-	            	System.out.println("-------3----------");
 	                preloaded = false;
 	            } else {
 	                int scaleCount = dao.countAll(EvalScale.class);
 	                if (scaleCount <= 0) {
-	                	System.out.println("-------4----------");
 	                    preloaded = false;
 	                }
 	            }
         	}
         }
-        System.out.println("-------preloaded----------"+preloaded);
         return preloaded;
     }
 

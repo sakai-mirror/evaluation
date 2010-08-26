@@ -47,7 +47,7 @@ public class EvalDataPreloaderImpl {
    }
 
    public void init() {
-      boolean autoDDL = false;
+      boolean autoDDL = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_AUTO_DDL, false);
       String serverId = externalLogic.getConfigurationSetting(EvalExternalLogic.SETTING_SERVER_ID, "UNKNOWN_SERVER_ID");
       if (autoDDL) {
          log.info("Auto DDL enabled: Checking preload data exists...");
@@ -65,10 +65,8 @@ public class EvalDataPreloaderImpl {
       } else {
          log.info("Auto DDL disabled: Skipping data preloading...");
          if ( preloadData.checkCriticalDataPreloaded() ) {
-        	 System.out.println("---------aa--------");
             log.info("Preloaded data is present");
          } else {
-        	System.out.println("---------bb--------");
             throw new IllegalStateException("Preloaded data is missing, evaluation cannot start up in this state, " +
             		"you must either enable the auto.ddl flag or preload the critical system data (config settings, email templates, scales) " +
             		"manually, evaluation system shutting down...");
