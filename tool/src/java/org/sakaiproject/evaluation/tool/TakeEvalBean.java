@@ -65,11 +65,6 @@ public class TakeEvalBean {
         this.messages = messages;
     }
     
-    private EvalEmailsLogic emailsLogic;
-    public void setEmailsLogic(EvalEmailsLogic emailsLogic) {
-       this.emailsLogic = emailsLogic;
-    }
-    
     private EvalSettings settings;
     public void setSettings(EvalSettings settings) {
        this.settings = settings;
@@ -103,9 +98,6 @@ public class TakeEvalBean {
         messages.addMessage(new TargettedMessage("evaluations.take.message", new Object[] {
                 eval.getTitle(), commonLogic.getDisplayTitle(evalGroupId) },
                 TargettedMessage.SEVERITY_INFO));
-        if(((Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL)).booleanValue()) {
-      	  emailsLogic.sendEvalSubmissionConfirmationEmail(eval.getId());
-        }
         return "success";
     }
 

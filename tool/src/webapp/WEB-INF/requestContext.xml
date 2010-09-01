@@ -57,8 +57,6 @@
         <property name="commonLogic"
             ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
         <property name="messages" ref="targettedMessageList" />
-        <property name="emailsLogic"
-            ref="org.sakaiproject.evaluation.logic.EvalEmailsLogic" />
         <property name="settings"
             ref="org.sakaiproject.evaluation.logic.EvalSettings" />
     </bean>

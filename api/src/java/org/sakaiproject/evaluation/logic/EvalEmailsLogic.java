@@ -126,7 +126,6 @@ public interface EvalEmailsLogic {
     /**
      * Send confirmation to a user that an evaluation has been submitted (might be required by Instructor)
      * @param evalId the id of an EvalEvaluation object
-     
      * @return the email address of the user
      */
     public String sendEvalSubmissionConfirmationEmail(Long evalId);
