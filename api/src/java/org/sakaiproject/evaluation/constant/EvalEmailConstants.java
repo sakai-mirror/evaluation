@@ -315,7 +315,6 @@ public class EvalEmailConstants {
     * ${TimeStamp} - the time of evaluation submission
     */
    public static final String EMAIL_SUBMITTED_DEFAULT_TEXT = 
-	   "Dear ${UserName},\n\n" +
 	   "This message is a confirmation of your submission for ${EvalTitle}.  " +
 	   "It was submitted on ${TimeStamp}.  Thank you for helping the University maintain and improve the quality of its teaching.\n\n" +
 	   "Please save this message for your records.\n\n" +

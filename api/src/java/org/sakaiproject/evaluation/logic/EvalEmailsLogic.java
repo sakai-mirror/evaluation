@@ -14,7 +14,6 @@
 
 package org.sakaiproject.evaluation.logic;
 
-import java.util.Map;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.model.EvalEmailMessage;
@@ -50,11 +49,10 @@ public interface EvalEmailsLogic {
      * @param subjectTemplate TODO
      * @param eval the evaluation related to this message (for replacements)
      * @param group the eval group related to the message (for replacements)
-     * @param replacementValues a map of String -> String representing $keys in the template to replace with text values
      * @return the processed message template with replacements and logic handled
      */
     public EvalEmailMessage makeEmailMessage(String messageTemplate, String subjectTemplate, EvalEvaluation eval,
-          EvalGroup group, Map<String, String> replacementValues);
+          EvalGroup group);
 
     // NOTIFICATION methods
 
@@ -126,9 +124,10 @@ public interface EvalEmailsLogic {
     /**
      * Send confirmation to a user that an evaluation has been submitted (might be required by Instructor)
      * @param evalId the id of an EvalEvaluation object
+     * @param userId the UUID of the user to send this email to
      * @return the email address of the user
      */
-    public String sendEvalSubmissionConfirmationEmail(Long evalId);
+    public String sendEvalSubmissionConfirmationEmail(String userId, Long evalId);
 
 
 

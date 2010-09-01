@@ -209,7 +209,7 @@ public class EvalDeliveryServiceImpl implements EvalDeliveryService {
             //send an confirmation email to the responder 
             try {
             	if(((Boolean) settings.get(EvalSettings.ENABLE_SUBMISSION_CONFIRMATION_EMAIL)).booleanValue()) {
-                	  emailsLogic.sendEvalSubmissionConfirmationEmail(response.getEvaluation().getId());
+                	  emailsLogic.sendEvalSubmissionConfirmationEmail(userId, response.getEvaluation().getId());
                   }
             }catch(Exception e){
             	log.debug("Unable to send the confirmation email to user: " + userId);
