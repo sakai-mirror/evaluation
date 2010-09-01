@@ -692,6 +692,17 @@ public class EvalEmailsLogicImpl implements EvalEmailsLogic {
 		String timeStamp =  df.format(new Date());
 		replacementValues.put("TimeStamp", timeStamp);
 		
+		//handle the username variable if we can get the user
+		String name = "";
+		try{
+			String currentUserId = externalLogic.getCurrentUserId();
+	        EvalUser user = externalLogic.getEvalUserById(currentUserId);
+	        name = user.displayName;
+		}catch (Exception e) {
+			//not populating the username variable with anything proper. We could not get a valid user.
+		}
+		replacementValues.put("UserName", name);
+		
         String message = TextTemplateLogicUtils.processTextTemplate(messageTemplate, replacementValues);
         String subject = null;
         if (subjectTemplate != null) {
