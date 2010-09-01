@@ -640,7 +640,7 @@ public class EvalExternalLogicImpl implements EvalExternalLogic {
             }
         }
 
-        if (l.isEmpty()) log.info("Empty list of groups for user:" + userId + ", permission: " + permission);
+        if (l.isEmpty()) log.debug("Empty list of groups for user:" + userId + ", permission: " + permission);
         return l;
     }
 
