@@ -2,6 +2,22 @@
  * For the takeEval and preview views
  */
 $(document).ready(function() {
+    if ($('.blockItemGroup').length > 0){
+            evalsys.instrumentBlockItem();
+    }
+    if ($('.steppedItemGroup').length > 0){
+            evalsys.instrumentSteppedItem();
+    }
+
+    if ($('.mult-choice-ans').length > 0){
+            evalsys.instrumentMCMAItem();
+    }
+    if ($('.itemListEval').length > 0) {
+            evalsys.instrumentScaleItem();
+    }
+    if ($('.fullDisplayHorizontal').length > 0) {
+            evalsys.instrumentDisplayHorizontal();
+    }
     $("div.JSevalComment").evalComment();   //Bind comment boxes toggle link action
     var instrSel = $('div[@rel=evalinstructorSelector]');
     var assSel = $('div[@rel=evalassistantSelector]');
