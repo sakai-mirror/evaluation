@@ -507,14 +507,14 @@ public class SetupEvalBean {
 				String[] orderingInstructors = selectedEvaluationUsersLocator.getOrderingForInstructors(currentGroupId);
 				String[] orderingAssistants = selectedEvaluationUsersLocator.getOrderingForAssistants(currentGroupId);
 				if(hasInstructorQuestions){
-					updateEvalAssignUsers(deselectedInstructors, orderingInstructors, EvalAssignUser.TYPE_EVALUATEE, currentGroupId, evalUsers, null);
+					updateEvalAssignUsers(deselectedInstructors, orderingInstructors, EvalAssignUser.TYPE_EVALUATEE, currentGroupId, evalUsers, Boolean.TRUE);
 				}else{
-					updateEvalAssignUsers(new String[]{}, new String[]{}, EvalAssignUser.TYPE_EVALUATEE, currentGroupId, evalUsers, Boolean.TRUE);
+					updateEvalAssignUsers(new String[]{}, new String[]{}, EvalAssignUser.TYPE_EVALUATEE, currentGroupId, evalUsers, Boolean.FALSE);
 				}
 				if(hasAssistantQuestions){
-					updateEvalAssignUsers(deselectedAssistants, orderingAssistants, EvalAssignUser.TYPE_ASSISTANT, currentGroupId, evalUsers, null);
+					updateEvalAssignUsers(deselectedAssistants, orderingAssistants, EvalAssignUser.TYPE_ASSISTANT, currentGroupId, evalUsers, Boolean.TRUE);
 				}else{
-					updateEvalAssignUsers(new String[]{}, new String[]{}, EvalAssignUser.TYPE_ASSISTANT, currentGroupId, evalUsers, Boolean.TRUE);
+					updateEvalAssignUsers(new String[]{}, new String[]{}, EvalAssignUser.TYPE_ASSISTANT, currentGroupId, evalUsers, Boolean.FALSE);
 				}
 				// set selection settings for assign group
 				String settingInstructor = assignGroupSelectionSettings.getInstructorSetting(currentGroupId);
@@ -582,17 +582,17 @@ public class SetupEvalBean {
 	 * @param type either {@link EvalAssignUser.TYPE_EVALUATEE} or {@link EvalAssignUser.TYPE_ASSISTANT}
 	 * @param currentGroupId 
 	 * @param evalUsers 
-	 * @param addAll (Optional) If deselected array is empty and addAll is true, the evalUsers will be unlinked.
+	 * @param addAll (Optional) If deselected array is empty and addAll is false, the evalUsers will be unlinked.
 	 */
 	private void updateEvalAssignUsers(String[] deselected, String[] ordering, String type, String currentGroupId, List<EvalAssignUser> evalUsers, Boolean addAll) {
-		if (deselected != null && deselected.length > 0){
+		if (deselected != null){
 			List<String> deselectedList = Arrays.asList(deselected);
 			List<String> orderingList = Arrays.asList(ordering);
 			for (EvalAssignUser user : evalUsers) {
 				// only update users for this group with this permission type
 				String userId = user.getUserId();
 				if(currentGroupId.equals( user.getEvalGroupId().toString() ) && type.equals( user.getType()) ){
-					if(deselectedList.isEmpty() && addAll != null && Boolean.TRUE.equals(addAll)){
+					if(deselectedList.isEmpty() && Boolean.FALSE.equals(addAll)){
 						//lets unlink every evalUser passed to us
 						user.setStatus(EvalAssignUser.STATUS_REMOVED);
 					}else{
