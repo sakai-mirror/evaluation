@@ -128,13 +128,13 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
         // update evaluation user assignments for evals with none yet (migration code)
         List<EvalEvaluation> evals = dao.getEvalsWithoutUserAssignments();
         if (! evals.isEmpty()) {
-            log.info("Creating user assignments for "+evals.size()+" evals with none yet (auto-migration), may take awhile for a large number of evaluations");
+            log.debug("Creating user assignments for "+evals.size()+" evals with none yet (auto-migration), may take awhile for a large number of evaluations");
             int counter = 0;
             for (EvalEvaluation evaluation : evals) {
                 List<Long> l = synchronizeUserAssignmentsForced(evaluation, null, false);
                 counter += l.size();
             }
-            log.info("Synchronized "+counter+" user assignments for "+evals.size()+" evals (auto-migration)");
+            log.debug("Synchronized "+counter+" user assignments for "+evals.size()+" evals (auto-migration)");
         }
         // run a timer which ensures that evaluation states are kept up to date
         initiateUpdateStateTimer();
@@ -175,7 +175,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                             })
                     );
                     if (evals.size() > 0) {
-                        log.info("Checking the state of " + evals.size() + " evaluations to ensure they are all up to date...");
+                        log.debug("Checking the state of " + evals.size() + " evaluations to ensure they are all up to date...");
                         // only do partial purge if constant > 0
                         long partialPurgeTime = -1;
                         if (EvalConstants.EVALUATION_PARTIAL_CLEANUP_DAYS > 0) {
@@ -192,7 +192,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                                     && partialPurgeTime > -1) {
                                 // purge out partial evaluations older than the partial purge time
                                 if (evaluation.getLastModified().getTime() < partialPurgeTime) {
-                                    log.info("Purging partial evaluation ("+evaluation.getId()+") from " + evaluation.getLastModified());
+                                    log.debug("Purging partial evaluation ("+evaluation.getId()+") from " + evaluation.getLastModified());
                                     deleteEvaluation(evaluation.getId(), commonLogic.getAdminUserId());
                                     continue;
                                 }
@@ -207,7 +207,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                             }
                         }
                         if (count > 0) {
-                            log.info("Updated the state of "+count+" evaluations...");
+                            log.debug("Updated the state of "+count+" evaluations...");
                         }
                     }
 
@@ -219,7 +219,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
         // now we need to obtain a lock and then run the task if we have it
         Timer timer = new Timer(true);
-        log.info("Initializing the repeating timer task for evaluation, first run in " + (startDelay/1000) + " seconds " +
+        log.debug("Initializing the repeating timer task for evaluation, first run in " + (startDelay/1000) + " seconds " +
                 "and subsequent runs will happen every " + (repeatInterval/1000) + " seconds after that");
         timer.schedule(runStateUpdateTask, startDelay, repeatInterval);
     }
@@ -413,7 +413,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
         // save the eval
         dao.save(evaluation);
-        log.info("User ("+userId+") saved evaluation ("+evaluation.getId()+"), title: " + evaluation.getTitle());
+        log.debug("User ("+userId+") saved evaluation ("+evaluation.getId()+"), title: " + evaluation.getTitle());
 
         // initialize the scheduling for the eval jobs (only if state is not partial)
         if ( EvalUtils.checkStateAfter(evalState, EvalConstants.EVALUATION_STATE_PARTIAL, false) ) {
@@ -441,7 +441,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
         // effectively we are locking the evaluation when a user replies to it, otherwise the chain can be changed
         if (evaluation.getLocked().booleanValue()) {
             // lock evaluation and associated template
-            log.info("Locking evaluation ("+evaluation.getId()+") and associated template ("+evaluation.getTemplate().getId()+")");
+            log.debug("Locking evaluation ("+evaluation.getId()+") and associated template ("+evaluation.getTemplate().getId()+")");
             dao.lockEvaluation(evaluation, true);
         }
 
@@ -563,7 +563,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                 }
             }
 
-            log.info("User ("+userId+") removed evaluation ("+evaluationId+"), title: " + evaluation.getTitle());
+            log.debug("User ("+userId+") removed evaluation ("+evaluationId+"), title: " + evaluation.getTitle());
             return;
         }
 
@@ -1016,7 +1016,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
             }
         }
 
-        log.info(message);
+        log.debug(message);
         return changedUserAssignments;
     }
 
@@ -1276,7 +1276,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
             // save everything at once
             dao.saveMixedSet(new Set[] {nodeAssignments, groupAssignments});
-            log.info("User (" + userId + ") added nodes (" + ArrayUtils.arrayToString(nodeIds)
+            log.debug("User (" + userId + ") added nodes (" + ArrayUtils.arrayToString(nodeIds)
                     + ") and groups (" + ArrayUtils.arrayToString(evalGroupIds) + ") to evaluation ("
                     + evaluationId + ")");
             List<EvalAssignHierarchy> results = new ArrayList<EvalAssignHierarchy>(nodeAssignments);
@@ -1329,7 +1329,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
             }
 
             dao.deleteMixedSet(new Set[] {eahs, groups});
-            log.info("User (" + userId + ") deleted existing hierarchy assignments ("
+            log.debug("User (" + userId + ") deleted existing hierarchy assignments ("
                     + ArrayUtils.arrayToString(assignHierarchyIds) + ") and groups ("+groupListing.toString()+")");
 
             // sync all the user assignments after the groups are saved
@@ -1384,7 +1384,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
                             assignGroup.getEvaluation().getId(), assignGroup.getEvalGroupId());
                 }
 
-                log.info("User ("+userId+") created a new assignGroup ("+assignGroup.getId()+"), " +
+                log.debug("User ("+userId+") created a new assignGroup ("+assignGroup.getId()+"), " +
                         "linked evalGroupId ("+assignGroup.getEvalGroupId()+") with eval ("+eval.getId()+")");
 
                 // sync the user assignments related to this assign group
@@ -1412,7 +1412,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
             // allow any other changes
             dao.save(assignGroup);
-            log.info("User ("+userId+") updated existing assignGroup ("+assignGroup.getId()+") properties");
+            log.debug("User ("+userId+") updated existing assignGroup ("+assignGroup.getId()+") properties");
         }
     }
 
@@ -1451,7 +1451,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
         String userId = commonLogic.getCurrentUserId();
         Long assignGroupId = assignGroup.getId();
         dao.delete(assignGroup);
-        log.info("User ("+userId+") deleted existing assign group ("+assignGroup.getId()+")");
+        log.debug("User ("+userId+") deleted existing assign group ("+assignGroup.getId()+")");
 
         // also need to remove any user assignments related to this group
         List<EvalAssignUser> assignedUsers = dao.findBySearch(EvalAssignUser.class, new Search( new Restriction[] {
@@ -1460,7 +1460,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
         }));
         Set<EvalAssignUser> assignedUsersSet = new HashSet<EvalAssignUser>(assignedUsers);
         dao.deleteSet( assignedUsersSet );
-        log.info("User assignments ("+assignedUsers.size()+") related to deleted assign group ("+assignGroup.getId()+") were removed for user ("+userId+")");
+        log.debug("User assignments ("+assignedUsers.size()+") related to deleted assign group ("+assignGroup.getId()+") were removed for user ("+userId+")");
     }
 
     // EMAIL TEMPLATES
@@ -1520,7 +1520,7 @@ public class EvalEvaluationSetupServiceImpl implements EvalEvaluationSetupServic
 
         // save the template if allowed
         dao.save(emailTemplate);
-        log.info("User (" + userId + ") saved email template (" + emailTemplate.getId() + ")");
+        log.debug("User (" + userId + ") saved email template (" + emailTemplate.getId() + ")");
     }
 
     public void removeEmailTemplate(Long emailTemplateId, String userId) {
