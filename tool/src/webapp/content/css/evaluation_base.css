@@ -1034,7 +1034,7 @@ background-repeat : no-repeat !important;
 
 .elementAlertFront{
 	background: transparent url(/library/image/silk/error.png) no-repeat scroll left 0;
-	padding-left: 20px
+	padding-left: 2em
 }
 
 /* style selection controls fieldset */
