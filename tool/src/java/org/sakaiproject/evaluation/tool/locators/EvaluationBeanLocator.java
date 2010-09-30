@@ -83,10 +83,13 @@ public class EvaluationBeanLocator implements BeanLocator {
             String key = it.next();
             EvalEvaluation evaluation = delivered.get(key);
             if (key.startsWith(NEW_PREFIX)) {
-                // could do stuff here
+                // set eval defaults here
+            	evalBeanUtils.setEvaluationDefaults(evaluation, EvalConstants.EVALUATION_TYPE_EVALUATION);
             }
-            // fix up all the dates before saving
-            evalBeanUtils.fixupEvaluationDates(evaluation);
+            // validate the eval category before saving, throws exception
+            // and returns to page if it contains invalid characters
+            evalBeanUtils.validateEvalCategory(evaluation.getEvalCategory());
+            
             // fix selection settings too
             fixUpSelections(evaluation);
             evaluationSetupService.saveEvaluation(evaluation, commonLogic.getCurrentUserId(), false);

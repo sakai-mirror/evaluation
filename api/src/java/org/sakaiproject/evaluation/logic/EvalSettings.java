@@ -223,6 +223,10 @@ public interface EvalSettings {
      */
     public static final String ENABLE_EVAL_CATEGORIES = "ENABLE_EVAL_CATEGORIES:java.lang.Boolean";
     /**
+     * CONSTANT: Show the textbox for entering evaluation term IDs when setting up an eval - {@link Boolean}, default False
+     */
+    public static final String ENABLE_EVAL_TERM_IDS = "ENABLE_EVAL_TERM_IDS:java.lang.Boolean";
+    /**
      * CONSTANT: If this is activated then evaluation responses can be removed,
      * this is for removal of individual responses - {@link Boolean}, default False
      */
@@ -252,6 +256,16 @@ public interface EvalSettings {
      */
     public static final String ENABLE_SINGLE_EMAIL_PER_STUDENT = "ENABLE_SINGLE_EMAIL_PER_STUDENT:java.lang.Boolean";
 
+	/**
+	 * CONSTANT: Enable an email to be sent at completion of an evaluation job - {@link Boolean}, default False
+     */
+    public static final String ENABLE_JOB_COMPLETION_EMAIL = "ENABLE_JOB_COMPLETION_EMAIL:java.lang.Boolean";
+    
+	/**
+	 * CONSTANT: Enable a status of which group you are processing in the email reminder job - {@link Boolean}, default False
+     */
+    public static final String ENABLE_REMINDER_STATUS = "ENABLE_REMINDER_STATUS:java.lang.Boolean";
+    
     /**
      * CONSTANT: Frequency of reminders when one email per student is set. - {@link Integer},default 0}
      */
@@ -330,6 +344,16 @@ public interface EvalSettings {
      */
     public static final String ENABLE_INSTRUCTOR_ASSISTANT_SELECTION = "ENABLE_INSTRUCTOR_ASSISTANT_SELECTION:java.lang.Boolean";
 
+    /**
+     * If this is enabled/true then we only show evalgroups/sites like the current one in the Assign Eval to groups view
+     */
+    public static final String ENABLE_FILTER_ASSIGNABLE_GROUPS = "ENABLE_FILTER_ASSIGNABLE_GROUPS:java.lang.Boolean";
+    
+    /**
+     * if this is enabled/true, users can decide to disable the email notification sent out when the eval begins
+     */
+    public static final String ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION = "ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION:java.lang.Boolean";
+
 
     /**
      * This is here to identify all the boolean ONLY settings in the system,
@@ -339,6 +363,7 @@ public interface EvalSettings {
     public static String[] BOOLEAN_SETTINGS = {
         ADMIN_VIEW_BELOW_RESULTS,
         ADMIN_VIEW_INSTRUCTOR_ADDED_RESULTS,
+        ALLOW_EVALSPECIFIC_TOGGLE_EMAIL_NOTIFICATION,
         DISABLE_ITEM_BANK,
         DISABLE_QUESTION_BLOCKS,
         DISPLAY_HIERARCHY_HEADERS,
@@ -347,9 +372,11 @@ public interface EvalSettings {
         ENABLE_ADHOC_USERS,
         ENABLE_CSV_REPORT_EXPORT,
         ENABLE_EVAL_CATEGORIES,
+        ENABLE_EVAL_TERM_IDS,
         ENABLE_EVAL_EARLY_CLOSE,
         ENABLE_EVAL_REOPEN,
         ENABLE_EVAL_RESPONSE_REMOVAL,
+        ENABLE_FILTER_ASSIGNABLE_GROUPS,
         ENABLE_IMPORTING,
         ENABLE_INSTRUCTOR_ASSISTANT_SELECTION,
         ENABLE_ITEM_COMMENTS,
@@ -376,7 +403,9 @@ public interface EvalSettings {
         REQUIRE_COMMENTS_BLOCK,
         USE_ADMIN_AS_FROM_EMAIL,
         USE_EXPERT_ITEMS,
-        USE_EXPERT_TEMPLATES
+        USE_EXPERT_TEMPLATES,
+        ENABLE_JOB_COMPLETION_EMAIL,
+        ENABLE_REMINDER_STATUS
     };
 
     /**

@@ -27,7 +27,7 @@ var evalTemplateOrder = (function(){
     saveTopLevelTemplateOrdering = function(){
         var order = [];
         $("#itemList > div").not('.ui-sortable-helper').each(function(){
-            order.push($(this).find('a[templateitemid]').attr('templateitemid'));
+            order.push($(this).find('input[name=template-item-id]:hidden').val());
         });
         var params = {
             orderedIds : order.toString()
@@ -36,22 +36,15 @@ var evalTemplateOrder = (function(){
     },
 
     initSaveGroupOrderControls = function(anyGroupedItemObject){
-            log.info("Moved ordering for %o", anyGroupedItemObject);
-            $(document).trigger('block.triggerChildrenSort', [anyGroupedItemObject.parents("div.itemTableBlock")]);
-            if (anyGroupedItemObject.parents('.itemTableBlock').find('.itemBlockSave').length === 0) {
-                var saveAction = '<a class="itemBlockSave highlight" href="#saveAction">Save new order for grouped items</a>'; //todo: i8n this
-                $(saveAction).appendTo(anyGroupedItemObject.parents('.itemTableBlock').children('.instruction').eq(0));
-                anyGroupedItemObject.parents('.itemTableBlock').children('.instruction').eq(0).effect('highlight', 1500);
-                anyGroupedItemObject.parents('.itemTableBlock').find('.itemBlockSave').bind('click', function() {
-                    evalTemplateOrder.saveGroupLevelTemplateOrdering(anyGroupedItemObject);
-                });
-            }
-        },
+        log.info("Moved ordering for %o", anyGroupedItemObject);
+        $(document).trigger('block.triggerChildrenSort', [anyGroupedItemObject.parents("div.itemTableBlock")]);
+        evalTemplateOrder.saveGroupLevelTemplateOrdering(anyGroupedItemObject);
+    },
 
     saveGroupLevelTemplateOrdering = function(anyGroupedItemObject){
         var order = [];
         anyGroupedItemObject.parents('.itemTableBlock').find('div.itemRowBlock').not('.ui-sortable-helper').each(function(){
-            order.push($(this).find('a[templateitemid]').attr('templateitemid'));
+            order.push($(this).find('input[name=hidden-item-id]:hidden').val());
         });
         var params = {
             orderedIds : order.toString()
@@ -76,31 +69,28 @@ var evalTemplateOrder = (function(){
         log.group("Init groupable Items list");
         log.debug("%i items WERE groupable.", evalTemplateUtils.vars.groupableItems.length);
         evalTemplateUtils.vars.groupableItems = [];
-        $('div.itemList > div:visible').each(function() {
-            var that = $(this);
-            if (that.children('.itemLine3').length === 0) {
-                var t = "",
-                rowNumber;
-                if (that.find('.itemText > span').eq(1).text() == ""){
-                    t = that.find('.itemText > span').eq(0).html();
-                }
-                else{
-                    t = that.find('.itemText > span').eq(1).html();
-                }
-                that.find("select:eq(0)").each(function(){
-                    rowNumber = this.options[this.selectedIndex].value;
-                });
-                var groupableItem = {
-                    text:   t,
-                    type:   (that.find('.itemCheckbox > input').attr('id') ? that.find('.itemCheckbox > input').attr('id') : "000"),
-                    itemId: that.find('a[templateitemid]').eq(0).attr('templateitemid'),
-                    otp:    that.find('a[otp]').eq(0).attr('otp'),
-                    rowId:  that.attr('id'),
-                    rowNumber: rowNumber
-                };
+        $('input[name=item-classification][value=Scaled]').each(function() {
+            var that = $(this).parents('.itemRow');
+            var t = "",
+            rowNumber;
+            if (that.find('.itemText > span').eq(1).text() === ""){
+                t = that.find('.itemText > span').eq(0).html();
+            }
+            else{
+                t = that.find('.itemText > span').eq(1).html();
+            }
+            that.find("select:eq(0)").each(function(){
+                rowNumber = this.options[this.selectedIndex].value;
+            });
+            var groupableItem = {
+                text:   t,
+                type:   (that.find('.itemCheckbox > input').attr('id') ? that.find('.itemCheckbox > input').attr('id') : "000"),
+                itemId: that.find('input[name=template-item-id]:hidden').val(),
+                rowId:  that.attr('id'),
+                rowNumber: rowNumber
+            };
             evalTemplateUtils.vars.groupableItems.push(groupableItem);
             log.debug("Added %o to list.", groupableItem);
-        }
     });
     log.info("%i items now groupable.", evalTemplateUtils.vars.groupableItems.length);
     log.groupEnd();

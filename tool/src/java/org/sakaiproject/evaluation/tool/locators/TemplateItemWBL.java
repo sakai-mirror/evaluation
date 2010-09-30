@@ -19,8 +19,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.sakaiproject.evaluation.constant.EvalConstants;
+import org.sakaiproject.evaluation.logic.EvalAuthoringService;
 import org.sakaiproject.evaluation.model.EvalTemplateItem;
 import org.sakaiproject.evaluation.tool.LocalTemplateLogic;
+import org.sakaiproject.evaluation.utils.TemplateItemUtils;
 
 import uk.org.ponder.beanutil.WriteableBeanLocator;
 import uk.org.ponder.messageutil.TargettedMessage;
@@ -45,7 +47,11 @@ public class TemplateItemWBL implements WriteableBeanLocator {
    public void setMessages(TargettedMessageList messages) {
       this.messages = messages;
    }
-
+   
+   private EvalAuthoringService authoringService;
+   public void setAuthoringService(EvalAuthoringService authoringService) {
+       this.authoringService = authoringService;
+   }
 
    // keep track of all template items that have been delivered during this request
    private Map<String, EvalTemplateItem> delivered = new HashMap<String, EvalTemplateItem>();
@@ -115,7 +121,7 @@ public class TemplateItemWBL implements WriteableBeanLocator {
    /**
     * saves all delivered template items and the associated items (new or existing)
     */
-   public void saveBoth() {
+   public String saveBoth() {
       for (Iterator<String> it = delivered.keySet().iterator(); it.hasNext();) {
          String key = it.next();
          EvalTemplateItem templateItem = (EvalTemplateItem) delivered.get(key);
@@ -130,10 +136,40 @@ public class TemplateItemWBL implements WriteableBeanLocator {
          localTemplateLogic.saveItem( templateItem.getItem() );
          // then save the templateItem
          localTemplateLogic.saveTemplateItem(templateItem);
-         messages.addMessage( new TargettedMessage("templateitem.saved.message", 
-               new Object[] { templateItem.getDisplayOrder() }, 
-               TargettedMessage.SEVERITY_INFO));
+         return templateItem.getId().toString();
       }
+      return "";  //will never get here
+   }
+   
+   public void saveToGroup(Long groupItemId) {
+	   for (Iterator<String> it = delivered.keySet().iterator(); it.hasNext();) {
+	         String key = it.next();
+	         EvalTemplateItem templateItem = (EvalTemplateItem) delivered.get(key);
+	         if (key.startsWith(NEW_PREFIX)) {
+	            // new template item here
+	            if (templateItem.getItem().getId() == null) {
+		           // save the item
+	               localTemplateLogic.saveItem( templateItem.getItem() );
+	            }
+	         }	         
+	        // then group and save the templateItem
+			EvalTemplateItem parent = authoringService.getTemplateItemById(groupItemId);
+			int totalGroupedItems = authoringService.getItemCountForTemplateItemBlock(parent.getTemplate().getId(), groupItemId);
+
+			templateItem.setBlockParent(Boolean.FALSE);
+			templateItem.setBlockId(groupItemId);
+			templateItem.setDisplayOrder(totalGroupedItems + 1);
+			templateItem.setHierarchyLevel(parent.getHierarchyLevel());
+			templateItem.setHierarchyNodeId(parent.getHierarchyNodeId());
+			templateItem.setCategory(parent.getCategory());
+			templateItem.setResultsSharing(parent.getResultsSharing());
+			localTemplateLogic.saveTemplateItem(templateItem);
+
+			/*messages.addMessage(new TargettedMessage(
+					"templateitem.saved.message", new Object[] { templateItem
+							.getDisplayOrder() },
+					TargettedMessage.SEVERITY_INFO));*/
+			}
    }
 
    /**

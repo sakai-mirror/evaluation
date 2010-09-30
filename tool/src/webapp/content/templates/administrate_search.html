@@ -16,15 +16,7 @@
     </head>
     <body>
         <div class="portletBody">
-            <div class="navIntraTool">
-                <a rsf:id="administrate-link" href="administrate.html">Administrate</a>
-                <a rsf:id="summary-link" href="summary.html">Summary</a>
-			    <a rsf:id="control-evaluations-link" href="control_evaluations.html">My Evaluations</a>
-			    <a rsf:id="control-templates-link" href="control_templates.html">My Templates</a>
-			    <a rsf:id="control-items-link" href="control_items.html">My Items</a>
-			    <a rsf:id="control-scales-link" href="control_scales.html">My Scales</a>
-			    <a rsf:id="control-emailtemplates-link" href="control_email_templates.html">My Email Templates</a>
-            </div>
+            <div rsf:id="navIntraTool:" class="navIntraTool"/>
             <ul class="breadCrumb">
                 <li style="float: left">
                     <a rsf:id="summary-link" href="summary.html">Summary</a>
@@ -86,6 +78,9 @@
 								<!-- string for input in bundle as administrate.search.list.due.date.title -->
 								<span rsf:id="item-due-date-title">Due Date</span>
 							</th>
+							<th id="item-owner">
+								<span rsf:id="msg=administrate.search.list.owner">Owner</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -96,13 +91,16 @@
 								(<a rsf:id="evalAdminTitleLink_edit" href="evaluation_settings.html">revise</a>)
 							</td>
 							<td header="item-group-id">
-								<span rsf:id="evalAdminProviderId">Group Provider ID</span>
+								<a rsf:id="evalAdminGroup" href="#">Group Name</a>
 							</td>
 							<td header="item-start-date" nowrap="nowrap">
 								<span rsf:id="evalAdminStartDate">09/07/2005</span>
 							</td>
 							<td header="item-due-date" nowrap="nowrap">
 								<span rsf:id="evalAdminDueDate">09/21/2005</span>
+							</td>
+							<td header="item-owner" nowrap="nowrap">
+								<span rsf:id="evalAdminOwner">Sakai, Administrator</span>
 							</td>
 						</tr>
 						<tr rsf:id="evalAdminList:">
@@ -112,13 +110,16 @@
 								(<a rsf:id="evalAdminTitleLink_edit" href="evaluation_settings.html">revise</a>)
 							</td>
 							<td header="item-group-id">
-								<span rsf:id="evalAdminProviderId">Group Provider ID</span>
+								<a rsf:id="evalAdminGroup" href="#">Group Name</a>
 							</td>
 							<td header="item-start-date" nowrap="nowrap">
 								<span rsf:id="evalAdminStartDate">09/07/2005</span>
 							</td>
 							<td header="item-due-date" nowrap="nowrap">
 								<span rsf:id="evalAdminDueDate">09/21/2005</span>
+							</td>
+							<td header="item-owner" nowrap="nowrap">
+								<span rsf:id="evalAdminOwner">Sakai, Administrator</span>
 							</td>
 						</tr>
 						<tr rsf:id="evalAdminList:">
@@ -128,13 +129,16 @@
 								(<a rsf:id="evalAdminTitleLink_edit" href="evaluation_settings.html">revise</a>)
 							</td>
 							<td header="item-group-id">
-								<span rsf:id="evalAdminProviderId">Group Provider ID</span>
+								<a rsf:id="evalAdminGroup" href="#">Group Name</a>
 							</td>
 							<td header="item-start-date" nowrap="nowrap">
 								<span rsf:id="evalAdminStartDate">09/07/2005</span>
 							</td>
 							<td header="item-due-date" nowrap="nowrap">
 								<span rsf:id="evalAdminDueDate">09/21/2005</span>
+							</td>
+							<td header="item-owner" nowrap="nowrap">
+								<span rsf:id="evalAdminOwner">Sakai, Administrator</span>
 							</td>
 						</tr>
 						<tr rsf:id="evalAdminList:">
@@ -144,13 +148,16 @@
 								(<a rsf:id="evalAdminTitleLink_edit" href="evaluation_settings.html">revise</a>)
 							</td>
 							<td header="item-group-id">
-								<span rsf:id="evalAdminProviderId">Group Provider ID</span>
+								<a rsf:id="evalAdminGroup" href="#">Group Name</a>
 							</td>
 							<td header="item-start-date" nowrap="nowrap">
 								<span rsf:id="evalAdminStartDate">09/07/2005</span>
 							</td>
 							<td header="item-due-date" nowrap="nowrap">
 								<span rsf:id="evalAdminDueDate">09/21/2005</span>
+							</td>
+							<td header="item-owner" nowrap="nowrap">
+								<span rsf:id="evalAdminOwner">Sakai, Administrator</span>
 							</td>
 						</tr>
 					</tbody>

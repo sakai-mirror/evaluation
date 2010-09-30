@@ -100,33 +100,18 @@ function startSort() {
                         if (targetVal !== thatVal) {
                             $(document).trigger('block.rejectItem', [ui, "plain"]);
                         } else {
-                            var confirmMsg = 'Are you sure you want to add this item into this group?';//todo: i8n this
+                            var confirmMsg = evalTemplateUtils.messageLocator('modifytemplate.group.add.existingitem.confirm');
                                 if (confirm(confirmMsg)) {
                                     var parentObj = ui.item.parents("div.itemRow"),
                                     blockId = parentObj.find("input[name=template-item-id]").val(),
-                                    itemId =  ui.item.find('a[templateitemid]').attr('templateitemid');
-                                    log.info("Added group %o", parentObj);
-                                    ui.item.attr('style', 'display:none');
-                                    var shadow = ui.item.parent().find('.itemRowBlock').eq(0).clone(true);
-                                    ui.item.parent().find('div[id="' + shadow.attr('id') + '"]').not(':lt(2)').remove();
-                                    shadow.find('span').eq(1).html(ui.item.find('.itemText > span').eq(0).html());
-                                    shadow.find('input').eq(0).val(itemId);
-                                    shadow.find('a[templateitemid]').attr('templateitemid', ui.item.find('a[templateitemid]').attr('templateitemid'));
-                                    shadow.find('a[otp]').attr('otp', ui.item.find('a[otp]').attr('otp'));
-                                    shadow.insertAfter(ui.item);
-                                    log.info("Added %o to group %o", itemId, parentObj);
+                                    itemId =  ui.item.find('input[name=template-item-id]').val();
                                     //Save new item to the group using already set EB post method
                                     var params = {
                                         blockid : blockId,
                                         additems: itemId
                                     },
                                     fnAfter = function(){
-                                        evalTemplateSort.updateDropDownMax();
-                                        //Save new group order
-                                        evalTemplateOrder.saveGroupLevelTemplateOrdering(ui.item);
-                                        //Save overall template ordering so the template knows that we've removed a few items and grouped them.
-                                        evalTemplateOrder.saveTopLevelTemplateOrdering();
-                                        $(document).trigger('block.triggerChildrenSort', [parentObj]);
+                                        window.location.reload(true);
                                     };
                                     evalTemplateData.item.saveOrder(evalTemplateUtils.pages.eb_block_edit, params, null, fnAfter);
                                 }
@@ -164,7 +149,7 @@ $(document).bind('block.triggerChildrenSort', function(e, parentItem) {
 });
 $(document).bind('block.rejectItem', function(e, ui, option) {
     evalTemplateUtils.debug.group("rejecting to block this item: %o", ui.item);
-    $(document).trigger('list.warning', [ui, option, 'block', 'Sorry this item cannot be grouped here. It is not the same type as the grouped items.']);//todo: i8n this
+    $(document).trigger('list.warning', [ui, option, 'block', evalTemplateUtils.messageLocator('modifytemplate.group.cannot.add.item')]);
     var shadow = evalTemplateUtils.vars.isIE ? ui.item.clone(false) : ui.item.clone(true);
     var shadowPlace = $('.itemList > div.itemRow').eq(ui.item.find('input').eq(0).val()).attr('id');
     ui.item.remove();

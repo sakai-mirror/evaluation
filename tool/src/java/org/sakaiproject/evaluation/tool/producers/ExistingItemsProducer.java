@@ -19,9 +19,8 @@ import java.util.List;
 
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
-import org.sakaiproject.evaluation.logic.EvalEvaluationService;
-import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.model.EvalItem;
+import org.sakaiproject.evaluation.tool.renderers.NavBarRenderer;
 import org.sakaiproject.evaluation.tool.viewparams.ChooseItemViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.TemplateViewParameters;
 
@@ -71,15 +70,24 @@ public class ExistingItemsProducer implements ViewComponentProducer, NavigationC
     public void setAuthoringService(EvalAuthoringService authoringService) {
         this.authoringService = authoringService;
     }
-
+    
+    private NavBarRenderer navBarRenderer;
+    public void setNavBarRenderer(NavBarRenderer navBarRenderer) {
+		this.navBarRenderer = navBarRenderer;
+	}
 
     /* (non-Javadoc)
      * @see uk.org.ponder.rsf.view.ComponentProducer#fillComponents(uk.org.ponder.rsf.components.UIContainer, uk.org.ponder.rsf.viewstate.ViewParameters, uk.org.ponder.rsf.view.ComponentChecker)
      */
     public void fillComponents(UIContainer tofill, ViewParameters viewparams, ComponentChecker checker) {
 
-        // local variables used in the render logic
+    	// local variables used in the render logic
         String currentUserId = commonLogic.getCurrentUserId();
+
+        /*
+         * top links here
+         */
+        navBarRenderer.makeNavBar(tofill, NavBarRenderer.NAV_ELEMENT, this.getViewID());
 
         ChooseItemViewParameters itemViewParameters = (ChooseItemViewParameters) viewparams;
         Long templateId = itemViewParameters.templateId;

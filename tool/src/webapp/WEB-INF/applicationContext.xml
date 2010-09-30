@@ -3,6 +3,12 @@
 
 <!-- Aaron Zeckoski (aaronz@vt.edu) -->
 <beans>
+	
+	<!-- tool entity providers -->
+	<bean
+		parent="org.sakaiproject.entitybroker.entityprovider.AbstractEntityProvider"
+		class="org.sakaiproject.evaluation.tool.entity.EvalResourcesProvider">		
+	</bean>
 
     <!-- Configure the location of the messages files -->
     <bean id="messageLocator" class="uk.org.ponder.springutil.SpringMessageLocator">
@@ -30,7 +36,7 @@
 		      templateBeanLocator, templateItemWBL, answersBeanLocator, responseAnswersBeanLocator, responseBeanLocator, 
 		      evaluationBeanLocator, takeEvalBean, settingsBean, scaleBean, scaleBeanLocator, itemWBL, 
 		      hierNodeLocator, hierNodeLocatorInvoker, hierNodeGroupsLocator, hierNodeGroupsLocatorInvoker,
-              emailTemplateWBL, administrateSearchBean" />
+              emailTemplateWBL, administrateSearchBean, selectedEvaluationUsersLocator, assignGroupSelectionSettings" />
     </bean>
 
     <!-- allows us to identify entities used in OTP on the EL path,
@@ -179,7 +185,7 @@
         <property name="templateNames"
             value="render_header_item, render_text_item, render_scaled_item, render_block_item, 
 			     render_multiplechoice_item, render_multipleanswer_item,
-			     render_add_item_control, hierarchy_controls, render_hierarchy_node_selector" />
+			     render_add_item_control, hierarchy_controls, render_hierarchy_node_selector, nav_bar" />
         <property name="expected" value="true" />
     </bean>
 
@@ -200,7 +206,12 @@
             ref="org.sakaiproject.evaluation.ModelAccessWrapperInvoker" />
     </bean>
 
-    <bean class="org.sakaiproject.evaluation.tool.inferrers.TemplateVPInferrer" />
+    <bean class="org.sakaiproject.evaluation.tool.inferrers.TemplateVPInferrer">
+        <property name="commonLogic"
+            ref="org.sakaiproject.evaluation.logic.EvalCommonLogic" />
+        <property name="authoringService"
+            ref="org.sakaiproject.evaluation.logic.EvalAuthoringService"/>
+    </bean>
 
     <bean class="org.sakaiproject.evaluation.tool.inferrers.EvalCategoryVPInferrer" />
 

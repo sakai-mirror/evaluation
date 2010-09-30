@@ -23,32 +23,32 @@ var evalTemplateFacebox = (function() {
             $('#saveReorderButton').click();
             $.facebox({ajax:(f)});
         };
-        $.facebox.settings.faceboxHtml = '\
-        <div id="facebox" style="display:none;"> \
-          <div class="popup"> \
-            <table width="700px"> \
-              <tbody> \
-                <tr> \
-                  <td class="tl"/><td class="b"/><td class="tr"/> \
-                </tr> \
-                <tr> \
-                  <td class="b"/> \
-                  <td class="body"> \
-                  <div class="header breadCrumb" style="display:block"> \
-                 <a class="close" href="#" accesskey="x"><img class="close_image" title="close"/></a></div> \
-                    <div style="display: none" class="results"></div> \
-                    <div class="content"> \
-                    </div> \
-                  </td> \
-                  <td class="b"/> \
-                </tr> \
-                <tr> \
-                  <td class="bl"/><td class="b"/><td class="br"/> \
-                </tr> \
-              </tbody> \
-            </table> \
-          </div> \
-        </div>';
+        $.facebox.settings.faceboxHtml = '<div id="facebox" style="display:none;">' +
+                                         '<div class="popup"> ' +
+                                         '<table width="700px"> ' +
+                                         '<tbody> ' +
+                                         '<tr>' +
+                                         '<td class="tl"/><td class="b"/><td class="tr"/>' +
+                                         '</tr>' +
+                                         '<tr>' +
+                                         '<td class="b"/>' +
+                                         '<td class="body">' +
+                                         '<div class="header breadCrumb" style="display:block">' +
+                                         '<h2 id="titleHeader" class="titleHeader">&nbsp;</h2>' +
+                                         '<a class="close" href="#" accesskey="x"><img class="close_image" title="close"/></a></div>' +
+                                         '<div style="display: none" class="results"></div>' +
+                                         '<div class="content">' +
+                                         '</div>' +
+                                         '</td>' +
+                                         '<td class="b"/>' +
+                                         '</tr>' +
+                                         '<tr>' +
+                                         '<td class="bl"/><td class="b"/><td class="br"/>' +
+                                         '</tr>' +
+                                         '</tbody>' +
+                                         '</table>' +
+                                         '</div>' +
+                                         '</div>';
 
         $.facebox.loading = function() {
             //store original frame height
@@ -59,6 +59,7 @@ var evalTemplateFacebox = (function() {
             origionalFBfunctions.loading();
             $('#saveReorderButton').click();
             $('#facebox').css({
+                top:    evalTemplateUtils.frameScrollHeight,
                 left:    $(window).width() / 2 - ($('#facebox table').width() / 2)
             }).show();
             $('#facebox_overlay').unbind('click');
@@ -89,15 +90,35 @@ var evalTemplateFacebox = (function() {
             $('#facebox .body').css('width', 660);
             $('#facebox .header').eq(0).show();
             $.facebox.settings.elementToUpdate = null;
+            evalTemplateData.setCurrentRow(undefined);
             return false;
         };
 
-        $.facebox.setHeader = function(obj) {
-            if ($("#facebox .titleHeader")) {
-                $("#facebox .titleHeader").remove();
+        $.facebox.setHeader = function(page_type) {
+            var pageTitle = "";
+            if(page_type === evalTemplateUtils.pages.preview_item_page){
+                pageTitle = evalTemplateUtils.messageLocator("previewitem.page.title");
+            }else
+            if(page_type === evalTemplateUtils.pages.modify_block_page){
+                pageTitle = evalTemplateUtils.messageLocator("modifyblock.page.title");
+            }else
+            if(page_type === evalTemplateUtils.pages.modify_item_page){
+                pageTitle = evalTemplateUtils.messageLocator("modifyitem.page.title");
+            }else
+            if(page_type === evalTemplateUtils.pages.modify_template_page){
+                pageTitle = evalTemplateUtils.messageLocator("modifytemplatetitledesc.page.title");
+            }else
+            if(page_type === evalTemplateUtils.pages.choose_expert_page){
+                pageTitle = evalTemplateUtils.messageLocator("expert.expert.items");
             }
-            $(obj).clone(true).insertBefore($("#facebox .header .close"));
-            $(obj).remove();
+
+            $("h2.pageHeaderOnPage").hide();
+
+            if (pageTitle !== "" && $("#facebox .titleHeader").length > 0) {
+                $("#facebox .titleHeader").text(pageTitle);
+            }
+
+            evalTemplateUtils.debug.info("Page title for %s is %s", page_type, pageTitle);
         };
 
         $.facebox.setBtn = function(obj, form) {
@@ -115,24 +136,31 @@ var evalTemplateFacebox = (function() {
 
     };
 
-
     return {
         init: function() {
             initFunction();
         },
         fbResetClasses: function() {
             $("#itemList").find(".editing").attr("class", "itemRow");
-            if ($("#facebox .titleHeader").length > 0) {
-                $("#facebox .titleHeader").remove();
-            }
         },
         addItem: function(url) {
             evalTemplateUtils.debug.info("Trying to fetch: %s", url);
+            //Clear current iframe height position
+            evalTemplateUtils.frameScrollHeight = 0;
+            evalTemplateFacebox.clearFacebox(url);
+        },
+        clearFacebox: function(_this){
             //Unbind current reveal event
             $(document).unbind('reveal.facebox');
             //Check for after load type of event to call
             var pageType = undefined,
-                    revealFunction;
+                    revealFunction,
+                    url = null;
+            if ( typeof _this.href === "undefined"){
+                url = _this;
+            }else{
+                url = _this.href;
+            }
             pageType = evalTemplateUtils.getPageType(url);
             if (typeof pageType !== "undefined") {
                 //Bind new reveal event
@@ -140,19 +168,33 @@ var evalTemplateFacebox = (function() {
                     revealFunction = evalTemplateLoaderEvents.modify_item;
                 } else if (pageType === evalTemplateUtils.pages.modify_template_page) {
                     revealFunction = evalTemplateLoaderEvents.modify_template;
+                }else if (pageType === evalTemplateUtils.pages.modify_block_page) {
+                    revealFunction = evalTemplateLoaderEvents.modify_block;
+                } else if (pageType === evalTemplateUtils.pages.preview_item_page){
+                    revealFunction = evalTemplateLoaderEvents.preview_item;
                 } else if (pageType === evalTemplateUtils.pages.choose_existing_page) {
                     //Redirect
-                    //if ( confirm("Are you sure?")) {
-                        window.location = url;
-                   // }else{
-                        return false;
-                    //}
+                    window.location = url;
+                    return false;
+                } else if (pageType === evalTemplateUtils.pages.choose_expert_page){
+                    revealFunction = evalTemplateLoaderEvents.choose_expert_category;
                 }
                 $(document).bind('reveal.facebox', function() {
                     if (typeof revealFunction !== "undefined") {
                         revealFunction();
                     }
                 });
+            }
+            if (url !== null && ($(_this).attr("rel") === "faceboxGrid" && pageType !== evalTemplateUtils.pages.modify_template_page)) {
+                var itemRowBlock = $(_this).parents('.itemRow');
+                evalTemplateData.setCurrentRow(itemRowBlock);
+                evalTemplateFacebox.fbResetClasses();
+                $(_this).parent().parent().parent().parent().attr("class", "editing");
+                $.facebox.settings.elementToUpdate = itemRowBlock;
+            }else{
+                evalTemplateData.setCurrentRow(undefined);
+                evalTemplateFacebox.fbResetClasses();
+                $.facebox.settings.elementToUpdate = null;
             }
             $.facebox({ajax: url});
         }
@@ -177,34 +219,10 @@ var evalTemplateFacebox = (function() {
 (function($) {
     function setPreClick(that) {
         that.each(function() {
-            $(this).bind('click', function() {
-                //Unbind current reveal event
-                $(document).unbind('reveal.facebox');
-                //Check for after load type of event to call
-                var pageType = undefined,
-                        revealFunction;
-                pageType = evalTemplateUtils.getPageType(this.href);
-                if (typeof pageType !== "undefined") {
-                    //Bind new reveal event
-                    if (pageType === evalTemplateUtils.pages.modify_item_page) {
-                        revealFunction = evalTemplateLoaderEvents.modify_item;
-                    } else if (pageType === evalTemplateUtils.pages.modify_template_page) {
-                        revealFunction = evalTemplateLoaderEvents.modify_template;
-                    }else if (pageType === evalTemplateUtils.pages.modify_block_page) {
-                            revealFunction = evalTemplateLoaderEvents.modify_block;
-                    }
-                    $(document).bind('reveal.facebox', function() {
-                        if (typeof revealFunction !== "undefined") {
-                            revealFunction();
-                        }
-                    });
-                }
-                if ($(this).attr("rel") === "faceboxGrid" && pageType !== evalTemplateUtils.pages.modify_template_page) {
-                    evalTemplateFacebox.fbResetClasses();
-                    $(this).parent().parent().parent().parent().attr("class", "editing");
-                    $.facebox.settings.elementToUpdate = $(this).parent().parent().parent();
-                }
-                $.facebox({ajax: this.href});
+            $(this).bind('click', function(e) {
+                //Save current iframe height position
+                evalTemplateUtils.frameScrollHeight = e.pageY;
+                evalTemplateFacebox.clearFacebox(this);
                 return false;
             });
         });
@@ -212,11 +230,21 @@ var evalTemplateFacebox = (function() {
 
     function setChildGroupClick(that) {
         that.each(function() {
-            $(this).bind('click', function() {
+            $(this).bind('click', function(e) {
+                //Save current iframe height position
+                evalTemplateUtils.frameScrollHeight = e.pageY;
                 //Unbind current reveal event
                 $(document).unbind('reveal.facebox');
-                var url = 'modify_item?templateItemId=' + $(this).parent().parent().find('input[name*=hidden-item-id]').val() + '&templateId=' + $('input[name*=templateId]').val() + '&itemClassification=Block';
+                var itemRowBlock = $(this).parents('.itemRowBlock'),
+                    params = {
+                    templateItemId: itemRowBlock.find('input[name*=hidden-item-id]').val(),
+                    templateId: $('input[name=templateId]').val(),
+                    itemClassification: "Block",
+                    groupItemId: -1
+                },
+                        url = 'modify_item?' + $.param(params);
                 $.facebox.settings.elementToUpdate = "block";
+                evalTemplateData.setCurrentRow(itemRowBlock);               
 
                 $(document).bind('reveal.facebox', function() {
                     evalTemplateLoaderEvents.modify_item();

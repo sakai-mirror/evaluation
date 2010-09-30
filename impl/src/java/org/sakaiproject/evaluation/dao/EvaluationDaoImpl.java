@@ -78,6 +78,36 @@ public class EvaluationDaoImpl extends HibernateGeneralGenericDao implements Eva
         log.debug("init");
     }
 
+    /* (non-Javadoc)
+     * @see org.sakaiproject.evaluation.dao.EvaluationDao#forceCommit()
+     */
+    public void forceCommit() {
+        getHibernateTemplate().flush(); // this should sync the data immediately
+        // do a commit using the current transaction or make a new one
+        if (getSession().getTransaction() != null) {
+            getSession().getTransaction().commit();
+            getSession().beginTransaction(); // start a new one
+        } else {
+            // establish a transaction and then force the commit
+            getSession().beginTransaction().commit();
+        }
+        // should probably use the org.springframework.transaction.PlatformTransactionManager
+    }
+
+    /* (non-Javadoc)
+     * @see org.sakaiproject.evaluation.dao.EvaluationDao#forceRollback()
+     */
+    public void forceRollback() {
+        getHibernateTemplate().clear(); // clear pending data
+        // do a rollback using the current transaction or make a new one
+        if (getSession().getTransaction() != null) {
+            getSession().getTransaction().rollback();
+            getSession().beginTransaction(); // start a new one
+        } else {
+            // establish a transaction and then force the rollback
+            getSession().beginTransaction().rollback();
+        }
+    }
 
     public void fixupDatabase() {
         // fix up some of the null fields

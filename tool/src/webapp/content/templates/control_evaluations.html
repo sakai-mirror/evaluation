@@ -11,14 +11,7 @@
     </head>
     <body>
         <div class="portletBody">
-            <div class="navIntraTool">
-                <a rsf:id="administrate-link" href="administrate.html">Administrate</a>
-                <a rsf:id="summary-link" href="summary.html">Summary</a>
-                <a rsf:id="control-evaluations-link" class="inactive" href="control_evaluations.html">My Evaluations</a>
-                <a rsf:id="control-templates-link" href="control_templates.html">My Templates</a>
-                <a rsf:id="control-items-link" href="control_items.html">My Items</a>
-                <a rsf:id="control-scales-link" href="control_scales.html">My Scales</a>
-            </div>
+            <div rsf:id="navIntraTool:" class="navIntraTool"/>
             <ul class="breadCrumb" style="clear:both;height:1.5em">
                 <li style="float:left">
                     <a rsf:id="summary-link" href="summary.html">Summary</a>
@@ -37,7 +30,10 @@
                     </li>
                 </ul>
             </div>
-            <div rsf:id="partial-eval-listing:">
+            <p class="elementAlertFront instruction" rsf:id="eval-instructions-group-notpublished">
+				This evaluation is assigned to at least one currently unpublished site. Publish these sites for students to be notified via email and given access to complete this evaluation.
+			</p>
+			<div rsf:id="partial-eval-listing:">
                 <h3 rsf:id="msg=controlevaluations.partial.header">Partial Evaluations</h3>
                 <p class="instruction">
                     <span rsf:id="msg=controlevaluations.partial.description">Your Evaluations which you started creating but did not complete</span>

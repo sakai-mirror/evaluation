@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.sakaiproject.evaluation.beans.EvalBeanUtils;
 import org.sakaiproject.evaluation.constant.EvalConstants;
-import org.sakaiproject.evaluation.logic.EvalAuthoringService;
 import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalDeliveryService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
@@ -31,6 +30,7 @@ import org.sakaiproject.evaluation.logic.EvalSettings;
 import org.sakaiproject.evaluation.logic.entity.EvalCategoryEntityProvider;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
+import org.sakaiproject.evaluation.tool.renderers.NavBarRenderer;
 import org.sakaiproject.evaluation.tool.viewparams.EvalViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.ReportParameters;
 import org.sakaiproject.evaluation.utils.EvalUtils;
@@ -45,10 +45,10 @@ import uk.org.ponder.rsf.components.UILink;
 import uk.org.ponder.rsf.components.UIMessage;
 import uk.org.ponder.rsf.components.UIOutput;
 import uk.org.ponder.rsf.components.decorators.DecoratorList;
+import uk.org.ponder.rsf.components.decorators.UIStyleDecorator;
 import uk.org.ponder.rsf.components.decorators.UITooltipDecorator;
 import uk.org.ponder.rsf.view.ComponentChecker;
 import uk.org.ponder.rsf.view.ViewComponentProducer;
-import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParameters;
 
 /**
@@ -81,11 +81,6 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
       this.evaluationService = evaluationService;
    }
 
-   private EvalAuthoringService authoringService;
-   public void setAuthoringService(EvalAuthoringService authoringService) {
-      this.authoringService = authoringService;
-   }
-
    private EvalEvaluationSetupService evaluationSetupService;
    public void setEvaluationSetupService(EvalEvaluationSetupService evaluationSetupService) {
       this.evaluationSetupService = evaluationSetupService;
@@ -105,6 +100,11 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
    public void setSettings(EvalSettings settings) {
       this.settings = settings;
    }
+   
+   private NavBarRenderer navBarRenderer;
+   public void setNavBarRenderer(NavBarRenderer navBarRenderer) {
+		this.navBarRenderer = navBarRenderer;
+	}
 
 
    /* (non-Javadoc)
@@ -124,59 +124,18 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
 
       // local variables used in the render logic
       String currentUserId = commonLogic.getCurrentUserId();
-      boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
-      boolean createTemplate = authoringService.canCreateTemplate(currentUserId);
-      boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 
       /*
        * top links here
        */
-      UIInternalLink.make(tofill, "summary-link", 
-            UIMessage.make("summary.page.title"), 
-            new SimpleViewParameters(SummaryProducer.VIEW_ID));
-
-      if (userAdmin) {
-    	  UIInternalLink.make(tofill, "administrate-link", 
-    			  UIMessage.make("administrate.page.title"),
-    			  new SimpleViewParameters(AdministrateProducer.VIEW_ID));
-      }
-
-      // only show "My Evaluations", "My Templates", "My Items", "My Scales" and "My Email Templates" links if enabled
-      boolean showMyToplinks = ((Boolean)settings.get(EvalSettings.ENABLE_MY_TOPLINKS)).booleanValue();
-      if(showMyToplinks) {
-    	  if (createTemplate) {
-    		  UIInternalLink.make(tofill, "control-templates-link",
-    				  UIMessage.make("controltemplates.page.title"), 
-    				  new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
-    		  if (!((Boolean)settings.get(EvalSettings.DISABLE_ITEM_BANK))) {
-    			  UIInternalLink.make(tofill, "control-items-link",
-    					  UIMessage.make("controlitems.page.title"), 
-    					  new SimpleViewParameters(ControlItemsProducer.VIEW_ID));    
-    		  }
-
-    	  }
-
-    	  if (beginEvaluation) {
-    		  UIInternalLink.make(tofill, "control-evaluations-link",
-    				  UIMessage.make("controlevaluations.page.title"),
-    				  new SimpleViewParameters(ControlEvaluationsProducer.VIEW_ID));
-    	  } else {
-    		  throw new SecurityException("User attempted to access " + 
-    				  VIEW_ID + " when they are not allowed");
-    	  }
-
-    	  if (userAdmin) {
-    		  UIInternalLink.make(tofill, "control-scales-link",
-    				  UIMessage.make("controlscales.page.title"),
-    				  new SimpleViewParameters(ControlScalesProducer.VIEW_ID));
-    	  }
-      }
+      navBarRenderer.makeNavBar(tofill, NavBarRenderer.NAV_ELEMENT, this.getViewID());
 
       // get all the visible evaluations for the current user
       List<EvalEvaluation> partialEvals = new ArrayList<EvalEvaluation>();
       List<EvalEvaluation> inqueueEvals = new ArrayList<EvalEvaluation>();
       List<EvalEvaluation> activeEvals = new ArrayList<EvalEvaluation>();
       List<EvalEvaluation> closedEvals = new ArrayList<EvalEvaluation>();
+      List<Long> takableEvaluationIds = new ArrayList<Long>(); // collect evaluation Ids for evaluations that are pending and active ONLY
 
       List<EvalEvaluation> evals = evaluationSetupService.getVisibleEvaluationsForUser(commonLogic.getCurrentUserId(), false, false, true);
       for (int j = 0; j < evals.size(); j++) {
@@ -187,16 +146,21 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
 
          if ( EvalConstants.EVALUATION_STATE_INQUEUE.equals(evalStatus) ) {
             inqueueEvals.add(eval);
+            takableEvaluationIds.add(eval.getId());
          } else if (EvalConstants.EVALUATION_STATE_CLOSED.equals(evalStatus) ||
                EvalConstants.EVALUATION_STATE_VIEWABLE.equals(evalStatus) ) {
             closedEvals.add(eval);
          } else if (EvalConstants.EVALUATION_STATE_ACTIVE.equals(evalStatus) ||
                EvalConstants.EVALUATION_STATE_GRACEPERIOD.equals(evalStatus) ) {
             activeEvals.add(eval);
+            takableEvaluationIds.add(eval.getId());
          } else if (EvalConstants.EVALUATION_STATE_PARTIAL.equals(evalStatus) ) {
             partialEvals.add(eval);
          }
       }
+      
+      // get evalGroups for pending and active evals only. Later we will check if any of them are unpublished
+      Map<Long, List<EvalAssignGroup>> takableAssignGroups = evaluationService.getAssignGroupsForEvals(takableEvaluationIds.toArray(new Long[0]), true, null);
 
       // create start new eval link
       UIInternalLink.make(tofill, "begin-evaluation-link", UIMessage.make("starteval.page.title"), 
@@ -226,6 +190,8 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
                   new EvalViewParameters( RemoveEvalProducer.VIEW_ID, evaluation.getId() ) );
          }
       }
+      
+      int countUnpublishedGroups = 0;
 
       // create inqueue evaluations header
       if (inqueueEvals.size() > 0) {
@@ -236,7 +202,7 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
 
             UIBranchContainer evaluationRow = UIBranchContainer.make(evalListing, "inqueue-eval-row:", evaluation.getId().toString());
 
-            UIInternalLink.make(evaluationRow, "inqueue-eval-link", evaluation.getTitle(), 
+            UIInternalLink evalTitleLink = UIInternalLink.make(evaluationRow, "inqueue-eval-link", evaluation.getTitle(), 
                   new EvalViewParameters( PreviewEvalProducer.VIEW_ID, evaluation.getId(), evaluation.getTemplate().getId() ) );
             UILink.make(evaluationRow, "eval-direct-link", UIMessage.make("controlevaluations.eval.direct.link"), 
                   commonLogic.getEntityURL(evaluation));
@@ -245,6 +211,21 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
                      commonLogic.getEntityURL(EvalCategoryEntityProvider.ENTITY_PREFIX, evaluation.getEvalCategory()) );
                catLink.decorators = new DecoratorList( 
                      new UITooltipDecorator( UIMessage.make("general.category.link.tip", new Object[]{evaluation.getEvalCategory()}) ) );
+            }
+            
+            // check if this eval has any site/group that is unpublished
+            List<EvalAssignGroup> assignGroups = takableAssignGroups.get(evaluation.getId());
+            int countUnpublished = 0;
+            for (EvalAssignGroup group : assignGroups){
+            	if (! commonLogic.isEvalGroupPublished(group.getEvalGroupId())){
+            		countUnpublished ++;
+            	}
+            }
+            
+            if (countUnpublished > 0){
+            	evalTitleLink.decorate( new UIStyleDecorator("elementAlertFront") );
+            	evalTitleLink.decorate( new UITooltipDecorator( UIMessage.make("controlevaluations.instructions.site.unpublished")) );
+            	countUnpublishedGroups ++;
             }
 
             UIInternalLink.make(evaluationRow, "notifications-link", 
@@ -291,7 +272,7 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
 
             UIBranchContainer evaluationRow = UIBranchContainer.make(evalListing, "active-eval-row:", evaluation.getId().toString());
 
-            UIInternalLink.make(evaluationRow, "active-eval-link", evaluation.getTitle(), 
+            UIInternalLink evalTitleLink = UIInternalLink.make(evaluationRow, "active-eval-link", evaluation.getTitle(), 
                   new EvalViewParameters( PreviewEvalProducer.VIEW_ID, evaluation.getId(),	evaluation.getTemplate().getId() ) );
             UILink.make(evaluationRow, "eval-direct-link", UIMessage.make("controlevaluations.eval.direct.link"), 
                   commonLogic.getEntityURL(evaluation));
@@ -301,6 +282,7 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
                catLink.decorators = new DecoratorList( 
                      new UITooltipDecorator( UIMessage.make("general.category.link.tip", new Object[]{evaluation.getEvalCategory()}) ) );
             }
+            
 
             UIInternalLink.make(evaluationRow, "notifications-link", 
                     new EvalViewParameters( EvaluationNotificationsProducer.VIEW_ID, evaluation.getId() ) );
@@ -353,6 +335,10 @@ public class ControlEvaluationsProducer implements ViewComponentProducer {
          }
       } else {
          UIMessage.make(tofill, "no-active-evals", "controlevaluations.active.none");
+      }
+      
+      if (countUnpublishedGroups > 0){
+      	UIMessage.make(tofill, "eval-instructions-group-notpublished", "controlevaluations.instructions.site.unpublished");
       }
 
       // create closed evaluations header and link

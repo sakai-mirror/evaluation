@@ -112,13 +112,13 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             List<EvalScale> scales = dao.findBySearch(EvalScale.class,
                     new Search( new Restriction("mode", "", Restriction.NULL) ) );
             if (scales.size() > 0) {
-                log.info("Found " + scales.size() + " scales with a null mode, fixing up data...");
+                log.debug("Found " + scales.size() + " scales with a null mode, fixing up data...");
                 for (EvalScale scale : scales) {
                     // set this to the default then
                     scale.setMode(EvalConstants.SCALE_MODE_SCALE);
                 }
                 dao.saveSet(new HashSet<EvalScale>(scales));
-                log.info("Fixed " + scales.size() + " scales with a null mode, set to default SCALE_MODE...");
+                log.debug("Fixed " + scales.size() + " scales with a null mode, set to default SCALE_MODE...");
             }
 
             // fix up orphaned template items (template or item is null)
@@ -225,7 +225,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             } else {
                 commonLogic.registerEntityEvent(EVENT_SCALE_UPDATE, scale);
             }
-            log.info("User ("+userId+") saved scale ("+scale.getId()+"), title: " + scale.getTitle());
+            log.debug("User ("+userId+") saved scale ("+scale.getId()+"), title: " + scale.getTitle());
             return;
         }
 
@@ -249,7 +249,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         if (securityChecks.checkUserControlScale(userId, scale)) {
             dao.delete(scale);
             commonLogic.registerEntityEvent(EVENT_SCALE_DELETE, scale);
-            log.info("User ("+userId+") deleted scale ("+scale.getId()+"), title: " + scale.getTitle());
+            log.debug("User ("+userId+") deleted scale ("+scale.getId()+"), title: " + scale.getTitle());
             return;
         }
 
@@ -299,7 +299,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlScale(userId, scale);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -321,7 +321,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlScale(userId, scale);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -448,7 +448,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
                     if (! items.contains(item)) {
                         items.add(item);
                         dao.save(eig);
-                        log.info("Added expert item ("+item.getId()+") to default item group: " + EvalConstants.EXPERT_ITEM_CATEGORY_TITLE);
+                        log.debug("Added expert item ("+item.getId()+") to default item group: " + EvalConstants.EXPERT_ITEM_CATEGORY_TITLE);
                     }
                 }
             }
@@ -458,11 +458,11 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             } else {
                 commonLogic.registerEntityEvent(EVENT_ITEM_UPDATE, item);
             }
-            log.info("User ("+userId+") saved item ("+item.getId()+"), title: " + item.getItemText());
+            log.debug("User ("+userId+") saved item ("+item.getId()+"), title: " + item.getItemText());
 
             if (item.getLocked().booleanValue() == true && item.getScale() != null) {
                 // lock associated scale
-                log.info("Locking scale ("+item.getScale().getTitle()+") associated with new item ("+item.getId()+")");
+                log.debug("Locking scale ("+item.getScale().getTitle()+") associated with new item ("+item.getId()+")");
                 dao.lockScale( item.getScale(), Boolean.FALSE );
             }
 
@@ -492,11 +492,11 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             String itemClassification = item.getClassification();
             dao.delete(item);
             commonLogic.registerEntityEvent(EVENT_ITEM_DELETE, item);
-            log.info("User ("+userId+") removed item ("+item.getId()+"), title: " + item.getItemText());
+            log.debug("User ("+userId+") removed item ("+item.getId()+"), title: " + item.getItemText());
 
             // unlock associated scales if there were any
             if (item.getLocked().booleanValue() && scale != null) {
-                log.info("Unlocking associated scale ("+scale.getTitle()+") for removed item ("+itemId+")");
+                log.debug("Unlocking associated scale ("+scale.getTitle()+") for removed item ("+itemId+")");
                 dao.lockScale( scale, Boolean.FALSE );
             }
 
@@ -626,17 +626,21 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         }
 
         // get the template items count to set display order for new templateItems
+        int itemsCount = getItemCountForTemplate(template.getId());
         if (templateItem.getId() == null) {
             if (TemplateItemUtils.isBlockParent(templateItem) 
                     && templateItem.getDisplayOrder() != null) {
                 // if this a block parent then we allow the display order to be set
             } else {
                 // new item
-                int itemsCount = getItemCountForTemplate(template.getId());
                 templateItem.setDisplayOrder( new Integer(itemsCount + 1) );
             }
         } else {
             // existing item
+        	if (templateItem.getDisplayOrder() == null){
+        		//put items without display ids at the bottom of the template
+        		templateItem.setDisplayOrder( new Integer(itemsCount + 2) );
+        	}
             // TODO - check if the display orders are set to a value that is used already?
         }
 
@@ -681,10 +685,10 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
             // Should not be locking this here -AZ
             //       // lock related item and associated scales
-            //       log.info("Locking item ("+item.getId()+") and associated scale");
+            //       log.debug("Locking item ("+item.getId()+") and associated scale");
             //       dao.lockItem(item, Boolean.TRUE);
 
-            log.info("User ("+userId+") saved templateItem ("+templateItem.getId()+"), " +
+            log.debug("User ("+userId+") saved templateItem ("+templateItem.getId()+"), " +
                     "linked item (" + item.getId() +") and template ("+ template.getId()+")");
             return;
         }
@@ -757,7 +761,32 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         ));
         return itemsCount;
     }
+    
+    public int getNonBlockItemCountForTemplate(Long templateId) {
+    	return getItemCountForTemplate(templateId);
+    }
 
+    /**
+     * Used for determining next available displayOrder for in a block
+     * 
+     * @param templateId unique id for a template
+     * @param blockId id for a template block
+     * @return a count of the non-child items in the template
+     */
+    protected int getItemCountForTemplateItem(Long templateId, Long blockId) {
+        // only count items which are not children of a block
+        int itemsCount = (int) dao.countBySearch(EvalTemplateItem.class, new Search(
+                new Restriction[] {
+                        new Restriction("template.id", templateId),
+                        new Restriction("blockId", blockId)
+                }
+        ));
+        return itemsCount;
+    }
+    
+    public int getItemCountForTemplateItemBlock(Long templateId, Long blockId) {
+    	return getItemCountForTemplateItem(templateId, blockId);
+    }
 
     public void deleteTemplateItem(Long templateItemId, String userId) {
         log.debug("templateItemId:" + templateItemId + ", userId:" + userId);
@@ -795,7 +824,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
             // if this parent is used elsewhere then this will cause exception - EVALSYS-559
             if (isUsedItem(itemId)) {
-                log.info("Cannot remove block parent item ("+itemId+") - item is in use elsewhere");
+                log.debug("Cannot remove block parent item ("+itemId+") - item is in use elsewhere");
             } else {
                 try {
                     deleteItem(itemId, userId);
@@ -831,7 +860,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         // fire event
         commonLogic.registerEntityEvent(EVENT_TEMPLATEITEM_DELETE, templateItem);
         // log
-        log.info("Eval: User ("+userId+") deleted eval template item ("+templateItem.getId()+")");
+        log.debug("Eval: User ("+userId+") deleted eval template item ("+templateItem.getId()+")");
     }
 
     /**
@@ -905,7 +934,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlItem(userId, item);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -928,7 +957,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlItem(userId, item);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -944,7 +973,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlTemplateItem(userId, templateItem);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -1061,7 +1090,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         if (securityChecks.checkUserControlItemGroup(userId, itemGroup)) {
             dao.save(itemGroup);
 
-            log.info("User ("+userId+") saved itemGroup ("+itemGroup.getId()+"), " + " of type ("+ itemGroup.getType()+")");
+            log.debug("User ("+userId+") saved itemGroup ("+itemGroup.getId()+"), " + " of type ("+ itemGroup.getType()+")");
             return;     
         }
 
@@ -1089,7 +1118,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
             dao.delete(itemGroup);
 
-            log.info("User ("+userId+") removed itemGroup ("+itemGroup.getId()+"), " + " of type ("+ itemGroup.getType()+")");
+            log.debug("User ("+userId+") removed itemGroup ("+itemGroup.getId()+"), " + " of type ("+ itemGroup.getType()+")");
             return;     
         }
 
@@ -1110,7 +1139,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlItemGroup(userId, itemGroup);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -1126,7 +1155,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlItemGroup(userId, itemGroup);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -1238,7 +1267,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
             template.setExpertDescription( commonLogic.cleanupUserStrings(template.getExpertDescription()) );
 
             dao.save(template);
-            log.info("User ("+userId+") saved template ("+template.getId()+"), title: " + template.getTitle());
+            log.debug("User ("+userId+") saved template ("+template.getId()+"), title: " + template.getTitle());
 
             if (newTemplate) {
                 commonLogic.registerEntityEvent(EVENT_TEMPLATE_CREATE, template);
@@ -1251,7 +1280,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 
             if (template.getLocked().booleanValue() == true) {
                 // lock template and associated items
-                log.info("Locking template ("+template.getId()+") and associated items");
+                log.debug("Locking template ("+template.getId()+") and associated items");
                 dao.lockTemplate(template, Boolean.TRUE);
             }
 
@@ -1295,7 +1324,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         if (securityChecks.checkUserControlTemplate(userId, template)) {
             if (template.getLocked().booleanValue() == true) {
                 // unlock template and associated items
-                log.info("Unlocking template ("+template.getId()+") and associated items");
+                log.debug("Unlocking template ("+template.getId()+") and associated items");
                 dao.lockTemplate(template, Boolean.FALSE);
             }
 
@@ -1446,7 +1475,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlTemplate(userId, template);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -1469,7 +1498,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         try {
             allowed = securityChecks.checkUserControlTemplate(userId, template);
         } catch (RuntimeException e) {
-            log.info(e.getMessage());
+            log.debug(e.getMessage());
         }
         return allowed;
     }
@@ -1933,7 +1962,7 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
         // get all the autoUse items
         List<EvalTemplateItem> autoUseItems = getAutoUseTemplateItems(autoUseTag, autoUseTag, autoUseTag);
         if (autoUseItems.size() > 0) {
-            log.info("Found "+autoUseItems.size()+" autoUse items to insert for tag (" + autoUseTag + ") into template (id="+templateId+")");
+            log.debug("Found "+autoUseItems.size()+" autoUse items to insert for tag (" + autoUseTag + ") into template (id="+templateId+")");
             allTemplateItems = new ArrayList<EvalTemplateItem>();
             EvalTemplate template = getTemplateOrFail(templateId);
             String ownerId = template.getOwner();
@@ -2049,10 +2078,10 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
                 // add the full list to the template and save it
                 template.setTemplateItems( allItems );
                 dao.save(template);
-                log.info("Saved and inserted "+autoUseItems.size()+" autoUse items for tag (" + autoUseTag + ") into template (id="+templateId+")");
+                log.debug("Saved and inserted "+autoUseItems.size()+" autoUse items for tag (" + autoUseTag + ") into template (id="+templateId+")");
             }
         } else {
-            log.info("No autoUse items can be found to insert for tag: " + autoUseTag);
+            log.debug("No autoUse items can be found to insert for tag: " + autoUseTag);
         }
         return allTemplateItems;
     }
@@ -2098,7 +2127,4 @@ public class EvalAuthoringServiceImpl implements EvalAuthoringService {
 			
         }
 	}
-
-
-
 }

@@ -7,8 +7,14 @@ var evalTemplateUtils = (function() {
     var canDebug = false,
             canDebugLevels = "info,debug,warn,error", //Comma delimitated set of the debug levels to show. Select from info,debug,warn,error
             entityTemplateItemURL = "/direct/eval-templateitem/:ID:.xml",
-            pagesLoadedByFBwithJs = [];
-   
+            messgeBundlePath = "/direct/eval-resources/message-bundle.json",
+
+    // Dont configure these vars
+            templateId = 0,
+            pagesLoadedByFBwithJs = [],
+            messageBundle = {},
+            closedGroups = [];     // keep track of groups a user closes: EVALSYS-825
+
     function resizeFrame(updown, height) {
         try {
             var thisHeight = typeof height === "undefined" ? 280 : Number(height) + 40,
@@ -29,6 +35,19 @@ var evalTemplateUtils = (function() {
         }
     }
 
+    // Format bundle path for user locale
+    var loadMessageBundle = function(){
+        $.ajax({
+            url: messgeBundlePath,
+            global: false,
+            cache: true,
+            dataType : "json",
+            success: function(messageBundleJSON){
+                messageBundle = messageBundleJSON.data;
+            }
+        });
+    };
+
     //public data
     return {
         entity:{
@@ -38,6 +57,8 @@ var evalTemplateUtils = (function() {
         },
         //keep frame size before grow
         frameSize: 0,
+        //keep iframe scroll height
+        frameScrollHeight: 0,
         frameGrow: function(height) {
             resizeFrame(1, height);
         },
@@ -96,23 +117,30 @@ var evalTemplateUtils = (function() {
             }
             //browser check
             evalTemplateUtils.vars.isIE = $.browser.msie;
+
+            // Message Locale bundle loader
+            loadMessageBundle();
+
+            templateId = $('input[name=templateId]:hidden').val();
         },
         pages: {
                 modify_item_page: "modify_item",
                 modify_template_page: "modify_template",
                 modify_block_page: "modify_block",
                 choose_existing_page: "choose_existing_items",
+                choose_expert_page: "choose_expert_category",
                 eb_save_order: "/direct/eval-templateitem/template-items-reorder",
-                eb_block_edit: "/direct/eval-templateitem/modify-block-items"
+                eb_block_edit: "/direct/eval-templateitem/modify-block-items",
+                preview_item_page: "preview_item"
             },
         getPageType: function(url){
             evalTemplateUtils.debug.group("Getting the page type/name");
             var pageType = undefined,
                     i = 0,
                     regExp = null;
-            pagesLoadedByFBwithJs = [ evalTemplateUtils.pages.modify_item_page,
+            pagesLoadedByFBwithJs = [ evalTemplateUtils.pages.modify_item_page, evalTemplateUtils.pages.choose_expert_page,
                 evalTemplateUtils.pages.modify_template_page, evalTemplateUtils.pages.modify_block_page,
-                evalTemplateUtils.pages.choose_existing_page ];
+                evalTemplateUtils.pages.choose_existing_page, evalTemplateUtils.pages.preview_item_page];
             evalTemplateUtils.debug.debug("Pages supported are %s", pagesLoadedByFBwithJs.toString());
             for ( i in pagesLoadedByFBwithJs){
                 if ( typeof pageType == "undefined" ){
@@ -125,8 +153,49 @@ var evalTemplateUtils = (function() {
             evalTemplateUtils.debug.info("Page type found as: %s", pageType);
             evalTemplateUtils.debug.groupEnd();
             return pageType;
+        },
+        //retrieve the message strings for key
+        messageLocator: function(key, params){
+            return fluid.messageLocator( messageBundle )([key], params);            
+        },
+
+        // Remember the groups a user closes: EVALSYS-825
+        closedGroup : {
+            add : function(groupId){
+                if( groupId ){
+                    if ( $.inArray(groupId, closedGroups) === -1){
+                        closedGroups.push(groupId);
+                        evalTemplateUtils.debug.info("Closed %s", groupId);
+                    }
+                }
+                evalTemplateUtils.debug.warn("closedGroups %o", closedGroups);
+            },
+            remove : function(groupId){
+                if( groupId && $.inArray(groupId, closedGroups) > -1){
+                    var index;
+                    for ( var i in closedGroups){
+                        if ( closedGroups[i] === groupId ){
+                            index = i;
+                        }
+                    }
+                    closedGroups.splice(index, 1);
+                    evalTemplateUtils.debug.info("Opened %s", groupId);
+                }
+                evalTemplateUtils.debug.warn("closedGroups %o", closedGroups);
+            },
+            get : closedGroups            
+        },
+
+        // DOM values retrieval functions
+        getTemplateId:  function(){return templateId;},
+        getTemplateItemId: function(that){
+            return that.parents('.itemRow').find('input[name=template-item-id]:hidden').val();
+        },
+        getItemClassification: function(that){
+            return that.parents('.itemRow').find('input[name=item-classification]:hidden').val();
         }
-    };
+
+        };
 
 
 })($);

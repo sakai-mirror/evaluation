@@ -17,9 +17,9 @@
     function hideComment(dom) {
         var truncatedComment = truncate(dom, dom.textarea.val());//Truncate the comment and update Dom
         dom.showLink.hide();
-        dom.commentLabel.fadeIn("fast");
-        dom.editLink.fadeIn("fast");
-        dom.commentTruncated.text(truncatedComment).fadeIn("fast"); //add truncated comment to DOM
+        dom.commentLabel.show();
+        dom.editLink.show();
+        dom.commentTruncated.text(truncatedComment).show(); //add truncated comment to DOM
     }
 
 
@@ -28,7 +28,7 @@
             var clientH, frame = parent.document.getElementById(window.name);
             if (frame) {
                 if (updown === 'shrink') {
-                    clientH = document.body.clientHeight - 70;
+                    clientH = document.body.clientHeight;
                 } else {
                     clientH = document.body.clientHeight + 70;
                 }
@@ -42,12 +42,15 @@
         if (dom.hideLink.css("display") !== "none") {
             dom.hideLink.trigger('click');
         }
-        dom.commentHolder.find("a, span:not(.JSwarn)")
+        var commentLink = dom.commentHolder.find("a, span:not(.JSwarn)");
+        commentLink
                 .css({color:"#000", opacity:0.5})
                 .unbind("click")
                 .bind("click", function() {
             return false;
         });
+        //Add event for tooltip
+        commentLink.tipsy({gravity: 'w'});
         if (dom.textarea.val().length > 0) {
             //Warn user
             dom.warn.fadeIn("fast");
@@ -57,26 +60,29 @@
     function enable(dom) {
         dom.commentHolder.find("a, span:not(.JSwarn)")
                 .css({color:null, opacity:1})
-                .unbind("click");
+                .unbind("click")
+                //Remove event for tooltip
+                .unbind('mouseenter').unbind('mouseleave');
+        
         //Hide warning
         dom.warn.fadeOut("fast");
         //Bind the click event for ADD comment control
         dom.showLink.bind('click', function() {
-            dom.textarea.slideDown("fast");
-            dom.showLink.slideUp("fast");
-            dom.hideLink.slideDown("fast");
+            dom.textarea.show();
+            dom.showLink.hide();
+            dom.hideLink.show();
             dom.warn.fadeOut("fast");
-            resizeFrame('grow');
+			resizeFrame('grow');
             dom.textarea.focus();
             return false;
         });
         //Bind the click event for EDIT comment control
         dom.editLink.bind('click', function() {
-            dom.textarea.slideDown("fast");
-            dom.commentLabel.slideUp("fast");
-            dom.commentTruncated.slideUp("fast");
-            dom.editLink.slideUp("fast");
-            dom.hideLink.slideDown("fast");
+            dom.textarea.show();
+            dom.commentLabel.hide();
+            dom.commentTruncated.hide();
+            dom.editLink.hide();
+            dom.hideLink.show();
             dom.warn.fadeOut("fast");
             resizeFrame('grow');
             dom.textarea.focus();
@@ -87,10 +93,12 @@
             if (dom.textarea.val().length > 0) {
                 hideComment(dom);
             } else {
-                dom.showLink.slideDown("fast");
+                dom.showLink.show(0, function(){
+                    dom.showLink.css({display: "inline"});
+                });
             }
-            dom.textarea.slideUp("fast");
-            dom.hideLink.slideUp("fast");
+            dom.textarea.hide();
+            dom.hideLink.hide();
             resizeFrame('shrink');
             return false;
         });
@@ -111,21 +119,23 @@
                         commentTruncated: commentHolder.find("span.JScommentTruncated"),
                         commentLabel: commentHolder.find("span.JSlabel"),
                         //if li:eq(0) doesn't return an object, we are in an item preview
-                        questionHolder: commentHolder.parents("li:eq(0)").length === 0 ? commentHolder.parents("div.highlightPanel:eq(0)") : commentHolder.parents("li:eq(0)"),
+                        questionHolder: commentHolder.parents("li.evalItemTop:eq(0)").length === 0 ? commentHolder.parents("div.highlightPanel:eq(0)") : commentHolder.parents("li.evalItemTop:eq(0)"),
                         warn: commentHolder.find("span.JSwarn")
                     };
             //Set listeners for any question item response activity and toggle comment controls - EVALSYS-628
 
-            dom.questionHolder.find("input").each(function() {
+			dom.questionHolder.find("input").each(function() {
                 if (this.checked) {
                     isSelectionMade = true;
                 }
+
                 $(this).bind("click", function() {
                     //Only items with checkboxes or radio buttions are supported.
-                    if (dom.questionHolder.find("input:checked").length === 1) {
+					// console.log(dom.questionHolder.find("input:checked").length)
+					  if (dom.questionHolder.find(":checked").length > 0) {
                         //Activate comment controls
                         enable(dom);
-                    } else if (dom.questionHolder.find("input:checked").length === 0) {
+                    } else if (dom.questionHolder.find(":checked").length === 0) {
                         //De-activate comment controls
                         disable(dom);
                     }

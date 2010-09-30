@@ -12,15 +12,7 @@
 <body>
 <div class="portletBody">
 
-<div class="navIntraTool">
-   <a rsf:id="administrate-link" href="administrate.html" class="inactive">Administrate</a>
-   <a rsf:id="summary-link" href="summary.html">Summary</a>
-   <a rsf:id="control-evaluations-link" href="control_evaluations.html">My Evaluations</a>
-   <a rsf:id="control-templates-link" href="control_templates.html">My Templates</a>
-   <a rsf:id="control-items-link" href="control_items.html">My Items</a>
-   <a rsf:id="control-scales-link" href="control_scales.html">My Scales</a>
-   <a rsf:id="control-emailtemplates-link" href="control_email_templates.html">My Email Templates</a>
-</div>
+<div rsf:id="navIntraTool:" class="navIntraTool"/>
 
 <!--//gsilver: all in the same line, avoid wspace -->
 <div>
@@ -205,6 +197,10 @@
             <label rsf:id="msg=administrate.general.use.evaluation.category" for="general-use-eval-category">Enable the use of a category key for grouping when setting up evaluations</label>
         </p>
         <p class=   "checkbox indnt1">
+            <input type="checkbox" rsf:id="general-use-eval-term-id" />
+            <label rsf:id="msg=administrate.general.use.evaluation.term.id" for="general-use-eval-term-id">Enable the use of a eval term ID when setting up evaluations</label>
+        </p>
+        <p class=   "checkbox indnt1">
             <input type="checkbox" rsf:id="general-default-question-category" />
             <label rsf:id="msg=administrate.general.default.question.category.note" for="general-default-question-category">All questions default to course category only
             (instructor category not allowed)</label>
@@ -240,9 +236,9 @@
             <label rsf:id="msg=administrate.general.require.comments.block.note" for="general-require-comments-block">Require a comments block to be included in every evaluation</label>
         </p>
 -->
-        <p class=   "longtext indnt1">
+		<p class=   "longtext indnt1">
             <label class="block" rsf:id="general-eval-closed-still-recent-note" for="general-eval-closed-still-recent-selection">Number of days old can an eval be and still be recently closed</label>
-            <select rsf:id="general-eval-closed-still-recent" id="general-eval-closed-still-recent-id"></select>
+            <input rsf:id="general-eval-closed-still-recent" id="general-eval-closed-still-recent-id" size="5" type="text"/>
         </p>
         <p class=   "longtext indnt1">
             <label class="block" rsf:id="general-mim-time-diff-between-dates-note" for="general-mim-time-diff-between-dates-selection">Minimum time difference (in hours) between start date and due date of an evaluation</label>
@@ -269,13 +265,17 @@
         </p>
         <p class=   "checkbox indnt1">
             <input type="checkbox" rsf:id="general-enable-ta-category" />
-            <label rsf:id="msg=administrate.general.enable.ta.category" for="general-enable-ta-category">Enable Teaching Assistant item category (UMD/UCT)</label>
+            <label rsf:id="msg=administrate.general.enable.ta.category" for="general-enable-ta-category">Enable Teaching Assistant item category</label>
         </p>
         <p class=   "checkbox indnt1">
             <input type="checkbox" rsf:id="general-enable-selections" />
-            <label rsf:id="msg=administrate.general.enable.selections" for="general-enable-selections">Enable Instructor/Assistant Selections for grouping instructor related items (UCT)</label>
+            <label rsf:id="msg=administrate.general.enable.selections" for="general-enable-selections">Enable advanced Instructor / Teaching Assistant selection options when assigning evaluations </label>
+        </p>        
+        <!--<p class=   "checkbox indnt1">
+            <input type="checkbox" rsf:id="general-filter-evalgroups" />
+            <label rsf:id="msg=administrate.general.enable.filtered.evalgroups" for="general-filter-evalgroups">Only show sites with the same type and term as the current site when assigning evaluations </label>
         </p>
-    </fieldset>
+    --></fieldset>
 
     <p class="act"><input class="active" rsf:id="saveSettings" type="submit" value="Save Settings" accesskey="s" />
     <input  type="button" value="Cancel" onclick="javascript:history.go(-1);" accesskey="x" />  

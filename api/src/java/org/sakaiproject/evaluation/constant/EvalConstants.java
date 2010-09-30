@@ -517,6 +517,14 @@ public class EvalConstants {
      * (only a super admin can make a template or item public)
      */
     public static final String SHARING_PUBLIC = "public";
+    
+    /**
+     * UMD specific results sharing values
+     * EVALSYS-850
+     */
+    public static final String SHARING_ADMIN = "Administrative";
+    public static final String SHARING_STUDENT = "Student";
+    public static final String SHARING_BOTH = "Both";
 
     /**
      * Evaluation instructorOpt setting:
@@ -594,6 +602,13 @@ public class EvalConstants {
      * used with the "single-email-per-user" email notification option
      */
     public static final String EMAIL_TEMPLATE_CONSOLIDATED_REMINDER_SUBJECT = "ConsolidatedReminderSubject";
+
+    /**
+     * EmailTemplate type setting:
+     * This identifies a template as the email job completed subject template,
+     * used with the "job-completion-email" notification option
+     */
+    public static final String EMAIL_TEMPLATE_JOB_COMPLETED = "JobCompleted";
 
     /**
      * Email Delivery option setting:

@@ -23,6 +23,8 @@ package org.sakaiproject.evaluation.tool.producers;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,8 +34,10 @@ import org.sakaiproject.evaluation.logic.EvalCommonLogic;
 import org.sakaiproject.evaluation.logic.EvalDeliveryService;
 import org.sakaiproject.evaluation.logic.EvalEvaluationService;
 import org.sakaiproject.evaluation.logic.EvalSettings;
+import org.sakaiproject.evaluation.logic.model.EvalUser;
 import org.sakaiproject.evaluation.model.EvalAssignGroup;
 import org.sakaiproject.evaluation.model.EvalEvaluation;
+import org.sakaiproject.evaluation.tool.renderers.NavBarRenderer;
 import org.sakaiproject.evaluation.tool.viewparams.AdminSearchViewParameters;
 import org.sakaiproject.evaluation.tool.viewparams.EvalViewParameters;
 import org.sakaiproject.evaluation.utils.EvalUtils;
@@ -50,7 +54,6 @@ import uk.org.ponder.rsf.components.UIOutput;
 import uk.org.ponder.rsf.util.RSFUtil;
 import uk.org.ponder.rsf.view.ComponentChecker;
 import uk.org.ponder.rsf.view.ViewComponentProducer;
-import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
 
@@ -101,6 +104,11 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 	public void setLocale(Locale locale) {
 		this.locale = locale;
 	}
+	
+    private NavBarRenderer navBarRenderer;
+    public void setNavBarRenderer(NavBarRenderer navBarRenderer) {
+		this.navBarRenderer = navBarRenderer;
+	}
 
 	/* (non-Javadoc)
 	 * @see uk.org.ponder.rsf.view.ComponentProducer#fillComponents(uk.org.ponder.rsf.components.UIContainer, uk.org.ponder.rsf.viewstate.ViewParameters, uk.org.ponder.rsf.view.ComponentChecker)
@@ -118,7 +126,6 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 
 		String currentUserId = commonLogic.getCurrentUserId();
 		boolean userAdmin = commonLogic.isUserAdmin(currentUserId);
-		boolean beginEvaluation = evaluationService.canBeginEvaluation(currentUserId);
 		//DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
 		DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM);
 		//NumberFormat nf = NumberFormat.getInstance(locale);
@@ -132,42 +139,8 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 		UIMessage.make(tofill, "search-page-title", "administrate.search.page.title");
 
 		// TOP LINKS
-		UIInternalLink.make(tofill, "administrate-link",
-				UIMessage.make("administrate.page.title"),
-				new SimpleViewParameters(AdministrateProducer.VIEW_ID));
-
-		UIInternalLink.make(tofill, "summary-link", 
-				UIMessage.make("summary.page.title"), 
-				new SimpleViewParameters(SummaryProducer.VIEW_ID));
-
-        // only show "My Evaluations", "My Templates", "My Items", "My Scales" and "My Email Templates" links if enabled
-        boolean showMyToplinks = ((Boolean)evalSettings.get(EvalSettings.ENABLE_MY_TOPLINKS)).booleanValue();
-        if(showMyToplinks) {
-        	if (beginEvaluation) {
-        		UIInternalLink.make(tofill, "control-evaluations-link",
-        				UIMessage.make("controlevaluations.page.title"), 
-        				new SimpleViewParameters(ControlEvaluationsProducer.VIEW_ID));
-        	}
-        	
-        	UIInternalLink.make(tofill, "control-templates-link",
-        			UIMessage.make("controltemplates.page.title"), 
-        			new SimpleViewParameters(ControlTemplatesProducer.VIEW_ID));
-
-        	if (!((Boolean)evalSettings.get(EvalSettings.DISABLE_ITEM_BANK))) {
-        		UIInternalLink.make(tofill, "control-items-link",
-        				UIMessage.make("controlitems.page.title"),
-        				new SimpleViewParameters(ControlItemsProducer.VIEW_ID));
-        	}
-
-        	UIInternalLink.make(tofill, "control-scales-link",
-        			UIMessage.make("controlscales.page.title"),
-        			new SimpleViewParameters(ControlScalesProducer.VIEW_ID));
-
-        	UIInternalLink.make(tofill, "control-emailtemplates-link",
-        			UIMessage.make("controlemailtemplates.page.title"),
-        			new SimpleViewParameters(ControlEmailTemplatesProducer.VIEW_ID));
-        }
-
+		navBarRenderer.makeNavBar(tofill, NavBarRenderer.NAV_ELEMENT, this.getViewID());
+		
 		//System Settings
 		UIForm searchForm = UIForm.make(tofill, "search-form");
 		UIInput searchInput = UIInput.make(searchForm, "search-input", 
@@ -231,7 +204,25 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 				UIMessage.make(searchResults, "item-group-id-title", "administrate.search.list.group.id.title");
 				UIMessage.make(searchResults, "item-start-date-title", "administrate.search.list.start.date.title");
 				UIMessage.make(searchResults, "item-due-date-title", "administrate.search.list.due.date.title");
-
+				
+				//loop through the evaluations and get whatever we need for use in retrieving users, groups etc.. later
+				List<Long> evalIds = new ArrayList<Long>();  //keep the eval ids
+				Map<String, EvalUser> evalOwners = new HashMap<String, EvalUser>();  //keep the owner's Id and Sort name
+				
+				for(EvalEvaluation eval : evals){
+					evalOwners.put(eval.getOwner(), null);
+					evalIds.add(eval.getId());
+				}
+				
+				//in one DB query, get the eval owners sort names
+				List<EvalUser> evalOwnersFull = commonLogic.getEvalUsersByIds(evalOwners.keySet().toArray(new String[evalOwners.size()]));
+				for(EvalUser evalUser : evalOwnersFull){
+					evalOwners.put(evalUser.userId, evalUser);
+				}
+				
+				//in one DB query, get the eval groups
+				Map<Long, List<EvalAssignGroup>> evalAssignGroupsFull = this.evaluationService.getAssignGroupsForEvals(evalIds.toArray(new Long[evalIds.size()]), false, false);
+				
 				for(EvalEvaluation eval : evals)
 				{
 					UIBranchContainer evalrow = UIBranchContainer.make(searchResults,
@@ -250,22 +241,31 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 								UIMessage.make("administrate.search.list.revise"),
 								newviewparams );
 					
-					Map<Long, List<EvalAssignGroup>> map = this.evaluationService.getAssignGroupsForEvals(new Long[]{eval.getId()}, false, false);
-					List<EvalAssignGroup> list = map.get(eval.getId());
-					String evalAdminProviderId = null;
-					for(EvalAssignGroup grp : list) {
-						if(evalAdminProviderId == null) {
-							evalAdminProviderId = grp.getEvalGroupId();
-						} else {
-							evalAdminProviderId += ", " + grp.getEvalGroupId();
-						}
+					List<EvalAssignGroup> list = evalAssignGroupsFull.get(eval.getId());
+					// vary the display depending on the number of groups assigned
+					int groupsCount = list.size();
+					if (groupsCount == 1){
+						UIInternalLink.make(evalrow, "evalAdminGroup", getTitleForFirstEvalGroup(list.get(0).getEvalGroupId()), 
+			                     new EvalViewParameters(EvaluationAssignmentsProducer.VIEW_ID, eval.getId()) );
+					}else{
+						UIInternalLink.make(evalrow, "evalAdminGroup", 
+			                     UIMessage.make("controlevaluations.eval.groups.link", new Object[] { groupsCount }), 
+			                     new EvalViewParameters(EvaluationAssignmentsProducer.VIEW_ID, eval.getId()) );
 					}
 					
-					if(evalAdminProviderId != null) {
-						UIOutput.make(evalrow, "evalAdminProviderId", evalAdminProviderId);
-					}
 					UIOutput.make(evalrow, "evalAdminStartDate", df.format(eval.getStartDate()));
 					UIOutput.make(evalrow, "evalAdminDueDate", df.format(eval.getDueDate()));
+					
+					String ownerOutput = "-------";
+					EvalUser owner = evalOwners.get(eval.getOwner());
+					if(owner != null){
+						if (owner.username.equals(owner.sortName)){
+							ownerOutput = owner.username;
+						}else{
+							ownerOutput = owner.sortName + " (" + owner.username+ ")";
+						}
+					}
+					UIOutput.make(evalrow, "evalAdminOwner", ownerOutput);
 				}
 			}
 			else
@@ -280,5 +280,16 @@ public class AdministrateSearchProducer implements ViewComponentProducer, ViewPa
 	{
 		return new AdminSearchViewParameters(VIEW_ID);
 	}
+	
+	/**
+    * Gets the title for the first returned evalGroupId for this evaluation,
+    * should only be used when there is only one evalGroupId assigned to an eval
+    * 
+    * @param evaluationId
+    * @return title of first evalGroupId returned
+    */
+   private String getTitleForFirstEvalGroup(String evalGroupId) {
+      return commonLogic.getDisplayTitle( evalGroupId );
+   }
 
 }
