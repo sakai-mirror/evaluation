@@ -420,7 +420,7 @@ public class PreloadDataImpl {
 
         // Default Student settings
         evalConfigMap.put(EvalSettings.STUDENT_ALLOWED_LEAVE_UNANSWERED, true);
-        evalConfigMap.put(EvalSettings.STUDENT_MODIFY_RESPONSES, false);
+        evalConfigMap.put(EvalSettings.STUDENT_MODIFY_RESPONSES, null);
         evalConfigMap.put(EvalSettings.STUDENT_ALLOWED_VIEW_RESULTS, false);
 
         // Default Admin settings
@@ -459,7 +459,7 @@ public class PreloadDataImpl {
         evalConfigMap.put(EvalSettings.ENABLE_EVAL_REOPEN, true);
         evalConfigMap.put(EvalSettings.ENABLE_MY_TOPLINKS, true);
         evalConfigMap.put(EvalSettings.ENABLE_ADMINISTRATING_BOX, true);
-        evalConfigMap.put(EvalSettings.ENABLE_TEXT_ITEM_REQUIRED, false);
+        evalConfigMap.put(EvalSettings.ENABLE_TEXT_ITEM_REQUIRED, true);
 
         // REPORTING
         evalConfigMap.put(EvalSettings.ENABLE_CSV_REPORT_EXPORT, true);
@@ -487,7 +487,7 @@ public class PreloadDataImpl {
         evalConfigMap.put(EvalSettings.ENABLE_SINGLE_EMAIL_PER_STUDENT, false);
         evalConfigMap.put(EvalSettings.DEFAULT_EMAIL_REMINDER_FREQUENCY, 0);
         evalConfigMap.put(EvalSettings.EVALUATION_TIME_TO_WAIT_SECS, 300);
-        evalConfigMap.put(EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION, true);
+        evalConfigMap.put(EvalSettings.ENABLE_EVAL_AVAILABLE_EMAIL_NOTIFICATION, null);
 
         // Default batch performance metrics settings
         evalConfigMap.put(EvalSettings.LOG_PROGRESS_EVERY, 0);
