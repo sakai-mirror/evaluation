@@ -461,6 +461,7 @@ public class PreloadDataImpl {
         evalConfigMap.put(EvalSettings.ENABLE_MY_TOPLINKS, true);
         evalConfigMap.put(EvalSettings.ENABLE_ADMINISTRATING_BOX, true);
         evalConfigMap.put(EvalSettings.ENABLE_TEXT_ITEM_REQUIRED, false);
+        evalConfigMap.put(EvalSettings.ENABLE_GROUP_SPECIFIC_PREVIEW, false);
 
         // REPORTING
         evalConfigMap.put(EvalSettings.ENABLE_CSV_REPORT_EXPORT, true);
