@@ -212,7 +212,9 @@ public class EvalDeliveryServiceImpl implements EvalDeliveryService {
                 	  emailsLogic.sendEvalSubmissionConfirmationEmail(userId, response.getEvaluation().getId());
                   }
             }catch(Exception e){
-            	log.debug("Unable to send the confirmation email to user: " + userId);
+            	//NOTE this will still cause the transaction to roll back!
+            	log.warn("Unable to send the confirmation email to user: " + userId + " due to: " + e);
+            	e.printStackTrace();
             }
             
             int answerCount = response.getAnswers() == null ? 0 : response.getAnswers().size();
