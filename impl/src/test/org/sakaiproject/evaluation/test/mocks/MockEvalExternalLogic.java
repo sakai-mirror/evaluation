@@ -590,4 +590,10 @@ public List<String> searchForEvalGroupIds(String searchString, String order, int
 	return sitesIds;
 }
 
+
+public void setSessionTimeout(int Seconds) {
+	// TODO Auto-generated method stub
+	
+}
+
 }

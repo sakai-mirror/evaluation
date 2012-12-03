@@ -1109,4 +1109,15 @@ public class EvalExternalLogicImpl implements EvalExternalLogic {
 		return isEvalGroupPublished;
 	}
 
+	
+	public void setSessionTimeout(int seconds) {
+		Session session = sessionManager.getCurrentSession();
+		
+		if (session !=null) {
+			session.setMaxInactiveInterval(seconds);
+		}
+			
+		
+	}
+
 }
