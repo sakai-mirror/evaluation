@@ -575,20 +575,18 @@ public class ReportsViewingProducer extends EvalCommonProducer implements ViewPa
 			List<EvalAssignUser> evaluatees = evaluationService.getParticipantsForEval(evaluation.getId(), null, null, EvalAssignUser.TYPE_EVALUATEE, null, null, null);
             evaluatees.addAll(evaluationService.getParticipantsForEval(evaluation.getId(), null, null, EvalAssignUser.TYPE_ASSISTANT, null, null, null));
             List<String> listedEvaluatees = new ArrayList<String>();
-            ArrayList downloadReportVPList = new ArrayList();
 
 			for (int i = 0; i < evaluatees.size(); i++) {
 				EvalAssignUser evaluatee = evaluatees.get(i);
                 if (!listedEvaluatees.contains(evaluatee.getUserId())) {
+				  UIBranchContainer evaluateeBranch = UIBranchContainer.make(tofill, "pdfResultsReportIndividual:", i+"");
 				  EvalUser user = commonLogic.getEvalUserById( evaluatee.getUserId() );
 				
-				  downloadReportVPList.add(new DownloadReportViewParams("pdfResultsReportIndividual", templateId, reportViewParams.evaluationId, reportViewParams.groupIds, evaltitle+"Individual.pdf", evaluatee.getUserId()));
-
+				  UIInternalLink.make(evaluateeBranch, "pdfResultsReportIndividualLink", UIMessage.make("viewreport.view.pdf.individual", new Object[] {user.displayName}), new DownloadReportViewParams(
+				  "pdfResultsReportIndividual", templateId, reportViewParams.evaluationId, reportViewParams.groupIds, evaltitle+"Individual.pdf", evaluatee.getUserId()));
                   listedEvaluatees.add(evaluatee.getUserId());
                 }
 			}
-
-            addItemControlRenderer.renderControl(tofill, "pdfResultsReportIndividual:", downloadReportVPList.toArray(new DownloadReportViewParams[downloadReportVPList.size()]), listedEvaluatees.toArray(new String[listedEvaluatees.size()]), UIMessage.make("viewreport.view.pdf.individual"), templateId);
 			
         }
 
