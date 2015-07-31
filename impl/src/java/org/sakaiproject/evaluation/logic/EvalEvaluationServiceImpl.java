@@ -1178,6 +1178,8 @@ public class EvalEvaluationServiceImpl implements EvalEvaluationService, Evaluat
 		
 		return this.dao.getConsolidatedEmailMapping(sendingAvailableEmails, pageSize, page);
 	}
+
+
     
 	/*
 	 * (non-Javadoc)
