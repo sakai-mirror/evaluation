@@ -83,6 +83,8 @@ public class CSVReportExporter implements ReportExporter {
         String currentUserId = commonLogic.getCurrentUserId();
         String evalOwner = evaluation.getOwner();
 
+        boolean isCurrentUserAdmin = commonLogic.isUserAdmin(currentUserId);
+
         // 1 Make TIDL
         TemplateItemDataList tidl = responseAggregator.prepareTemplateItemDataStructure(evaluation.getId(), groupIds);
 
@@ -96,7 +98,7 @@ public class CSVReportExporter implements ReportExporter {
         for (DataTemplateItem dti : dtiList) {
             
             if (!instructorViewAllResults // If the eval is so configured,
-              && !commonLogic.isUserAdmin(currentUserId) // and currentUser is not an admin
+              && !isCurrentUserAdmin // and currentUser is not an admin
               && !currentUserId.equals(evalOwner) // and currentUser is not the eval creator
               && !EvalConstants.ITEM_CATEGORY_COURSE.equals(dti.associateType) 
               && !currentUserId.equals(commonLogic.getEvalUserById(dti.associateId).userId) ) {
@@ -146,7 +148,7 @@ public class CSVReportExporter implements ReportExporter {
             for (DataTemplateItem dti : dtiList) {
                 
                 if (!instructorViewAllResults // If the eval is so configured,
-                  && !commonLogic.isUserAdmin(currentUserId) // and currentUser is not an admin
+                  && !isCurrentUserAdmin // and currentUser is not an admin
                   && !currentUserId.equals(evalOwner) // and currentUser is not the eval creator
                   && !EvalConstants.ITEM_CATEGORY_COURSE.equals(dti.associateType) 
                   && !currentUserId.equals(commonLogic.getEvalUserById(dti.associateId).userId) ) {

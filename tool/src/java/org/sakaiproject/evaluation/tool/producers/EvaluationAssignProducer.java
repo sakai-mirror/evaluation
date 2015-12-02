@@ -24,6 +24,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.sakaiproject.entitybroker.EntityReference;
 import org.sakaiproject.evaluation.constant.EvalConstants;
 import org.sakaiproject.evaluation.logic.EvalAuthoringService;
@@ -88,7 +91,7 @@ import uk.org.ponder.rsf.viewstate.ViewStateHandler;
 @SuppressWarnings("deprecation")
 public class EvaluationAssignProducer extends EvalCommonProducer implements ViewParamsReporter, ActionResultInterceptor {
 	
-	//private static Log log = LogFactory.getLog(EvaluationAssignProducer.class);
+    private static Log log = LogFactory.getLog(EvaluationAssignProducer.class);
 
     public static final String VIEW_ID = "evaluation_assign";
     public String getViewID() {
@@ -183,6 +186,9 @@ public class EvaluationAssignProducer extends EvalCommonProducer implements View
             hasAssistantQuestions = validItemCategories.contains(EvalConstants.ITEM_CATEGORY_ASSISTANT);
         }
         
+	log.debug("Template id: " + evaluation.getTemplate().getId() + " useSelectionOptions: " + useSelectionOptions + 
+	          " hasInstructorQuestions: " + hasInstructorQuestions + " hasAssistantQuestions: " + hasAssistantQuestions);
+
         String actionBean = "setupEvalBean.";
         Boolean newEval = false;
         
@@ -429,7 +435,12 @@ public class EvaluationAssignProducer extends EvalCommonProducer implements View
 	                //keep deselected user info as a result of changes in EVALSYS-660
 	                Set<String> deselectedInsructorIds = new HashSet<String>();
 	                Set<String> deselectedAssistantIds = new HashSet<String>();
-	                
+
+	                //Assign attribute to row to help JS set checkbox selection to true
+	                if(assignGroupsIds.contains(evalGroupId)){
+	                	checkboxRow.decorate(new UIStyleDecorator("selectedGroup"));
+	                }
+		                 
 	                if (useSelectionOptions){
 		                
 		                if (! newEval) {
@@ -445,11 +456,6 @@ public class EvaluationAssignProducer extends EvalCommonProducer implements View
 		                	deselectedAssistantIds.add(deselectedUser.getUserId());
 		                }
 		               
-		                //Assign attribute to row to help JS set checkbox selection to true
-		                if(assignGroupsIds.contains(evalGroupId)){
-		                	checkboxRow.decorate(new UIStyleDecorator("selectedGroup"));
-		                }
-		                 
 		                }else{
 		                	//add blank selection options for this group for use by evalAssign.js
 		                	form.parameters.add(new UIELBinding(groupSelectionOTP + evalGroupId.replaceAll("/site/", "") + ".instructor", ""));
@@ -497,7 +503,7 @@ public class EvaluationAssignProducer extends EvalCommonProducer implements View
 			                	link.decorate(new UITooltipDecorator(messageLocator.getMessage("assignselect.instructors.page.title")));
 			                }
 			                totalUsers = commonLogic.countUserIdsForEvalGroup(evalGroup.evalGroupId, EvalConstants.PERM_ASSISTANT_ROLE);
-			                if(totalUsers > 0 && hasInstructorQuestions){
+			                if(totalUsers > 0 && hasAssistantQuestions){
 			                	int currentUsers = deselectedAssistantIds.size() >= 0 ? ( totalUsers-deselectedAssistantIds.size() ) : totalUsers;
 			                	UIInternalLink link = UIInternalLink.make(checkboxRow, "select-tas", UIMessage.make("assignselect.tas.select", 
 			                			new Object[] {currentUsers,totalUsers}) , 
