@@ -1,3 +1,4 @@
 * EVALSYS-1413: Export report for a specific lecturer or TA
 * EVALSYS-1451: Support for exporting reports from direct and services
 * EVALSYS-1453 - Create new quartz job to export pdfs and delete evaluations
+ - Includes export as separate group fix
